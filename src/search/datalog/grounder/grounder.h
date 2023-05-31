@@ -12,7 +12,7 @@ public:
 
     virtual ~Grounder() = default;
 
-    virtual int ground(Datalog &lp, std::vector<Fact> &state_facts, int goal_predicate) = 0;
+    virtual int ground(Datalog &lp, std::vector<Fact> &state_facts, int goal_predicate, const Task &task) = 0;
 
     virtual void print_statistics(const Datalog &lp) = 0;
 };

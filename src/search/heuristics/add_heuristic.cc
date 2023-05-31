@@ -20,7 +20,7 @@ int AdditiveHeuristic::compute_heuristic(const DBState &s, const Task &task) {
 
     std::vector<datalog::Fact> state_facts = get_datalog_facts_from_state(s, task);
 
-    int h = grounder.ground(datalog, state_facts, datalog.get_goal_atom_idx());
+    int h = grounder.ground(datalog, state_facts, datalog.get_goal_atom_idx(),task);
     //grounder.print_statistics(datalog);
     datalog.reset_facts();
 

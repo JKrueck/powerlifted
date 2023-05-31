@@ -22,6 +22,11 @@ using namespace utils;
 int main(int argc, char *argv[]) {
     cout << "Initializing planner" << endl;
 
+    for (int i=0;i<argc;i++){
+        cout << argv[i] << endl;
+        
+
+    }
     Options opt(argc, argv);
 
     ifstream task_file(opt.get_filename());

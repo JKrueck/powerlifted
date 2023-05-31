@@ -3,10 +3,13 @@
 
 #include <vector>
 
+
 // A few forward declarations :-)
 class ActionSchema;
 class DBState;
 class LiftedOperatorId;
+
+class Task;
 
 typedef DBState StaticInformation;
 
@@ -35,7 +38,7 @@ public:
      * instantiation of the action schema.
      */
     virtual std::vector<LiftedOperatorId> get_applicable_actions(
-            const ActionSchema &action, const DBState &state) = 0;
+            const ActionSchema &action, const DBState &state,const Task &task) = 0;
 
     /**
      * Generate the state that results from applying the given action to the given state.

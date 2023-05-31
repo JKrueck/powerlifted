@@ -14,7 +14,7 @@ using namespace std;
 
 namespace datalog {
 
-int WeightedGrounder::ground(Datalog &datalog, std::vector<Fact> &state_facts, int goal_predicate) {
+int WeightedGrounder::ground(Datalog &datalog, std::vector<Fact> &state_facts, int goal_predicate,const Task &task) {
     phmap::flat_hash_set<Fact> reached_facts;
     std::vector<Fact> newfacts;
 

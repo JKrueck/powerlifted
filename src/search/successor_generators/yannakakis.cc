@@ -7,9 +7,9 @@
 #include "../task.h"
 
 #include <cassert>
-#include <stack>
-#include <queue>
 #include <iostream>
+#include <queue>
+#include <stack>
 
 using namespace std;
 
@@ -27,12 +27,13 @@ using namespace std;
  * @param task
  */
 YannakakisSuccessorGenerator::YannakakisSuccessorGenerator(const Task &task)
-    : GenericJoinSuccessor(task) {
+    : GenericJoinSuccessor(task)
+{
     /*
-      * Apply GYO algorithm for every action schema to check whether it has acyclic precondition/
-      *
-      * A lot of duplication from Full reducer successor generator.
-      */
+     * Apply GYO algorithm for every action schema to check whether it has acyclic precondition/
+     *
+     * A lot of duplication from Full reducer successor generator.
+     */
 
     size_t number_action_schemas = task.get_number_action_schemas();
 
@@ -79,13 +80,15 @@ YannakakisSuccessorGenerator::YannakakisSuccessorGenerator(const Task &task)
                     continue;
                 }
                 for (size_t j = 0; j < hyperedges.size() and !has_ear; ++j) {
-                    if (removed[j] or i==j) {
+                    if (removed[j] or i == j) {
                         continue;
                     }
                     set<int> diff;
                     // Contained only in the first hyperedge, then it is an ear
-                    set_difference(hyperedges[i].begin(), hyperedges[i].end(),
-                                   hyperedges[j].begin(), hyperedges[j].end(),
+                    set_difference(hyperedges[i].begin(),
+                                   hyperedges[i].end(),
+                                   hyperedges[j].begin(),
+                                   hyperedges[j].end(),
                                    inserter(diff, diff.end()));
                     has_ear = true;
                     ear = i;
@@ -104,12 +107,11 @@ YannakakisSuccessorGenerator::YannakakisSuccessorGenerator(const Task &task)
                     }
                 }
                 if (has_ear) {
-                    assert (ear!=-1 and in_favor!=-1);
+                    assert(ear != -1 and in_favor != -1);
                     removed[ear] = true;
                     full_reducer_order[action.get_index()].emplace_back(edge_to_precond[ear],
                                                                         edge_to_precond[in_favor]);
-                    full_reducer_back.emplace(edge_to_precond[in_favor],
-                                              edge_to_precond[ear]);
+                    full_reducer_back.emplace(edge_to_precond[in_favor], edge_to_precond[ear]);
                     jt.add_node(edge_to_precond[ear], edge_to_precond[in_favor]);
                 }
             }
@@ -121,7 +123,8 @@ YannakakisSuccessorGenerator::YannakakisSuccessorGenerator(const Task &task)
             full_reducer_order[action.get_index()].push_back(p);
             full_reducer_back.pop();
         }
-        // Add all hyperedges that were not removed to the join. If it is acyclic, there is only left.
+        // Add all hyperedges that were not removed to the join. If it is acyclic, there is only
+        // left.
         for (int k : missing_precond) {
             remaining_join[action.get_index()].push_back(k);
         }
@@ -131,7 +134,7 @@ YannakakisSuccessorGenerator::YannakakisSuccessorGenerator(const Task &task)
                 ++not_removed_counter;
             }
         }
-        if (not_removed_counter==1) {
+        if (not_removed_counter == 1) {
             /*
              * We need to add the root of every component and join them.
              * But since we considered all components when computing the full reducer,
@@ -142,15 +145,14 @@ YannakakisSuccessorGenerator::YannakakisSuccessorGenerator(const Task &task)
                     remaining_join[action.get_index()].push_back(edge_to_precond[k]);
                 }
             }
-        } else {
+        }
+        else {
             priority_queue<pair<int, int>> q;
             remaining_join[action.get_index()].clear();
-            remaining_join[action.get_index()].reserve(
-                removed.size() + missing_precond.size());
+            remaining_join[action.get_index()].reserve(removed.size() + missing_precond.size());
             for (size_t k = 0; k < missing_precond.size(); ++k) {
                 // TODO This is really ugly
-                q.emplace(action.get_precondition()[k].get_arguments().size(),
-                          missing_precond[k]);
+                q.emplace(action.get_precondition()[k].get_arguments().size(), missing_precond[k]);
             }
             for (size_t k = 0; k < removed.size(); ++k) {
                 q.emplace(hyperedges[k].size(), edge_to_precond[k]);
@@ -162,10 +164,10 @@ YannakakisSuccessorGenerator::YannakakisSuccessorGenerator(const Task &task)
             }
         }
     }
-
 }
 
-void YannakakisSuccessorGenerator::get_distinguished_variables(const ActionSchema &action) {
+void YannakakisSuccessorGenerator::get_distinguished_variables(const ActionSchema &action)
+{
     int action_index = action.get_index();
     for (const Atom &eff : action.get_effects()) {
         for (const Argument &arg : eff.get_arguments()) {
@@ -174,16 +176,16 @@ void YannakakisSuccessorGenerator::get_distinguished_variables(const ActionSchem
         }
     }
 
-    for (const Atom& atom : action.get_static_precondition()) {
+    for (const Atom &atom : action.get_static_precondition()) {
         // TODO: for now, we assume all static preconditions are
         //       (in)equalities. This may change in future
         const std::vector<Argument> &args = atom.get_arguments();
         assert(args.size() == 2);
-        if (atom.is_negated()){
-          if (!args[0].is_constant())
-            distinguished_variables[action_index].insert(args[0].get_index());
-          if (!args[1].is_constant())
-            distinguished_variables[action_index].insert(args[1].get_index());
+        if (atom.is_negated()) {
+            if (!args[0].is_constant())
+                distinguished_variables[action_index].insert(args[0].get_index());
+            if (!args[1].is_constant())
+                distinguished_variables[action_index].insert(args[1].get_index());
         }
     }
 }
@@ -209,25 +211,25 @@ void YannakakisSuccessorGenerator::get_distinguished_variables(const ActionSchem
  * @param staticInformation  Static predicates of the task
  * @return
  */
-Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action,
-                                                const DBState &state) {
-
+Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state,const Task &task)
+{
     if (action.is_ground()) {
         throw std::runtime_error("Shouldn't be calling instantiate() on a ground action");
     }
 
-    const auto& actiondata = action_data[action.get_index()];
+    const auto &actiondata = action_data[action.get_index()];
 
     vector<Table> tables;
     auto res = parse_precond_into_join_program(actiondata, state, tables);
-    if (!res) return Table::EMPTY_TABLE();
+    if (!res)
+        return Table::EMPTY_TABLE();
 
-    assert (!tables.empty());
+    assert(!tables.empty());
     assert(tables.size() == actiondata.relevant_precondition_atoms.size());
 
     for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
         size_t s = semi_join(tables[sj.second], tables[sj.first]);
-        if (s==0) {
+        if (s == 0) {
             return Table::EMPTY_TABLE();
         }
     }
@@ -246,8 +248,9 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action,
         }
         Table &working_table = tables[j.second];
         hash_join(working_table, tables[j.first]);
-        // Project must be after removal of inequality constraints, otherwise we might keep only the tuple violating
-        // some inequality. Variables in inequalities are also considered distinguished.
+        // Project must be after removal of inequality constraints, otherwise we might keep only the
+        // tuple violating some inequality. Variables in inequalities are also considered
+        // distinguished.
         filter_static(action, working_table);
         project(working_table, project_over);
         if (working_table.tuples.empty()) {

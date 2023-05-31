@@ -45,7 +45,7 @@ bool OrderedJoinSuccessorGenerator<OrderT>::parse_precond_into_join_program(
 
 template<typename OrderT>
 Table OrderedJoinSuccessorGenerator<OrderT>::instantiate(const ActionSchema &action,
-                                                         const DBState &state) {
+                                                         const DBState &state,const Task &task) {
 
     vector<int> order = precondition_to_order[action.get_index()];
 

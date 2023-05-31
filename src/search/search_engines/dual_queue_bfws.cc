@@ -88,7 +88,7 @@ utils::ExitCode DualQueueBFWS<PackedStateT>::search(const Task &task,
         }
 
         for (const auto& action:task.get_action_schemas()) {
-            auto applicable = generator.get_applicable_actions(action, state);
+            auto applicable = generator.get_applicable_actions(action, state,task);
             statistics.inc_generated(applicable.size());
 
             for (const LiftedOperatorId& op_id:applicable) {

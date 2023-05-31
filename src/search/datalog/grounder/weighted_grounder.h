@@ -62,7 +62,7 @@ public:
 
     ~WeightedGrounder() override = default;
 
-    int ground(Datalog &datalog, std::vector<Fact> &state_facts, int goal_predicate) override;
+    int ground(Datalog &datalog, std::vector<Fact> &state_facts, int goal_predicate,const Task &task) override;
 
     void print_statistics(const Datalog &lp) override {
         std::cout << lp.get_number_of_facts() << " final number of facts" << std::endl;
