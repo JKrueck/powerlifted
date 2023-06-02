@@ -169,7 +169,7 @@ FullReducerSuccessorGenerator::FullReducerSuccessorGenerator(const Task &task)
  * @param staticInformation  Static predicates of the task
  * @return
  */
-Table FullReducerSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state,const Task &task)
+Table FullReducerSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state, const Task &task, Table &thesis)
 {
     if (action.is_ground()) {
         throw std::runtime_error("Shouldn't be calling instantiate() on a ground action");

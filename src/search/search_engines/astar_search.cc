@@ -66,15 +66,17 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
 
         DBState state = packer.unpack(space.get_state(sid));
         if (check_goal(task, generator, timer_start, state, node, space)) return utils::ExitCode::SUCCESS;
+        
+        Table thes_table = state.get_table();
 
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
-            auto applicable = generator.get_applicable_actions(action, state,task);
+            auto applicable = generator.get_applicable_actions(action, state, task, thes_table);
             statistics.inc_generated(applicable.size());
 
             for (const LiftedOperatorId& op_id:applicable) {
-                DBState s = generator.generate_successor(op_id, action, state);
+                DBState s = generator.generate_successor(op_id, action, state, thes_table);
 
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);

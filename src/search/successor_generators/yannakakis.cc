@@ -211,7 +211,7 @@ void YannakakisSuccessorGenerator::get_distinguished_variables(const ActionSchem
  * @param staticInformation  Static predicates of the task
  * @return
  */
-Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state,const Task &task)
+Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state,const Task &task, Table &thesis_table)
 {
     if (action.is_ground()) {
         throw std::runtime_error("Shouldn't be calling instantiate() on a ground action");
@@ -251,6 +251,9 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         // Project must be after removal of inequality constraints, otherwise we might keep only the
         // tuple violating some inequality. Variables in inequalities are also considered
         // distinguished.
+        Table copy = tables[j.second];
+        thesis_table = copy;
+
         filter_static(action, working_table);
         project(working_table, project_over);
         if (working_table.tuples.empty()) {

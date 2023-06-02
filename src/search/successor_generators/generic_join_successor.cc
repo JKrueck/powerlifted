@@ -26,7 +26,7 @@ GenericJoinSuccessor::GenericJoinSuccessor(const Task &task)
 }
 
 Table GenericJoinSuccessor::instantiate(const ActionSchema &action,
-                                        const DBState &state,const Task &task)
+                                        const DBState &state,const Task &task, Table &thesis_table)
 {
 
     if (action.is_ground()) {
@@ -332,7 +332,8 @@ void GenericJoinSuccessor::create_hypergraph(const ActionSchema &action,
 DBState GenericJoinSuccessor::generate_successor(
     const LiftedOperatorId &op,
     const ActionSchema& action,
-    const DBState &state) {
+    const DBState &state,
+    Table &thesis_table) {
 
     added_atoms.clear();
     vector<bool> new_nullary_atoms(state.get_nullary_atoms());
@@ -346,7 +347,9 @@ DBState GenericJoinSuccessor::generate_successor(
         apply_lifted_action_effects(action, op.get_instantiation(), new_relation);
     }
 
-    return DBState(std::move(new_relation), std::move(new_nullary_atoms));
+    Table new_thesis_table = thesis_table;
+
+    return DBState(std::move(new_relation), std::move(new_nullary_atoms), new_thesis_table);
 }
 
 void GenericJoinSuccessor::order_tuple_by_free_variable_order(const vector<int> &free_var_indices,
@@ -462,7 +465,7 @@ void GenericJoinSuccessor::apply_lifted_action_effects(const ActionSchema &actio
  * we know the actions are applicable.
  */
 std::vector<LiftedOperatorId> GenericJoinSuccessor::get_applicable_actions(
-        const ActionSchema &action, const DBState &state, const Task &task)
+        const ActionSchema &action, const DBState &state, const Task &task, Table &thesis_table)
 {
     std::vector<LiftedOperatorId> applicable;
     if (is_trivially_inapplicable(state, action)) {
@@ -476,7 +479,7 @@ std::vector<LiftedOperatorId> GenericJoinSuccessor::get_applicable_actions(
         return applicable;
     }
 
-    Table instantiations = instantiate(action, state,task);
+    Table instantiations = instantiate(action, state,task, thesis_table);
     if (instantiations.tuples.empty()) { // No applicable action from this schema
         return applicable;
     }

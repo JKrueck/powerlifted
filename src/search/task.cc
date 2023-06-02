@@ -34,8 +34,11 @@ void Task::create_empty_initial_state(size_t number_predicates)
         static_preds.push_back(r);
         fluents.push_back(r);
     }
-    initial_state = DBState(std::move(fluents), vector<bool>(predicates.size(), false));
-    static_info = StaticInformation(std::move(static_preds), vector<bool>(predicates.size(), false));
+    //Create an empty table for the initial state for thesis stuff
+    Table thesis = Table(std::vector<std::vector<int>>{{1}},std::vector<int>{1});
+
+    initial_state = DBState(std::move(fluents), vector<bool>(predicates.size(), false), thesis);
+    static_info = StaticInformation(std::move(static_preds), vector<bool>(predicates.size(), false), thesis);
 }
 
 void Task::dump_state(DBState s) const

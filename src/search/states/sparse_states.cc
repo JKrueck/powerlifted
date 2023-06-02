@@ -118,7 +118,8 @@ DBState SparseStatePacker::unpack(const SparsePackedState &packed_state) const {
         }
         relations.emplace_back(packed_state.predicate_symbols[i], std::move(tuples));
     }
-    return DBState(std::move(relations), std::move(nullary_atoms));
+    Table thesis = packed_state.uncompressed_table;
+    return DBState(std::move(relations), std::move(nullary_atoms), thesis);
 }
 
 long SparseStatePacker::pack_tuple(const std::vector<int> &tuple, int predicate_index) const {
@@ -141,6 +142,7 @@ GroundAtom SparseStatePacker::unpack_tuple(long tuple, int predicate_index) cons
     assert(tuple == 0);
     return values;
 }
+
 
 int SparseStatePacker::get_index_given_predicate_and_param(int pred, int param, int element) const {
     return obj_to_hash_index[pred][param].at(element);

@@ -2,12 +2,15 @@
 #define SEARCH_STATE_H
 
 #include "../structures.h"
+#include "../database/table.h"
 
 #include <algorithm>
 #include <tuple>
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+class Table;
 
 /**
  * @brief Represents a state in the search space. Intuitively, it is represented
@@ -28,6 +31,7 @@ class DBState {
 
     std::vector<Relation> relations;
     std::vector<bool> nullary_atoms;
+    Table pre_static_table;
 
 public:
 
@@ -35,8 +39,8 @@ public:
     explicit DBState(unsigned num_predicates) :
         relations(num_predicates), nullary_atoms(num_predicates, false) {}
 
-    DBState(std::vector<Relation> &&relations, std::vector<bool> &&nullary_atoms) :
-        relations(std::move(relations)), nullary_atoms(std::move(nullary_atoms)) {
+    DBState(std::vector<Relation> &&relations, std::vector<bool> &&nullary_atoms, Table &pre_static_table) :
+        relations(std::move(relations)), nullary_atoms(std::move(nullary_atoms)), pre_static_table(pre_static_table) {
         // Explicit state constructor
     }
 
@@ -46,6 +50,10 @@ public:
 
     const std::vector<bool> &get_nullary_atoms() const {
         return nullary_atoms;
+    }
+
+    const Table &get_table() const{
+        return pre_static_table;
     }
 
     const std::unordered_set<GroundAtom, TupleHash>& get_tuples_of_relation(size_t i) const {
@@ -68,6 +76,14 @@ public:
 
     bool operator==(const DBState &other) const {
         return nullary_atoms==other.nullary_atoms && relations==other.relations;
+    }
+
+    void set_table(Table tab){
+        this->pre_static_table = tab;
+    }
+
+    Table get_table(){
+        return this->pre_static_table;
     }
 
     friend std::size_t hash_value(const DBState &s);

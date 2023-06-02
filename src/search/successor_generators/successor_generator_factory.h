@@ -3,7 +3,10 @@
 
 #include <string>
 
+
+
 class Task;
+class Table;
 class SuccessorGenerator;
 
 class SuccessorGeneratorFactory {

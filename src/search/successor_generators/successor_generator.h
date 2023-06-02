@@ -10,6 +10,7 @@ class DBState;
 class LiftedOperatorId;
 
 class Task;
+class Table;
 
 typedef DBState StaticInformation;
 
@@ -38,14 +39,15 @@ public:
      * instantiation of the action schema.
      */
     virtual std::vector<LiftedOperatorId> get_applicable_actions(
-            const ActionSchema &action, const DBState &state,const Task &task) = 0;
+            const ActionSchema &action, const DBState &state,const Task &task, Table &thesis_table) = 0;
 
     /**
      * Generate the state that results from applying the given action to the given state.
      */
     virtual DBState generate_successor(const LiftedOperatorId &op,
                                const ActionSchema& action,
-                               const DBState &state) = 0;
+                               const DBState &state,
+                               Table &thesis_table) = 0;
 
     void add_to_added_atoms(int i, const std::vector<int> & atom) {
         added_atoms.emplace_back(i, atom);

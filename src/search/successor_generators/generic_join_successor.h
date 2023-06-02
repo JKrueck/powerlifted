@@ -35,7 +35,7 @@ class GenericJoinSuccessor : public SuccessorGenerator {
 public:
     explicit GenericJoinSuccessor(const Task &task);
 
-    virtual Table instantiate(const ActionSchema &action, const DBState &state,const Task &task);
+    virtual Table instantiate(const ActionSchema &action, const DBState &state,const Task &task, Table &thesis_table);
 
     /**
     * Create the set of tables corresponding to the precondition of the given action.
@@ -58,11 +58,12 @@ public:
 
     DBState generate_successor(const LiftedOperatorId &op,
                                const ActionSchema& action,
-                               const DBState &state) override;
+                               const DBState &state,
+                               Table &thesis_table) override;
 
 
     std::vector<LiftedOperatorId> get_applicable_actions(
-            const ActionSchema &action, const DBState &state,const Task &task) override;
+            const ActionSchema &action, const DBState &state,const Task &task, Table &thesis_table) override;
 
     const GroundAtom tuple_to_atom(const std::vector<int> &tuple, const Atom &eff);
 

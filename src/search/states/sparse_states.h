@@ -1,11 +1,15 @@
 #ifndef SEARCH_SPARSE_STATES_H
 #define SEARCH_SPARSE_STATES_H
 
+#include "../database/table.h"
+
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+
+
 
 #include <boost/functional/hash/hash.hpp>
 
@@ -28,6 +32,7 @@
 
 class Task;
 class DBState;
+class Table;
 
 class SparseStatePacker;
 class PackedStateHash;
@@ -39,6 +44,7 @@ public:
     std::vector<std::vector<long>> packed_relations;
     std::vector<int> predicate_symbols;
     std::vector<bool> nullary_atoms;
+    Table uncompressed_table;
 
 
     bool operator==(const SparsePackedState &b) const;
@@ -73,6 +79,7 @@ private:
     int get_index_given_predicate_and_param(int pred, int param, int element) const;
 
     int get_obj_given_predicate_and_param(int pred, int param, int element) const;
+
 
 
     std::vector<std::vector<long>> hash_multipliers;

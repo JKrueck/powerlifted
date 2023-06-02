@@ -158,12 +158,14 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                  << ", time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << "]" << '\n';
         }
 
+        Table thes_table = state.get_table();
+
         for (const auto& action:task.get_action_schemas()) {
-            auto applicable = generator.get_applicable_actions(action, state,task);
+            auto applicable = generator.get_applicable_actions(action, state, task, thes_table);
             statistics.inc_generated(applicable.size());
 
             for (const LiftedOperatorId& op_id:applicable) {
-                DBState s = generator.generate_successor(op_id, action, state);
+                DBState s = generator.generate_successor(op_id, action, state, thes_table);
 
                 bool is_preferred = is_useful_operator(task, s, delete_free_h->get_useful_atoms());
                 int dist = g + action.get_cost();

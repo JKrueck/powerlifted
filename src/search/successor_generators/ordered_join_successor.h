@@ -23,7 +23,7 @@ public:
                                          const DBState &state,
                                          std::vector<Table>& tables) override;
 
-    Table instantiate(const ActionSchema &action, const DBState &state,const Task &task) override;
+    Table instantiate(const ActionSchema &action, const DBState &state,const Task &task, Table &thesis) override;
 
 };
 
