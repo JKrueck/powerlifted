@@ -104,6 +104,7 @@ SparsePackedState SparseStatePacker::pack(const DBState &state) const {
         sort(packed_relation.begin(), packed_relation.end());
         packed_state.packed_relations.push_back(packed_relation);
     }
+    packed_state.thesis_successor_packed= state.get_thesis();
     return packed_state;
 }
 
@@ -118,7 +119,7 @@ DBState SparseStatePacker::unpack(const SparsePackedState &packed_state) const {
         }
         relations.emplace_back(packed_state.predicate_symbols[i], std::move(tuples));
     }
-    Table thesis = packed_state.uncompressed_table;
+    ThesisClass thesis = packed_state.thesis_successor_packed;
     return DBState(std::move(relations), std::move(nullary_atoms), thesis);
 }
 

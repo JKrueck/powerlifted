@@ -6,6 +6,8 @@
 #include "../atom.h"
 #include "../structures.h"
 
+#include "../database/table.h"
+
 #include <map>
 #include <set>
 #include <unordered_set>
@@ -14,6 +16,13 @@
 class PrecompiledActionData;
 class Task;
 class Table;
+
+
+
+
+
+
+
 
 /**
  * This class is not a successor generator per se. It just contain most of the common functions
@@ -30,12 +39,14 @@ class Table;
  * @see database/join.cc
  */
 class GenericJoinSuccessor : public SuccessorGenerator {
-
+    using tuple_t = std::vector<int>;
 
 public:
     explicit GenericJoinSuccessor(const Task &task);
 
-    virtual Table instantiate(const ActionSchema &action, const DBState &state,const Task &task, Table &thesis_table);
+    virtual Table instantiate(const ActionSchema &action, const DBState &state,
+            const Task &task, Table &thesis_table, std::unordered_set<int> &thesis_matching,
+            std::unordered_map<int,std::vector<int>> &thesis_indices);
 
     /**
     * Create the set of tables corresponding to the precondition of the given action.
@@ -59,11 +70,13 @@ public:
     DBState generate_successor(const LiftedOperatorId &op,
                                const ActionSchema& action,
                                const DBState &state,
-                               Table &thesis_table) override;
+                                ThesisClass &thesis_class) override;
 
 
     std::vector<LiftedOperatorId> get_applicable_actions(
-            const ActionSchema &action, const DBState &state,const Task &task, Table &thesis_table) override;
+            const ActionSchema &action, const DBState &state,const Task &task,
+            Table &thesis_table, std::unordered_set<int> &thesis_matching, 
+            std::unordered_map<int,std::vector<int>> &thesis_indices) override;
 
     const GroundAtom tuple_to_atom(const std::vector<int> &tuple, const Atom &eff);
 
@@ -122,9 +135,10 @@ protected:
     void apply_ground_action_effects(const ActionSchema &action,
                                             std::vector<Relation> &new_relation) ;
 
+    //Return all added atoms
     void apply_lifted_action_effects(const ActionSchema &action,
                                      const std::vector<int> &tuple,
-                                     std::vector<Relation> &new_relation);
+                                     std::vector<Relation> &new_relation, std::vector<GroundAtom> &add_effects);
 
     bool is_ground_action_applicable(const ActionSchema &action,
                                      const DBState &state) const;
@@ -157,5 +171,11 @@ public:
     //! A set of tables with all static info precompiled for faster access at runtime
     std::vector<Table> precompiled_db;
 };
+
+
+
+
+
+
 
 #endif //SEARCH_GENERIC_JOIN_SUCCESSOR_H

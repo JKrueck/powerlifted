@@ -2,6 +2,7 @@
 #define SEARCH_SPARSE_STATES_H
 
 #include "../database/table.h"
+#include "../successor_generators/successor_generator.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -12,6 +13,8 @@
 
 
 #include <boost/functional/hash/hash.hpp>
+
+class ThesisClass;
 
 /**
  * @brief The packed state representation is a more concise representation of states,
@@ -44,7 +47,7 @@ public:
     std::vector<std::vector<long>> packed_relations;
     std::vector<int> predicate_symbols;
     std::vector<bool> nullary_atoms;
-    Table uncompressed_table;
+    ThesisClass thesis_successor_packed;
 
 
     bool operator==(const SparsePackedState &b) const;

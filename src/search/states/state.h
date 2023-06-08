@@ -3,6 +3,7 @@
 
 #include "../structures.h"
 #include "../database/table.h"
+#include "../successor_generators/successor_generator.h"
 
 #include <algorithm>
 #include <tuple>
@@ -11,6 +12,7 @@
 #include <vector>
 
 class Table;
+class ThesisClass;
 
 /**
  * @brief Represents a state in the search space. Intuitively, it is represented
@@ -31,7 +33,7 @@ class DBState {
 
     std::vector<Relation> relations;
     std::vector<bool> nullary_atoms;
-    Table pre_static_table;
+    ThesisClass thesis_successor;
 
 public:
 
@@ -39,8 +41,8 @@ public:
     explicit DBState(unsigned num_predicates) :
         relations(num_predicates), nullary_atoms(num_predicates, false) {}
 
-    DBState(std::vector<Relation> &&relations, std::vector<bool> &&nullary_atoms, Table &pre_static_table) :
-        relations(std::move(relations)), nullary_atoms(std::move(nullary_atoms)), pre_static_table(pre_static_table) {
+    DBState(std::vector<Relation> &&relations, std::vector<bool> &&nullary_atoms, ThesisClass &thesis_successor) :
+        relations(std::move(relations)), nullary_atoms(std::move(nullary_atoms)), thesis_successor(thesis_successor) {
         // Explicit state constructor
     }
 
@@ -52,8 +54,8 @@ public:
         return nullary_atoms;
     }
 
-    const Table &get_table() const{
-        return pre_static_table;
+    const ThesisClass &get_thesis() const{
+        return thesis_successor;
     }
 
     const std::unordered_set<GroundAtom, TupleHash>& get_tuples_of_relation(size_t i) const {
@@ -78,12 +80,12 @@ public:
         return nullary_atoms==other.nullary_atoms && relations==other.relations;
     }
 
-    void set_table(Table tab){
-        this->pre_static_table = tab;
+    void set_thesis(ThesisClass thes){
+        this->thesis_successor = thes;
     }
 
-    Table get_table(){
-        return this->pre_static_table;
+    ThesisClass get_thesis(){
+        return this->thesis_successor;
     }
 
     friend std::size_t hash_value(const DBState &s);

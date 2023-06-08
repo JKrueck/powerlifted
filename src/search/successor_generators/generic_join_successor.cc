@@ -26,7 +26,8 @@ GenericJoinSuccessor::GenericJoinSuccessor(const Task &task)
 }
 
 Table GenericJoinSuccessor::instantiate(const ActionSchema &action,
-                                        const DBState &state,const Task &task, Table &thesis_table)
+                                        const DBState &state,const Task &task, Table &thesis_table, std::unordered_set<int> &thesis_matching,
+                                        std::unordered_map<int,std::vector<int>> &thesis_indices)
 {
 
     if (action.is_ground()) {
@@ -43,9 +44,9 @@ Table GenericJoinSuccessor::instantiate(const ActionSchema &action,
     assert(!tables.empty());
     assert(tables.size() == actiondata.relevant_precondition_atoms.size());
 
-    Table &working_table = tables[0];
+    Table &working_table = tables[0];   
     for (size_t i = 1; i < tables.size(); ++i) {
-        hash_join(working_table, tables[i]);
+        hash_join(working_table, tables[i], thesis_matching, thesis_indices);
         // Filter out equalities
         filter_static(action, working_table);
         if (working_table.tuples.empty()) {
@@ -333,23 +334,30 @@ DBState GenericJoinSuccessor::generate_successor(
     const LiftedOperatorId &op,
     const ActionSchema& action,
     const DBState &state,
-    Table &thesis_table) {
+    ThesisClass &thesis_class) {
 
     added_atoms.clear();
     vector<bool> new_nullary_atoms(state.get_nullary_atoms());
     vector<Relation> new_relation(state.get_relations());
     apply_nullary_effects(action, new_nullary_atoms);
 
+    std::vector<GroundAtom> diff;
+    //diff.resize(state.get_relations().size());
+
     if (action.is_ground()) {
         apply_ground_action_effects(action, new_relation);
     }
     else {
-        apply_lifted_action_effects(action, op.get_instantiation(), new_relation);
+        apply_lifted_action_effects(action, op.get_instantiation(), new_relation, diff);
     }
 
-    Table new_thesis_table = thesis_table;
+    
 
-    return DBState(std::move(new_relation), std::move(new_nullary_atoms), new_thesis_table);
+    thesis_class.set_diff(diff);
+    
+    //Table new_thesis_table = thesis_class.get_table();
+
+    return DBState(std::move(new_relation), std::move(new_nullary_atoms), thesis_class);
 }
 
 void GenericJoinSuccessor::order_tuple_by_free_variable_order(const vector<int> &free_var_indices,
@@ -426,7 +434,7 @@ void GenericJoinSuccessor::apply_ground_action_effects(const ActionSchema &actio
 }
 void GenericJoinSuccessor::apply_lifted_action_effects(const ActionSchema &action,
                                                      const vector<int> &tuple,
-                                                     vector<Relation> &new_relation)
+                                                     vector<Relation> &new_relation, vector<GroundAtom> &add_effects)
 {
     for (const Atom &eff : action.get_effects()) {
         GroundAtom ga = GenericJoinSuccessor::tuple_to_atom(tuple, eff);
@@ -444,8 +452,10 @@ void GenericJoinSuccessor::apply_lifted_action_effects(const ActionSchema &actio
 
                 new_relation[eff.get_predicate_symbol_idx()].tuples.insert(ga);
                 add_to_added_atoms(eff.get_predicate_symbol_idx(), ga);
-
+                
+                add_effects.push_back(ga);
             }
+            
         }
     }
 }
@@ -465,7 +475,8 @@ void GenericJoinSuccessor::apply_lifted_action_effects(const ActionSchema &actio
  * we know the actions are applicable.
  */
 std::vector<LiftedOperatorId> GenericJoinSuccessor::get_applicable_actions(
-        const ActionSchema &action, const DBState &state, const Task &task, Table &thesis_table)
+        const ActionSchema &action, const DBState &state, const Task &task, 
+        Table &thesis_table, std::unordered_set<int> &thesis_matching, std::unordered_map<int,std::vector<int>> &thesis_indices)
 {
     std::vector<LiftedOperatorId> applicable;
     if (is_trivially_inapplicable(state, action)) {
@@ -479,7 +490,7 @@ std::vector<LiftedOperatorId> GenericJoinSuccessor::get_applicable_actions(
         return applicable;
     }
 
-    Table instantiations = instantiate(action, state,task, thesis_table);
+    Table instantiations = instantiate(action, state,task, thesis_table, thesis_matching, thesis_indices);
     if (instantiations.tuples.empty()) { // No applicable action from this schema
         return applicable;
     }

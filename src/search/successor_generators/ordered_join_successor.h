@@ -23,7 +23,9 @@ public:
                                          const DBState &state,
                                          std::vector<Table>& tables) override;
 
-    Table instantiate(const ActionSchema &action, const DBState &state,const Task &task, Table &thesis) override;
+    Table instantiate(const ActionSchema &action, const DBState &state,const Task &task,
+                    Table &thesis, std::unordered_set<int> &thesis_matching, 
+                    std::unordered_map<int,std::vector<int>> &thesis_indices) override;
 
 };
 

@@ -18,7 +18,7 @@ std::vector<std::pair<int, int>> compute_matching_columns(const Table &t1, const
     return matches;
 }
 
-void compute_matching_columns(const Table &t1, const Table &t2, std::vector<int>& matches1, std::vector<int>& matches2) {
+void compute_matching_columns(const Table &t1, const Table &t2, std::vector<int>& matches1, std::vector<int>& matches2, unordered_set<int>& join_index) {
     vector<pair<int, int>> matches;
     auto sz1 = t1.tuple_index.size();
     auto sz2 = t2.tuple_index.size();
@@ -27,6 +27,8 @@ void compute_matching_columns(const Table &t1, const Table &t2, std::vector<int>
             if (t1.tuple_index[i] == t2.tuple_index[j]) {
                 matches1.push_back(i);
                 matches2.push_back(j);
+                //Remember which attributes are used for joins
+                join_index.insert(t1.tuple_index[i]);
             }
         }
     }

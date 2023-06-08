@@ -44,7 +44,9 @@ bool OrderedJoinSuccessorGenerator<OrderT>::parse_precond_into_join_program(
 }
 
 template<typename OrderT>
-Table OrderedJoinSuccessorGenerator<OrderT>::instantiate(const ActionSchema &action, const DBState &state,const Task &task, Table &thesis_table) {
+Table OrderedJoinSuccessorGenerator<OrderT>::instantiate(const ActionSchema &action, const DBState &state,
+                                                        const Task &task, Table &thesis_table, std::unordered_set<int> &thesis_matching,
+                                                        std::unordered_map<int,std::vector<int>> &thesis_indices) {
 
     vector<int> order = precondition_to_order[action.get_index()];
 
@@ -64,7 +66,7 @@ Table OrderedJoinSuccessorGenerator<OrderT>::instantiate(const ActionSchema &act
 
     Table &working_table = tables[order[0]];
     for (size_t i = 1; i < tables.size(); ++i) {
-        hash_join(working_table, tables[order[i]]);
+        hash_join(working_table, tables[order[i]], thesis_matching, thesis_indices);
         // Filter out equalities
         filter_static(action, working_table);
         if (working_table.tuples.empty()) {

@@ -158,14 +158,19 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                  << ", time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << "]" << '\n';
         }
 
-        Table thes_table = state.get_table();
+        Table thes_table = state.get_thesis().get_table_copy();
+        std::unordered_set<int> thesis_matching;
+        std::unordered_map<int,std::vector<int>> thesis_indices;
 
         for (const auto& action:task.get_action_schemas()) {
-            auto applicable = generator.get_applicable_actions(action, state, task, thes_table);
+            auto applicable = generator.get_applicable_actions(action, state, task, thes_table, thesis_matching, thesis_indices);
             statistics.inc_generated(applicable.size());
 
+            //create new Thesis object
+            ThesisClass thesis_successor(thes_table,thesis_matching,true);
+
             for (const LiftedOperatorId& op_id:applicable) {
-                DBState s = generator.generate_successor(op_id, action, state, thes_table);
+                DBState s = generator.generate_successor(op_id, action, state, thesis_successor);
 
                 bool is_preferred = is_useful_operator(task, s, delete_free_h->get_useful_atoms());
                 int dist = g + action.get_cost();

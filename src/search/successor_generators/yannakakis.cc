@@ -190,6 +190,81 @@ void YannakakisSuccessorGenerator::get_distinguished_variables(const ActionSchem
     }
 }
 
+Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &action,
+                    const DBState &state,const Task &task, Table &thesis_table, std::unordered_set<int> &thesis_matching)
+{
+    
+    auto thesis = state.get_thesis();
+    auto diff = thesis.get_diff();
+    
+    unordered_map<int,int> index_table;
+    for(int i=0;i<thesis.get_table()->tuple_index.size();i++){
+        index_table.insert({thesis.get_table()->tuple_index.at(i),i});
+    }
+    
+
+    std::unordered_map<int,bool> has_matches;
+
+    auto effects = action.get_effects();
+    for (int i=0;i<effects.size();i++){
+        auto args = effects.at(i).get_arguments();
+        for(int j=0; j<args.size();j++){
+            if(std::find(thesis.get_matches().begin(),thesis.get_matches().end(),args.at(j).get_index())!=thesis.get_matches().end()){
+                has_matches.insert({args.at(j).get_index(),true});
+            }else{
+                has_matches.insert({args.at(j).get_index(),false});
+            }
+        }
+    }
+
+
+
+
+    vector<vector<tuple_t>> remember;
+    if(diff.size() > 0){
+        for(int i=0;i<diff.size();i++){
+            vector<vector<int>> temp;
+            for(int j=0;j<diff.at(i).size();j++){
+                //if we know that an ground atom has never been used as a match when computing the hash join we can skip looking for it 
+                if(!has_matches.at(action.get_effects().at(i).get_arguments().at(j).get_index())){
+                    continue;
+                }
+                for(int k=0;k<thesis.get_table()->tuples.size();k++){
+                    auto test = thesis.get_table()->tuples.at(k);
+                    if( std::find(test.begin(),test.end(),diff[i].at(j))!= test.end()){
+
+                            temp.push_back(test);
+                    }
+                }
+                remember.push_back(temp);
+            }
+        }
+    }
+
+    for(int i=0;i<remember.size();i++){
+        int predicate = effects.at(i).get_predicate_symbol_idx();
+        vector<int> tuple_indices = thesis.get_tuple_indices().at(predicate);
+        tuple_t new_table_entry;
+        for(int j=0;j<remember.at(i).size();j++){
+            new_table_entry.resize(remember.at(i).at(j).size());
+            for(int k=0;k<remember.at(i).at(j).size();k++){
+                int consider = index_table.at(k);
+                auto search = std::find(tuple_indices.begin(),tuple_indices.end(),consider);
+                if(search != tuple_indices.end()){
+                    new_table_entry.at(k) = diff.at(i).at(search-tuple_indices.begin());
+                }else{
+                    new_table_entry.at(k) = remember.at(i).at(j).at(k);
+                }
+            }
+            thesis.get_table()->tuples.push_back(new_table_entry);
+
+        }
+    }
+
+    return thesis.get_table_copy();
+
+}
+
 /**
  *
  * Instantiate a given action at a given state using Yannakakis' algorithm.
@@ -211,66 +286,83 @@ void YannakakisSuccessorGenerator::get_distinguished_variables(const ActionSchem
  * @param staticInformation  Static predicates of the task
  * @return
  */
-Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state,const Task &task, Table &thesis_table)
+Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state,const Task &task, Table &thesis_table, std::unordered_set<int> &thesis_matching,
+                                                std::unordered_map<int,std::vector<int>> &thesis_indices)
 {
+
     if (action.is_ground()) {
         throw std::runtime_error("Shouldn't be calling instantiate() on a ground action");
     }
 
-    const auto &actiondata = action_data[action.get_index()];
+    auto thesis = state.get_thesis();
 
-    vector<Table> tables;
-    auto res = parse_precond_into_join_program(actiondata, state, tables);
-    if (!res)
-        return Table::EMPTY_TABLE();
+    if(thesis.is_enabled()){
+        Table thesis_return_table = thesis_instantiate(action,state,task,thesis_table,thesis_matching);
+        thesis_table = thesis_return_table;
+        thesis_indices = thesis.get_tuple_indices();
+        thesis_matching = thesis.get_matches();
+        filter_static(action, thesis_return_table);
+        return thesis_return_table;
+    }else{
+        const auto &actiondata = action_data[action.get_index()];
 
-    assert(!tables.empty());
-    assert(tables.size() == actiondata.relevant_precondition_atoms.size());
-
-    for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
-        size_t s = semi_join(tables[sj.second], tables[sj.first]);
-        if (s == 0) {
+        vector<Table> tables;
+        auto res = parse_precond_into_join_program(actiondata, state, tables);
+        if (!res)
             return Table::EMPTY_TABLE();
-        }
-    }
 
-    const JoinTree &jt = join_trees[action.get_index()];
+        assert(!tables.empty());
+        assert(tables.size() == actiondata.relevant_precondition_atoms.size());
 
-    for (const auto &j : jt.get_order()) {
-        unordered_set<int> project_over;
-        for (auto x : tables[j.second].tuple_index) {
-            project_over.insert(x);
-        }
-        for (auto x : tables[j.first].tuple_index) {
-            if (distinguished_variables[action.get_index()].count(x) > 0) {
-                project_over.insert(x);
+        for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
+            size_t s = semi_join(tables[sj.second], tables[sj.first]);
+            if (s == 0) {
+                return Table::EMPTY_TABLE();
             }
         }
-        Table &working_table = tables[j.second];
-        hash_join(working_table, tables[j.first]);
-        // Project must be after removal of inequality constraints, otherwise we might keep only the
-        // tuple violating some inequality. Variables in inequalities are also considered
-        // distinguished.
-        Table copy = tables[j.second];
-        thesis_table = copy;
 
-        filter_static(action, working_table);
-        project(working_table, project_over);
-        if (working_table.tuples.empty()) {
-            return working_table;
+        const JoinTree &jt = join_trees[action.get_index()];
+
+        for (const auto &j : jt.get_order()) {
+            thesis_indices.insert({j.first,tables.at(j.first).tuple_index});
+            thesis_indices.insert({j.second,tables.at(j.second).tuple_index});
+            unordered_set<int> project_over;
+            for (auto x : tables[j.second].tuple_index) {
+                project_over.insert(x);
+            }
+            for (auto x : tables[j.first].tuple_index) {
+                if (distinguished_variables[action.get_index()].count(x) > 0) {
+                    project_over.insert(x);
+                }
+            }
+            Table &working_table = tables[j.second];
+            hash_join(working_table, tables[j.first], thesis_matching, thesis_indices);
+            // Project must be after removal of inequality constraints, otherwise we might keep only the
+            // tuple violating some inequality. Variables in inequalities are also considered
+            // distinguished.
+            Table copy = tables[j.second];
+            thesis_table = copy;
+
+            filter_static(action, working_table);
+            project(working_table, project_over);
+            if (working_table.tuples.empty()) {
+                return working_table;
+            }
         }
+
+        // For the case where the action schema is cyclic
+        Table &working_table = tables[remaining_join[action.get_index()][0]];
+        for (size_t i = 1; i < remaining_join[action.get_index()].size(); ++i) {
+            hash_join(working_table, tables[remaining_join[action.get_index()][i]],thesis_matching, thesis_indices);
+            filter_static(action, working_table);
+            if (working_table.tuples.empty()) {
+                return working_table;
+            }
+        }
+
+        project(working_table, distinguished_variables[action.get_index()]);
+        return working_table;
     }
 
-    // For the case where the action schema is cyclic
-    Table &working_table = tables[remaining_join[action.get_index()][0]];
-    for (size_t i = 1; i < remaining_join[action.get_index()].size(); ++i) {
-        hash_join(working_table, tables[remaining_join[action.get_index()][i]]);
-        filter_static(action, working_table);
-        if (working_table.tuples.empty()) {
-            return working_table;
-        }
-    }
-
-    project(working_table, distinguished_variables[action.get_index()]);
-    return working_table;
+    
 }

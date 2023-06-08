@@ -21,7 +21,7 @@ std::vector<int> project_tuple(
     return projected;
 }
 
-void hash_join(Table &t1, const Table &t2) {
+void hash_join(Table &t1, const Table &t2,  unordered_set<int> &thesis_matching, std::unordered_map<int,std::vector<int>> &thesis_indices) {
     /*
      * This function implements a hash join as follows
      *
@@ -32,7 +32,8 @@ void hash_join(Table &t1, const Table &t2) {
      *    in the hash table.
      */
     std::vector<int> matches1, matches2;
-    compute_matching_columns(t1, t2, matches1, matches2);
+    
+    compute_matching_columns(t1, t2, matches1, matches2, thesis_matching);
     assert(matches1.size()==matches2.size());
 
     vector<vector<int>> new_tuples;

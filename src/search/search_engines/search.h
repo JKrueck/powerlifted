@@ -5,6 +5,8 @@
 #include "../structures.h"
 #include "../utils/system.h"
 
+#include "../successor_generators/generic_join_successor.h"
+
 #include <utility>
 #include <vector>
 #include <map>
@@ -15,6 +17,7 @@ class Heuristic;
 class Task;
 class DBState;
 class SearchNode;
+class ThesisClass;
 template <typename StateT> class SearchSpace;
 
 class SearchBase {

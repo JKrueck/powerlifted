@@ -1,6 +1,10 @@
 #ifndef SEARCH_HASH_JOIN_H
 #define SEARCH_HASH_JOIN_H
 
+#include <unordered_set>
+#include <unordered_map>
+#include <vector>
+
 class Table;
 
 /**
@@ -14,6 +18,6 @@ class Table;
  * @see join.h
  * @see join.cc
  */
-void hash_join(Table &t1, const Table &t2);
+void hash_join(Table &t1, const Table &t2, std::unordered_set<int> &thesis_matching, std::unordered_map<int,std::vector<int>> &thesis_indices);
 
 #endif //SEARCH_HASH_JOIN_H

@@ -46,16 +46,21 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
 
         DBState state = packer.unpack(space.get_state(sid));
 
-        Table thes_table = state.get_table();
+        Table thes_table = state.get_thesis().get_table_copy();
+        std::unordered_set<int> thesis_matching;
+        std::unordered_map<int,std::vector<int>> thesis_indices;
 
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
         // performance, we could implement some form of std iterator
         for (const auto& action : task.get_action_schemas()) {
-            auto applicable = generator.get_applicable_actions(action, state,task, thes_table);
+            auto applicable = generator.get_applicable_actions(action, state,task, thes_table, thesis_matching, thesis_indices);
             statistics.inc_generated(applicable.size());
 
+            //create new Thesis object
+            ThesisClass thesis_successor(thes_table,thesis_matching,true);
+
             for (const LiftedOperatorId &op_id:applicable) {
-                DBState s = generator.generate_successor(op_id, action, state, thes_table);
+                DBState s = generator.generate_successor(op_id, action, state, thesis_successor);
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
                 if (child_node.status == SearchNode::Status::NEW) {
                     child_node.open(node.f+1);
