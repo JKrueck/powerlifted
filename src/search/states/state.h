@@ -33,7 +33,7 @@ class DBState {
 
     std::vector<Relation> relations;
     std::vector<bool> nullary_atoms;
-    ThesisClass thesis_successor;
+    ThesisClass* thesis_successor;
 
 public:
 
@@ -41,7 +41,7 @@ public:
     explicit DBState(unsigned num_predicates) :
         relations(num_predicates), nullary_atoms(num_predicates, false) {}
 
-    DBState(std::vector<Relation> &&relations, std::vector<bool> &&nullary_atoms, ThesisClass &thesis_successor) :
+    DBState(std::vector<Relation> &&relations, std::vector<bool> &&nullary_atoms, ThesisClass *thesis_successor) :
         relations(std::move(relations)), nullary_atoms(std::move(nullary_atoms)), thesis_successor(thesis_successor) {
         // Explicit state constructor
     }
@@ -81,7 +81,7 @@ public:
     }
 
     void set_thesis(ThesisClass thes){
-        this->thesis_successor = thes;
+        this->thesis_successor = &thes;
     }
 
     ThesisClass get_thesis(){

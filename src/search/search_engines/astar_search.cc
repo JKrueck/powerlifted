@@ -41,8 +41,13 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
     queue.do_insertion(root_node.state_id, make_pair(heuristic_layer+0, heuristic_layer));
 
     if (check_goal(task, generator, timer_start, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
-
+    
+    int counter = 0;
     while (not queue.empty()) {
+
+        std::vector<Table> thesis_tables;
+
+
         StateID sid = queue.remove_min();
         SearchNode &node = space.get_node(sid);
         int h = node.h;
@@ -67,22 +72,37 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
         DBState state = packer.unpack(space.get_state(sid));
         if (check_goal(task, generator, timer_start, state, node, space)) return utils::ExitCode::SUCCESS;
         
-        Table thes_table = state.get_thesis().get_table_copy();
-        std::unordered_set<int> thesis_matching;
-        std::unordered_map<int,std::vector<int>> thesis_indices;
+        //Create one new Thesis object per state
+        ThesisClass thesis_successor(true);
 
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
+            
+            //Storage for the Yannakis Table
+            Table thes_table = Table::EMPTY_TABLE();
+            //Storage for the hash-join matches
+            std::unordered_set<int> thesis_matching;
+            //Storage of the correspondence between tuple indices in the join tables and predicate index
+            std::unordered_map<int,std::vector<int>> thesis_indices;
+
+            
+            
+            if(action.get_index()==2){
+                int wtf = 666;
+            }
             auto applicable = generator.get_applicable_actions(action, state, task, thes_table, thesis_matching, thesis_indices);
+
+            thesis_successor.insert_table(thesis_matching);
+            thesis_successor.insert_tuple_indices(thesis_indices);
+            thesis_successor.insert_match(thesis_matching);
+            
             statistics.inc_generated(applicable.size());
 
-            //create new Thesis object
-            ThesisClass thesis_successor(thes_table,thesis_matching,true);
-            thesis_successor.set_tuple_indices(thesis_indices);
+            
 
             for (const LiftedOperatorId& op_id:applicable) {
-                DBState s = generator.generate_successor(op_id, action, state, thesis_successor);
+                DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
 
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);
@@ -109,6 +129,7 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
                 }
             }
         }
+        counter++;
     }
 
     print_no_solution_found(timer_start);

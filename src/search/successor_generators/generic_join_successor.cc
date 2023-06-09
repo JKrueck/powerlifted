@@ -334,7 +334,7 @@ DBState GenericJoinSuccessor::generate_successor(
     const LiftedOperatorId &op,
     const ActionSchema& action,
     const DBState &state,
-    ThesisClass &thesis_class) {
+    ThesisClass *thesis_class) {
 
     added_atoms.clear();
     vector<bool> new_nullary_atoms(state.get_nullary_atoms());
@@ -353,7 +353,7 @@ DBState GenericJoinSuccessor::generate_successor(
 
     
 
-    thesis_class.set_diff(diff);
+    thesis_class->insert_diff(diff);
     
     //Table new_thesis_table = thesis_class.get_table();
 
@@ -452,6 +452,8 @@ void GenericJoinSuccessor::apply_lifted_action_effects(const ActionSchema &actio
 
                 new_relation[eff.get_predicate_symbol_idx()].tuples.insert(ga);
                 add_to_added_atoms(eff.get_predicate_symbol_idx(), ga);
+
+                
                 
                 add_effects.push_back(ga);
             }

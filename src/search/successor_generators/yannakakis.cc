@@ -195,11 +195,11 @@ Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &actio
 {
     
     auto thesis = state.get_thesis();
-    auto diff = thesis.get_diff();
+    auto diff = thesis.get_diff_at_idx(action.get_index());
     
     unordered_map<int,int> index_table;
-    for(int i=0;i<thesis.get_table()->tuple_index.size();i++){
-        index_table.insert({thesis.get_table()->tuple_index.at(i),i});
+    for(int i=0;i<thesis.get_table_copy_at_idx(action.get_index()).tuple_index.size();i++){
+        index_table.insert({thesis.get_table_at_idx(action.get_index())->tuple_index.at(i),i});
     }
     
 
@@ -209,7 +209,10 @@ Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &actio
     for (int i=0;i<effects.size();i++){
         auto args = effects.at(i).get_arguments();
         for(int j=0; j<args.size();j++){
-            if(std::find(thesis.get_matches().begin(),thesis.get_matches().end(),args.at(j).get_index())!=thesis.get_matches().end()){
+            if( std::find(thesis.get_matches_at_idx(action.get_index())->begin(),
+                thesis.get_matches_at_idx(action.get_index())->end(),args.at(j).get_index())!=
+                thesis.get_matches_at_idx(action.get_index())->end())
+                {
                 has_matches.insert({args.at(j).get_index(),true});
             }else{
                 has_matches.insert({args.at(j).get_index(),false});
@@ -221,29 +224,32 @@ Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &actio
 
 
     vector<vector<tuple_t>> remember;
-    if(diff.size() > 0){
-        for(int i=0;i<diff.size();i++){
-            vector<vector<int>> temp;
-            for(int j=0;j<diff.at(i).size();j++){
+    if(diff->size() > 0){
+        for(int i=0;i<diff->size();i++){
+            vector<tuple_t> temp;
+            std::unordered_map<int,bool> is_inserted;
+            for(int j=0;j<diff->at(i).size();j++){
                 //if we know that an ground atom has never been used as a match when computing the hash join we can skip looking for it 
                 if(!has_matches.at(action.get_effects().at(i).get_arguments().at(j).get_index())){
                     continue;
                 }
-                for(int k=0;k<thesis.get_table()->tuples.size();k++){
-                    auto test = thesis.get_table()->tuples.at(k);
-                    if( std::find(test.begin(),test.end(),diff[i].at(j))!= test.end()){
+                for(int k=0;k<thesis.get_table_at_idx(action.get_index())->tuples.size();k++){
+                    auto test = thesis.get_table_at_idx(action.get_index())->tuples.at(k);
+                    if( std::find(test.begin(),test.end(),diff[i].at(j))!= test.end() &&
+                        is_inserted.count(k)==0){
 
                             temp.push_back(test);
+                            is_inserted.insert({k,true});
                     }
                 }
-                remember.push_back(temp);
             }
+            remember.push_back(temp);
         }
     }
 
     for(int i=0;i<remember.size();i++){
         int predicate = effects.at(i).get_predicate_symbol_idx();
-        vector<int> tuple_indices = thesis.get_tuple_indices().at(predicate);
+        vector<int> tuple_indices = thesis.get_tuple_indices_at_idx(action.get_index())->at(predicate);
         tuple_t new_table_entry;
         for(int j=0;j<remember.at(i).size();j++){
             new_table_entry.resize(remember.at(i).at(j).size());
@@ -251,17 +257,17 @@ Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &actio
                 int consider = index_table.at(k);
                 auto search = std::find(tuple_indices.begin(),tuple_indices.end(),consider);
                 if(search != tuple_indices.end()){
-                    new_table_entry.at(k) = diff.at(i).at(search-tuple_indices.begin());
+                    new_table_entry.at(k) = diff->at(i).at(search-tuple_indices.begin());
                 }else{
                     new_table_entry.at(k) = remember.at(i).at(j).at(k);
                 }
             }
-            thesis.get_table()->tuples.push_back(new_table_entry);
+            thesis.get_table_at_idx(action.get_index())->tuples.push_back(new_table_entry);
 
         }
     }
 
-    return thesis.get_table_copy();
+    return thesis.get_table_copy_at_idx(action.get_index());
 
 }
 
@@ -297,10 +303,11 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
     auto thesis = state.get_thesis();
 
     if(thesis.is_enabled()){
+        cout << "wrong" << endl;
         Table thesis_return_table = thesis_instantiate(action,state,task,thesis_table,thesis_matching);
-        thesis_table = thesis_return_table;
-        thesis_indices = thesis.get_tuple_indices();
-        thesis_matching = thesis.get_matches();
+        //thesis_table = thesis_return_table;
+        //thesis_indices = thesis.get_tuple_indices();
+        //thesis_matching = thesis.get_matches();
         filter_static(action, thesis_return_table);
         return thesis_return_table;
     }else{
@@ -317,6 +324,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
             size_t s = semi_join(tables[sj.second], tables[sj.first]);
             if (s == 0) {
+                thesis_table = Table::EMPTY_TABLE();
                 return Table::EMPTY_TABLE();
             }
         }
@@ -341,13 +349,17 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             // tuple violating some inequality. Variables in inequalities are also considered
             // distinguished.
             Table copy = tables[j.second];
-            thesis_table = copy;
+           
 
             filter_static(action, working_table);
+            if(working_table.EMPTY_TABLE){
+                copy = working_table;
+            }
             project(working_table, project_over);
             if (working_table.tuples.empty()) {
                 return working_table;
             }
+            thesis_table = copy;
         }
 
         // For the case where the action schema is cyclic

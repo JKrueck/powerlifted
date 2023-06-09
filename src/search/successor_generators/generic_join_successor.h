@@ -70,7 +70,7 @@ public:
     DBState generate_successor(const LiftedOperatorId &op,
                                const ActionSchema& action,
                                const DBState &state,
-                                ThesisClass &thesis_class) override;
+                                ThesisClass *thesis_class) override;
 
 
     std::vector<LiftedOperatorId> get_applicable_actions(
