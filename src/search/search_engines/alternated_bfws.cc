@@ -158,19 +158,31 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                  << ", time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << "]" << '\n';
         }
 
-        Table thes_table = state.get_thesis().get_table_copy();
-        std::unordered_set<int> thesis_matching;
-        std::unordered_map<int,std::vector<int>> thesis_indices;
+        //Create one new Thesis object per state
+        ThesisClass thesis_successor(true);
 
         for (const auto& action:task.get_action_schemas()) {
+
+
+            //Storage for the Yannakis Table
+            Table thes_table = Table::EMPTY_TABLE();
+            //Storage for the hash-join matches
+            std::unordered_set<int> thesis_matching;
+            //Storage of the correspondence between tuple indices in the join tables and predicate index
+            std::unordered_map<int,std::vector<int>> thesis_indices;
+
+
             auto applicable = generator.get_applicable_actions(action, state, task, thes_table, thesis_matching, thesis_indices);
+            
+            thesis_successor.insert_table(thes_table);
+            thesis_successor.insert_tuple_indices(thesis_indices);
+            thesis_successor.insert_match(thesis_matching);
+            
             statistics.inc_generated(applicable.size());
 
-            //create new Thesis object
-            ThesisClass thesis_successor(thes_table,thesis_matching,true);
 
             for (const LiftedOperatorId& op_id:applicable) {
-                DBState s = generator.generate_successor(op_id, action, state, thesis_successor);
+                DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
 
                 bool is_preferred = is_useful_operator(task, s, delete_free_h->get_useful_atoms());
                 int dist = g + action.get_cost();

@@ -85,22 +85,33 @@ utils::ExitCode LazySearch<PackedStateT>::search(const Task &task,
 
         if (check_goal(task, generator, timer_start, state, node, space)) return utils::ExitCode::SUCCESS;
 
-        Table thes_table = state.get_thesis().get_table_copy();
-        std::unordered_set<int> thesis_matching;
-        std::unordered_map<int,std::vector<int>> thesis_indices;
-
+        
+        //Create one new Thesis object per state
+        ThesisClass thesis_successor(true);
 
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
+            
+            //Storage for the Yannakis Table
+            Table thes_table = Table::EMPTY_TABLE();
+            //Storage for the hash-join matches
+            std::unordered_set<int> thesis_matching;
+            //Storage of the correspondence between tuple indices in the join tables and predicate index
+            std::unordered_map<int,std::vector<int>> thesis_indices;
+            
             auto applicable = generator.get_applicable_actions(action, state,task, thes_table, thesis_matching, thesis_indices);
+            
+            thesis_successor.insert_table(thes_table);
+            thesis_successor.insert_tuple_indices(thesis_indices);
+            thesis_successor.insert_match(thesis_matching);
+            
             statistics.inc_generated(applicable.size());
 
-            //create new Thesis object
-            ThesisClass thesis_successor(thes_table,thesis_matching,true);
+            
 
             for (const LiftedOperatorId& op_id:applicable) {
-                DBState s = generator.generate_successor(op_id, action, state, thesis_successor);
+                DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 int dist = g + action.get_cost();
                 auto &child_node =
                     space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);

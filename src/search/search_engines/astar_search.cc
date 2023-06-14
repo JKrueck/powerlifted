@@ -93,7 +93,7 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
             }
             auto applicable = generator.get_applicable_actions(action, state, task, thes_table, thesis_matching, thesis_indices);
 
-            thesis_successor.insert_table(thesis_matching);
+            thesis_successor.insert_table(thes_table);
             thesis_successor.insert_tuple_indices(thesis_indices);
             thesis_successor.insert_match(thesis_matching);
             

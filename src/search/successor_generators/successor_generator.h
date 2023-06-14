@@ -30,15 +30,29 @@ private:
     //Storage of the grounded action add effects
     std::vector<std::vector<GroundAtom>> diff;
     //Storage of the correspondence between tuple indices in the join tables and predicate index; per action
-    std::vector<std::unordered_map<int,std::vector<int>>> predicate_tuple_indices;
+    
     bool thesis_enable;
 public:
+    std::vector<std::unordered_map<int,std::vector<int>>> predicate_tuple_indices;
+    std::vector<int> test;
     ThesisClass(bool enable) : thesis_enable(enable)
-    {}
+    {
+        predicate_tuple_indices.reserve(1);
+        this->thesis_table.push_back(Table(std::vector<std::vector<int>>{{1}},std::vector<int>{1}));
+        this->test.push_back(1);
+        this->test.push_back(1);
+        this->test.push_back(1);
+    }
 
     ThesisClass() = default;
         
-        
+    void shrink()
+    {
+        thesis_table.resize(0);
+        thesis_match.resize(0);
+        diff.resize(0);
+        predicate_tuple_indices.resize(0);
+    }
    
     //~ThesisClass();
 
@@ -60,7 +74,7 @@ public:
 
     //don´t now if the move is good here
     void insert_table(Table tab){
-        this->thesis_table.push_back(std::move(tab));
+        this->thesis_table.push_back(tab);
     }
 
     std::unordered_set<int>* get_matches_at_idx(int idx){

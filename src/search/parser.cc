@@ -64,6 +64,7 @@ bool parse(Task &task, const ifstream &in)
     task.create_empty_initial_state(task.predicates.size());
     parse_initial_state(task, initial_state_size);
 
+    
 
     int goal_size;
     cin >> canary >> goal_size;
@@ -81,6 +82,11 @@ bool parse(Task &task, const ifstream &in)
     }
     cout << "Total number of action schemas: " << number_action_schemas << endl;
     parse_action_schemas(task, number_action_schemas);
+
+
+    //ThesisClass thesis(false);
+    ThesisClass pls_shrink = task.get_initial_state().get_thesis();
+    pls_shrink.predicate_tuple_indices.shrink_to_fit();
 
     return true;
 }

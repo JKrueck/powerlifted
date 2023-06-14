@@ -120,7 +120,7 @@ DBState SparseStatePacker::unpack(const SparsePackedState &packed_state) const {
         relations.emplace_back(packed_state.predicate_symbols[i], std::move(tuples));
     }
     ThesisClass thesis = packed_state.thesis_successor_packed;
-    return DBState(std::move(relations), std::move(nullary_atoms), thesis);
+    return DBState(std::move(relations), std::move(nullary_atoms), &thesis);
 }
 
 long SparseStatePacker::pack_tuple(const std::vector<int> &tuple, int predicate_index) const {

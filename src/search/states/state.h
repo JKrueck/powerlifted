@@ -54,8 +54,8 @@ public:
         return nullary_atoms;
     }
 
-    const ThesisClass &get_thesis() const{
-        return thesis_successor;
+    const ThesisClass &get_thesis() const {
+        return *thesis_successor;
     }
 
     const std::unordered_set<GroundAtom, TupleHash>& get_tuples_of_relation(size_t i) const {
@@ -82,10 +82,6 @@ public:
 
     void set_thesis(ThesisClass thes){
         this->thesis_successor = &thes;
-    }
-
-    ThesisClass get_thesis(){
-        return this->thesis_successor;
     }
 
     friend std::size_t hash_value(const DBState &s);

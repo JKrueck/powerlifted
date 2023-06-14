@@ -224,7 +224,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &actio
 
 
     vector<vector<tuple_t>> remember;
-    if(diff->size() > 0){
+/*if(diff->size() > 0){
         for(int i=0;i<diff->size();i++){
             vector<tuple_t> temp;
             std::unordered_map<int,bool> is_inserted;
@@ -234,7 +234,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &actio
                     continue;
                 }
                 for(int k=0;k<thesis.get_table_at_idx(action.get_index())->tuples.size();k++){
-                    auto test = thesis.get_table_at_idx(action.get_index())->tuples.at(k);
+                    GroundAtom test = thesis.get_table_at_idx(action.get_index())->tuples.at(k);
                     if( std::find(test.begin(),test.end(),diff[i].at(j))!= test.end() &&
                         is_inserted.count(k)==0){
 
@@ -245,7 +245,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &actio
             }
             remember.push_back(temp);
         }
-    }
+    }*/
 
     for(int i=0;i<remember.size();i++){
         int predicate = effects.at(i).get_predicate_symbol_idx();
