@@ -64,7 +64,7 @@ bool parse(Task &task, const ifstream &in)
     task.create_empty_initial_state(task.predicates.size());
     parse_initial_state(task, initial_state_size);
 
-    
+
 
     int goal_size;
     cin >> canary >> goal_size;
