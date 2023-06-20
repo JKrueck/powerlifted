@@ -194,7 +194,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &actio
                     const DBState &state,const Task &task, Table &thesis_table, std::unordered_set<int> &thesis_matching)
 {
     
-    auto thesis = state.get_thesis();
+    /*auto thesis = state.get_thesis();
     auto diff = thesis.get_diff_at_idx(action.get_index());
     
     unordered_map<int,int> index_table;
@@ -224,7 +224,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &actio
 
 
     vector<vector<tuple_t>> remember;
-/*if(diff->size() > 0){
+    if(diff->size() > 0){
         for(int i=0;i<diff->size();i++){
             vector<tuple_t> temp;
             std::unordered_map<int,bool> is_inserted;
@@ -235,17 +235,17 @@ Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &actio
                 }
                 for(int k=0;k<thesis.get_table_at_idx(action.get_index())->tuples.size();k++){
                     GroundAtom test = thesis.get_table_at_idx(action.get_index())->tuples.at(k);
-                    if( std::find(test.begin(),test.end(),diff[i].at(j))!= test.end() &&
-                        is_inserted.count(k)==0){
+                    //if( std::find(test.begin(),test.end(),diff[i].at(j))!= test.end() &&
+                      //  is_inserted.count(k)==0){
 
-                            temp.push_back(test);
-                            is_inserted.insert({k,true});
-                    }
+                        //    temp.push_back(test);
+                        //    is_inserted.insert({k,true});
+                    //}
                 }
             }
             remember.push_back(temp);
         }
-    }*/
+    }
 
     for(int i=0;i<remember.size();i++){
         int predicate = effects.at(i).get_predicate_symbol_idx();
@@ -267,8 +267,14 @@ Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &actio
         }
     }
 
-    return thesis.get_table_copy_at_idx(action.get_index());
+    return thesis.get_table_copy_at_idx(action.get_index());*/
 
+}
+
+
+Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task)
+{
+    
 }
 
 /**
@@ -287,27 +293,22 @@ Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &actio
  * @see database/semi_join.h
  * @see full_reducer_successor_generator.cc
  *
- * @param action Action schema currently being isntantiated
+ * @param action Action schema currently being instantiated
  * @param state State used as database
  * @param staticInformation  Static predicates of the task
  * @return
  */
-Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state,const Task &task, Table &thesis_table, std::unordered_set<int> &thesis_matching,
-                                                std::unordered_map<int,std::vector<int>> &thesis_indices)
+Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis)
 {
 
     if (action.is_ground()) {
         throw std::runtime_error("Shouldn't be calling instantiate() on a ground action");
     }
 
-    auto thesis = state.get_thesis();
 
-    if(thesis.is_enabled()){
-        cout << "wrong" << endl;
-        Table thesis_return_table = thesis_instantiate(action,state,task,thesis_table,thesis_matching);
-        //thesis_table = thesis_return_table;
-        //thesis_indices = thesis.get_tuple_indices();
-        //thesis_matching = thesis.get_matches();
+
+    if(false){
+        Table thesis_return_table = thesis_instantiate2(action,state,task);
         filter_static(action, thesis_return_table);
         return thesis_return_table;
     }else{
@@ -324,13 +325,16 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
             size_t s = semi_join(tables[sj.second], tables[sj.first]);
             if (s == 0) {
-                thesis_table = Table::EMPTY_TABLE();
                 return Table::EMPTY_TABLE();
             }
         }
 
+        //Save the fully reduced tables of this state
+        thesis.set_initial_tables(tables);
+
         const JoinTree &jt = join_trees[action.get_index()];
 
+        std::unordered_map<int,std::vector<int>> thesis_indices;
         for (const auto &j : jt.get_order()) {
             thesis_indices.insert({j.first,tables.at(j.first).tuple_index});
             thesis_indices.insert({j.second,tables.at(j.second).tuple_index});
@@ -344,28 +348,33 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
                 }
             }
             Table &working_table = tables[j.second];
-            hash_join(working_table, tables[j.first], thesis_matching, thesis_indices);
+            hash_join(working_table, tables[j.first]);
+
+            //save the result of the current hashjoin
+            thesis.insert_join_table(working_table);
+
             // Project must be after removal of inequality constraints, otherwise we might keep only the
             // tuple violating some inequality. Variables in inequalities are also considered
             // distinguished.
-            Table copy = tables[j.second];
+
+            //Table copy = tables[j.second];
            
 
             filter_static(action, working_table);
-            if(working_table.EMPTY_TABLE){
-                copy = working_table;
-            }
+            //if(working_table.EMPTY_TABLE){
+                //copy = working_table;
+            //}
             project(working_table, project_over);
             if (working_table.tuples.empty()) {
                 return working_table;
             }
-            thesis_table = copy;
+            //thesis_table = copy;
         }
 
         // For the case where the action schema is cyclic
         Table &working_table = tables[remaining_join[action.get_index()][0]];
         for (size_t i = 1; i < remaining_join[action.get_index()].size(); ++i) {
-            hash_join(working_table, tables[remaining_join[action.get_index()][i]],thesis_matching, thesis_indices);
+            hash_join(working_table, tables[remaining_join[action.get_index()][i]]);
             filter_static(action, working_table);
             if (working_table.tuples.empty()) {
                 return working_table;

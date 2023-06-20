@@ -84,10 +84,6 @@ bool parse(Task &task, const ifstream &in)
     parse_action_schemas(task, number_action_schemas);
 
 
-    //ThesisClass thesis(false);
-    ThesisClass pls_shrink = task.get_initial_state().get_thesis();
-    pls_shrink.predicate_tuple_indices.shrink_to_fit();
-
     return true;
 }
 

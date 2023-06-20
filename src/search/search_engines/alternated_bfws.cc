@@ -172,11 +172,11 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
             std::unordered_map<int,std::vector<int>> thesis_indices;
 
 
-            auto applicable = generator.get_applicable_actions(action, state, task, thes_table, thesis_matching, thesis_indices);
+            auto applicable = generator.get_applicable_actions(action, state,task, thesis_successor);
             
-            thesis_successor.insert_table(thes_table);
-            thesis_successor.insert_tuple_indices(thesis_indices);
-            thesis_successor.insert_match(thesis_matching);
+            //thesis_successor.insert_table(thes_table);
+            //thesis_successor.insert_tuple_indices(thesis_indices);
+            //thesis_successor.insert_match(thesis_matching);
             
             statistics.inc_generated(applicable.size());
 

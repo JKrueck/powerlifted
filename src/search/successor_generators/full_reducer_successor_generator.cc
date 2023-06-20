@@ -169,8 +169,8 @@ FullReducerSuccessorGenerator::FullReducerSuccessorGenerator(const Task &task)
  * @param staticInformation  Static predicates of the task
  * @return
  */
-Table FullReducerSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state, const Task &task, 
-                                                Table &thesis, std::unordered_set<int> &thesis_matching, std::unordered_map<int,std::vector<int>> &thesis_indices)
+Table FullReducerSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state, const Task &task,ThesisClass &thesis
+                                                )
 {
     if (action.is_ground()) {
         throw std::runtime_error("Shouldn't be calling instantiate() on a ground action");
@@ -198,7 +198,7 @@ Table FullReducerSuccessorGenerator::instantiate(const ActionSchema &action, con
 
     Table &working_table = tables[fjr[0]];
     for (size_t i = 1; i < fjr.size(); ++i) {
-        hash_join(working_table, tables[fjr[i]], thesis_matching, thesis_indices);
+        hash_join(working_table, tables[fjr[i]]);
         filter_static(action, working_table);
         if (working_table.tuples.empty()) {
             return working_table;

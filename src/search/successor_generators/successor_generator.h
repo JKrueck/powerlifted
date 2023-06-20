@@ -24,31 +24,26 @@ class ThesisClass
 {
 
 private:
-    std::vector<Table> thesis_table;
+    //Storage for fully reduced tables
+    std::vector<Table> thesis_initial_tables;
+    //Storage for the results of the singular join steps
+    std::vector<Table> thesis_join_tables;
     //Storage for the hash-join matches; per action
     std::vector<std::unordered_set<int>> thesis_match;
     //Storage of the grounded action add effects
     std::vector<std::vector<GroundAtom>> diff;
     //Storage of the correspondence between tuple indices in the join tables and predicate index; per action
-    
+    std::vector<std::unordered_map<int,std::vector<int>>> predicate_tuple_indices;
     bool thesis_enable;
 public:
-    std::vector<std::unordered_map<int,std::vector<int>>> predicate_tuple_indices;
-    std::vector<int> test;
     ThesisClass(bool enable) : thesis_enable(enable)
-    {
-        predicate_tuple_indices.reserve(1);
-        this->thesis_table.push_back(Table(std::vector<std::vector<int>>{{1}},std::vector<int>{1}));
-        this->test.push_back(1);
-        this->test.push_back(1);
-        this->test.push_back(1);
-    }
+    {}
 
     ThesisClass() = default;
         
     void shrink()
     {
-        thesis_table.resize(0);
+        thesis_initial_tables.resize(0);
         thesis_match.resize(0);
         diff.resize(0);
         predicate_tuple_indices.resize(0);
@@ -56,26 +51,32 @@ public:
    
     //~ThesisClass();
 
-    std::vector<Table>* get_tables(){
-        return &this->thesis_table;
+    std::vector<Table>* get_initial_tables(){
+        return &this->thesis_initial_tables;
+    }
+
+    std::vector<Table>* get_join_tables(){
+        return &this->thesis_join_tables;
     }
 
     std::vector<Table> get_tables_copy(){
-        return this->thesis_table;
+        return this->thesis_initial_tables;
     }
 
-    Table* get_table_at_idx(int idx){
-        return &this->thesis_table.at(idx);
+
+    void insert_join_table(Table tab){
+        this->thesis_join_tables.push_back(tab);
     }
 
-    Table get_table_copy_at_idx(int idx){
-        return this->thesis_table.at(idx);
+
+    void set_initial_tables(std::vector<Table> tab){
+        this->thesis_initial_tables = tab;
     }
 
-    //don´t now if the move is good here
-    void insert_table(Table tab){
-        this->thesis_table.push_back(tab);
+    void set_join_tables(std::vector<Table> tab){
+        this->thesis_join_tables = tab;
     }
+
 
     std::unordered_set<int>* get_matches_at_idx(int idx){
         return &this->thesis_match.at(idx);
@@ -136,9 +137,7 @@ public:
      * instantiation of the action schema.
      */
     virtual std::vector<LiftedOperatorId> get_applicable_actions(
-            const ActionSchema &action, const DBState &state,const Task &task, 
-            Table &thesis_table, std::unordered_set<int> &thesis_matching, 
-            std::unordered_map<int,std::vector<int>> &thesis_indices) = 0;
+            const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis) = 0;
 
     /**
      * Generate the state that results from applying the given action to the given state.

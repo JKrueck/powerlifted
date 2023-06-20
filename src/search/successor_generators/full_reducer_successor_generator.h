@@ -12,8 +12,7 @@ public:
     explicit FullReducerSuccessorGenerator(const Task &task);
 
     Table instantiate(const ActionSchema &action, const DBState &state,
-                    const Task &task, Table &thesis, std::unordered_set<int> &thesis_matching,
-                    std::unordered_map<int,std::vector<int>> &thesis_indices) override;
+                    const Task &task, ThesisClass &thesis) override;
 
 private:
     std::vector<std::vector<std::pair<int, int>>> full_reducer_order;
