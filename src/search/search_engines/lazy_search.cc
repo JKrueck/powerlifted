@@ -85,9 +85,7 @@ utils::ExitCode LazySearch<PackedStateT>::search(const Task &task,
 
         if (check_goal(task, generator, timer_start, state, node, space)) return utils::ExitCode::SUCCESS;
 
-        
-        //Create one new Thesis object per state
-        ThesisClass thesis_successor(true);
+
 
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
         // performance, we could implement some form of std iterator
@@ -99,6 +97,8 @@ utils::ExitCode LazySearch<PackedStateT>::search(const Task &task,
             std::unordered_set<int> thesis_matching;
             //Storage of the correspondence between tuple indices in the join tables and predicate index
             std::unordered_map<int,std::vector<int>> thesis_indices;
+            //Create one new Thesis object per state
+            ThesisClass thesis_successor(true,action);
             
             auto applicable = generator.get_applicable_actions(action, state,task, thesis_successor);
             

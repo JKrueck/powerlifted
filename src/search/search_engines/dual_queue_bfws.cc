@@ -87,8 +87,6 @@ utils::ExitCode DualQueueBFWS<PackedStateT>::search(const Task &task,
             boost_priority_queue();
         }
 
-        //Create one new Thesis object per state
-        ThesisClass thesis_successor(true);
 
         for (const auto& action:task.get_action_schemas()) {
             
@@ -98,11 +96,14 @@ utils::ExitCode DualQueueBFWS<PackedStateT>::search(const Task &task,
             std::unordered_set<int> thesis_matching;
             //Storage of the correspondence between tuple indices in the join tables and predicate index
             std::unordered_map<int,std::vector<int>> thesis_indices;
+            //Create one new Thesis object per state
+            ThesisClass thesis_successor(true,action);
             
             auto applicable = generator.get_applicable_actions(action, state,task, thesis_successor);
             //thesis_successor.insert_table(thes_table);
             //thesis_successor.insert_tuple_indices(thesis_indices);
             //thesis_successor.insert_match(thesis_matching);
+            //Create one new Thesis object per state
             
             statistics.inc_generated(applicable.size());
 

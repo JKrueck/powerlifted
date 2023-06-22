@@ -33,16 +33,15 @@ class DBState {
 
     std::vector<Relation> relations;
     std::vector<bool> nullary_atoms;
-    ThesisClass thesis_successor;
 
 public:
 
     DBState() = default;
     explicit DBState(unsigned num_predicates) :
-        relations(num_predicates), nullary_atoms(num_predicates, false) {}
+        relations(num_predicates), nullary_atoms(num_predicates) {}
 
-    DBState(std::vector<Relation> &&relations, std::vector<bool> &&nullary_atoms, ThesisClass thesis_successor) :
-        relations(std::move(relations)), nullary_atoms(std::move(nullary_atoms)), thesis_successor(thesis_successor) {
+    DBState(std::vector<Relation> &&relations, std::vector<bool> &&nullary_atoms) :
+        relations(std::move(relations)), nullary_atoms(std::move(nullary_atoms)) {
         // Explicit state constructor
     }
 
@@ -54,9 +53,6 @@ public:
         return nullary_atoms;
     }
 
-    const ThesisClass get_thesis() const {
-        return thesis_successor;
-    }
 
     const std::unordered_set<GroundAtom, TupleHash>& get_tuples_of_relation(size_t i) const {
         return relations[i].tuples;
@@ -78,10 +74,6 @@ public:
 
     bool operator==(const DBState &other) const {
         return nullary_atoms==other.nullary_atoms && relations==other.relations;
-    }
-
-    void set_thesis(ThesisClass thes){
-        this->thesis_successor = thes;
     }
 
     friend std::size_t hash_value(const DBState &s);

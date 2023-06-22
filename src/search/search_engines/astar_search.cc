@@ -47,7 +47,7 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
     //Storage for classes per state
     //intended to work similar to queue
     std::unordered_map<int,ThesisClass> thesis_state_memory;
-    thesis_state_memory.insert({0,ThesisClass(false)});
+    thesis_state_memory.insert({0,ThesisClass(false,task.get_action_schema_by_index(0))});
     while (not queue.empty()) {
 
         std::vector<Table> thesis_tables;
@@ -95,7 +95,6 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
             //Storage of the correspondence between tuple indices in the join tables and predicate index
             std::unordered_map<int,std::vector<int>> thesis_indices;
 
-        
             auto applicable = generator.get_applicable_actions(action, state, task, old_thesis);
 
             //thesis_successor.insert_table(thes_table);
@@ -107,12 +106,13 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
 
             for (const LiftedOperatorId& op_id:applicable) {
                 //Create one new Thesis object per state
-                ThesisClass thesis_successor(true);
+                ThesisClass thesis_successor(true,action);
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 
                 
                 thesis_successor.set_initial_tables(*(old_thesis.get_initial_tables()));
                 thesis_successor.set_join_tables(*(old_thesis.get_join_tables()));
+                //thesis_successor.set_action(action);
 
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);

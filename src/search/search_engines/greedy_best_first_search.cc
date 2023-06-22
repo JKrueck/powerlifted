@@ -70,8 +70,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
         DBState state = packer.unpack(space.get_state(sid));
 
-        //Create one new Thesis object per state
-        ThesisClass thesis_successor(true);
+        
 
         if (check_goal(task, generator, timer_start, state, node, space)) return utils::ExitCode::SUCCESS;
 
@@ -86,7 +85,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             std::unordered_set<int> thesis_matching;
             //Storage of the correspondence between tuple indices in the join tables and predicate index
             std::unordered_map<int,std::vector<int>> thesis_indices;
-
+            //Create one new Thesis object per state
+            ThesisClass thesis_successor(true,action);
             
 
 

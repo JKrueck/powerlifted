@@ -158,8 +158,6 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                  << ", time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << "]" << '\n';
         }
 
-        //Create one new Thesis object per state
-        ThesisClass thesis_successor(true);
 
         for (const auto& action:task.get_action_schemas()) {
 
@@ -170,6 +168,8 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
             std::unordered_set<int> thesis_matching;
             //Storage of the correspondence between tuple indices in the join tables and predicate index
             std::unordered_map<int,std::vector<int>> thesis_indices;
+            //Create one new Thesis object per state
+            ThesisClass thesis_successor(true,action);
 
 
             auto applicable = generator.get_applicable_actions(action, state,task, thesis_successor);

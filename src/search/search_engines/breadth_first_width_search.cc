@@ -112,8 +112,7 @@ utils::ExitCode BreadthFirstWidthSearch<PackedStateT>::search(const Task &task,
         int unsatisfied_goal_parent = map_state_to_evaluators.at(sid.id()).unsatisfied_goals;
         int unsatisfied_relevant_atoms_parent = map_state_to_evaluators.at(sid.id()).unsatisfied_relevant_atoms;
 
-        //Create one new Thesis object per state
-        ThesisClass thesis_successor(true);
+     
 
         for (const auto& action:task.get_action_schemas()) {
             
@@ -123,6 +122,8 @@ utils::ExitCode BreadthFirstWidthSearch<PackedStateT>::search(const Task &task,
             std::unordered_set<int> thesis_matching;
             //Storage of the correspondence between tuple indices in the join tables and predicate index
             std::unordered_map<int,std::vector<int>> thesis_indices;
+            //Create one new Thesis object per state
+            ThesisClass thesis_successor(true,action);
             
              auto applicable = generator.get_applicable_actions(action, state,task, thesis_successor);
             

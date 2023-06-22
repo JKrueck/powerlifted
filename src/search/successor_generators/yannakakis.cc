@@ -272,9 +272,22 @@ Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &actio
 }
 
 
-Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task)
+Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis)
 {
-    
+    int test = 2;
+
+    std::vector<Table> modified_tables;
+
+    std::vector<int> test12;
+    test12.push_back(0);
+    test12.push_back(1);
+
+    for(int i=0;i<thesis.get_diff()->size();i++){
+        if(thesis.get_diff()->at(i).size()!=0){
+            //Table new_table(thesis.get_diff()->at(i),test12);
+            
+        }
+    }
 }
 
 /**
@@ -307,8 +320,8 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
 
 
 
-    if(false){
-        Table thesis_return_table = thesis_instantiate2(action,state,task);
+    if(thesis.is_enabled()){
+        Table thesis_return_table = thesis_instantiate2(action,state,task, thesis);
         filter_static(action, thesis_return_table);
         return thesis_return_table;
     }else{

@@ -135,7 +135,7 @@ protected:
     //Return all added atoms
     void apply_lifted_action_effects(const ActionSchema &action,
                                      const std::vector<int> &tuple,
-                                     std::vector<Relation> &new_relation, std::vector<GroundAtom> &add_effects);
+                                     std::vector<Relation> &new_relation,  std::vector<GroundAtom> &add_effects);
 
     bool is_ground_action_applicable(const ActionSchema &action,
                                      const DBState &state) const;

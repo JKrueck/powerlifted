@@ -350,13 +350,14 @@ DBState GenericJoinSuccessor::generate_successor(
         apply_lifted_action_effects(action, op.get_instantiation(), new_relation, diff);
     }
 
-    
+   
 
-    thesis_class->insert_diff(diff);
+
+    thesis_class->set_diff(diff);
     
     //Table new_thesis_table = thesis_class.get_table();
 
-    return DBState(std::move(new_relation), std::move(new_nullary_atoms), thesis_class);
+    return DBState(std::move(new_relation), std::move(new_nullary_atoms));
 }
 
 void GenericJoinSuccessor::order_tuple_by_free_variable_order(const vector<int> &free_var_indices,
@@ -410,6 +411,7 @@ void GenericJoinSuccessor::apply_nullary_effects(const ActionSchema &action,
 void GenericJoinSuccessor::apply_ground_action_effects(const ActionSchema &action,
                                                      vector<Relation> &new_relation)
 {
+    
     for (const Atom &eff : action.get_effects()) {
         GroundAtom ga;
         for (const Argument &a : eff.get_arguments()) {
@@ -427,14 +429,16 @@ void GenericJoinSuccessor::apply_ground_action_effects(const ActionSchema &actio
 
             new_relation[eff.get_predicate_symbol_idx()].tuples.insert(ga);
             add_to_added_atoms(eff.get_predicate_symbol_idx(), ga);
-
+            
+            
         }
     }
 }
 void GenericJoinSuccessor::apply_lifted_action_effects(const ActionSchema &action,
                                                      const vector<int> &tuple,
-                                                     vector<Relation> &new_relation, vector<GroundAtom> &add_effects)
+                                                     vector<Relation> &new_relation,  std::vector<GroundAtom> &add_effects)
 {
+    std::unordered_map<int,int> thesis_indices_stuff;
     for (const Atom &eff : action.get_effects()) {
         GroundAtom ga = GenericJoinSuccessor::tuple_to_atom(tuple, eff);
         assert(eff.get_predicate_symbol_idx() == new_relation[eff.get_predicate_symbol_idx()].predicate_symbol);
@@ -453,8 +457,12 @@ void GenericJoinSuccessor::apply_lifted_action_effects(const ActionSchema &actio
                 add_to_added_atoms(eff.get_predicate_symbol_idx(), ga);
 
                 
-                
+                //remember add effects
                 add_effects.push_back(ga);
+                for(int i=0;i<eff.get_arguments().size();i++){
+                    auto thesis_action_parameter = action.get_parameters().at(eff.get_arguments().at(i).get_index());
+                    thesis_indices_stuff.insert({i,thesis_action_parameter.type});
+                }
             }
             
         }

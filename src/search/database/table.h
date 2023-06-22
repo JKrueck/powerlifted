@@ -10,6 +10,7 @@
 class Table {
 public:
     using tuple_t = std::vector<int>;
+    using GroundAtom = std::vector<int>;
 
     /// @var tuples: the relation corresponding to the table, encoded as a vector of tuples
     std::vector<tuple_t> tuples;
@@ -19,6 +20,11 @@ public:
     Table(std::vector<tuple_t> &&tuples, std::vector<int> &&tuple_index) :
         tuples(std::move(tuples)),
         tuple_index(std::move(tuple_index))
+    {}
+
+    Table(std::vector<GroundAtom> &tuples, std::vector<int> &tuple_index) :
+        tuples(tuples),
+        tuple_index(tuple_index)
     {}
 
     bool index_is_variable(std::size_t i) const {

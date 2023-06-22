@@ -47,7 +47,6 @@ public:
     std::vector<std::vector<long>> packed_relations;
     std::vector<int> predicate_symbols;
     std::vector<bool> nullary_atoms;
-    ThesisClass thesis_successor_packed;
 
 
     bool operator==(const SparsePackedState &b) const;

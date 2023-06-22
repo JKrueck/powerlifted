@@ -46,8 +46,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
 
         DBState state = packer.unpack(space.get_state(sid));
 
-        //Create one new Thesis object per state
-        ThesisClass thesis_successor(true);
+        
 
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
         // performance, we could implement some form of std iterator
@@ -59,7 +58,8 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
             std::unordered_set<int> thesis_matching;
             //Storage of the correspondence between tuple indices in the join tables and predicate index
             std::unordered_map<int,std::vector<int>> thesis_indices;
-
+            //Create one new Thesis object per state
+            ThesisClass thesis_successor(true,action);
 
             auto applicable = generator.get_applicable_actions(action, state,task, thesis_successor);
             statistics.inc_generated(applicable.size());

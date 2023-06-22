@@ -18,7 +18,7 @@ class YannakakisSuccessorGenerator : public GenericJoinSuccessor {
     Table thesis_instantiate(const ActionSchema &action,
                     const DBState &state,const Task &task, Table &thesis_table, std::unordered_set<int> &thesis_matching);
 
-    Table thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task);
+    Table thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis);
 
  private:
   std::vector<std::vector<std::pair<int, int>>> full_reducer_order;

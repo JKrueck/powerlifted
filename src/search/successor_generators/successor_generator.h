@@ -8,6 +8,7 @@
 #include "../database/table.h"
 #include "../database/utils.h"
 #include "../structures.h"
+#include "../action_schema.h"
 
 
 // A few forward declarations :-)
@@ -18,7 +19,12 @@ class LiftedOperatorId;
 class Task;
 class Table;
 
+/* TODO:
+    -deal with doubled action add effects
 
+
+
+*/
 
 class ThesisClass
 {
@@ -30,26 +36,26 @@ private:
     std::vector<Table> thesis_join_tables;
     //Storage for the hash-join matches; per action
     std::vector<std::unordered_set<int>> thesis_match;
-    //Storage of the grounded action add effects
-    std::vector<std::vector<GroundAtom>> diff;
+    //Storage of the grounded action add effects; store add effect per predicate
+    std::vector<GroundAtom>diff;
     //Storage of the correspondence between tuple indices in the join tables and predicate index; per action
     std::vector<std::unordered_map<int,std::vector<int>>> predicate_tuple_indices;
     bool thesis_enable;
+    ActionSchema last_action;
+
+    
 public:
-    ThesisClass(bool enable) : thesis_enable(enable)
+    ThesisClass(bool enable, ActionSchema act) : thesis_enable(enable), last_action(act)
     {}
 
-    ThesisClass() = default;
+    //ThesisClass() = default;
         
-    void shrink()
-    {
-        thesis_initial_tables.resize(0);
-        thesis_match.resize(0);
-        diff.resize(0);
-        predicate_tuple_indices.resize(0);
-    }
    
     //~ThesisClass();
+
+    void set_action(ActionSchema action){
+        this->last_action = action;
+    }
 
     std::vector<Table>* get_initial_tables(){
         return &this->thesis_initial_tables;
@@ -91,12 +97,12 @@ public:
         return thesis_enable;
     }
 
-    void insert_diff(std::vector<GroundAtom> set_diff){
-        this->diff.push_back(set_diff);
+    void set_diff( std::vector<GroundAtom> set_diff){
+        this->diff = set_diff;
     }
 
-    std::vector<GroundAtom>* get_diff_at_idx(int idx){
-        return &this->diff.at(idx);
+    std::vector<GroundAtom>* get_diff(){
+        return &this->diff;
     }
 
     void insert_tuple_indices(std::unordered_map<int,std::vector<int>> indices){
