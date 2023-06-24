@@ -190,11 +190,11 @@ void YannakakisSuccessorGenerator::get_distinguished_variables(const ActionSchem
     }
 }
 
-Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &action,
+/*Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &action,
                     const DBState &state,const Task &task, Table &thesis_table, std::unordered_set<int> &thesis_matching)
 {
     
-    /*auto thesis = state.get_thesis();
+    auto thesis = state.get_thesis();
     auto diff = thesis.get_diff_at_idx(action.get_index());
     
     unordered_map<int,int> index_table;
@@ -267,16 +267,17 @@ Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &actio
         }
     }
 
-    return thesis.get_table_copy_at_idx(action.get_index());*/
+    return thesis.get_table_copy_at_idx(action.get_index());
 
-}
+}*/
 
 
 Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis)
 {
+    cout << "used" << endl;
     std::map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_diff;
     //Find the add-effect differences between the current state and the state when this action was last used
-    for(int i=0;i<state.get_relations().size();i++){
+    for(long unsigned int i=0;i<state.get_relations().size();i++){
         std::unordered_set<GroundAtom,TupleHash> diff;
         if(state.get_tuples_of_relation(i).size()!=0){
             std::unordered_set<GroundAtom,TupleHash> new_tuples = state.get_tuples_of_relation(i);
@@ -308,7 +309,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     //Create a new relations vector that only contains the add effect changes
     std::vector<Relation> new_relations;
     new_relations.resize(state.get_relations().size());
-    for(int i=0;i<state.get_relations().size();i++){
+    for(long unsigned int i=0;i<state.get_relations().size();i++){
         if(predicate_to_diff.count(i)!=0){
             auto tuples = predicate_to_diff.at(i);
             new_relations[i] = Relation(i,std::move(tuples));
@@ -318,6 +319,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         }
     }
     std::vector<bool> nullary = state.get_nullary_atoms();
+    //Create a modified state with the new relations
     DBState mod_state = DBState(std::move(new_relations), std::move(nullary));
 
     const auto &actiondata = action_data[action.get_index()];
@@ -328,6 +330,55 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
 
     assert(!tables.empty());
     assert(tables.size() == actiondata.relevant_precondition_atoms.size());
+
+
+    const JoinTree &jt = join_trees[action.get_index()];
+
+    std::unordered_map<int,std::vector<int>> thesis_indices;
+    for (const auto &j : jt.get_order()) {
+        thesis_indices.insert({j.first,tables.at(j.first).tuple_index});
+        thesis_indices.insert({j.second,tables.at(j.second).tuple_index});
+        unordered_set<int> project_over;
+        for (auto x : tables[j.second].tuple_index) {
+            project_over.insert(x);
+        }
+        for (auto x : tables[j.first].tuple_index) {
+            if (distinguished_variables[action.get_index()].count(x) > 0) {
+                project_over.insert(x);
+            }
+        }
+        Table &working_table = tables[j.second];
+        hash_join(working_table, tables[j.first]);
+
+        //save the result of the current hashjoin
+        //thesis.insert_join_table(working_table);
+
+        // Project must be after removal of inequality constraints, otherwise we might keep only the
+        // tuple violating some inequality. Variables in inequalities are also considered
+        // distinguished.
+
+        //Table copy = tables[j.second];
+        
+
+        filter_static(action, working_table);
+        //if(working_table.EMPTY_TABLE){
+            //copy = working_table;
+        //}
+        project(working_table, project_over);
+        if (working_table.tuples.empty()) {
+            return working_table;
+        }
+        //thesis_table = copy;
+    }
+
+    Table &working_table = tables[remaining_join[action.get_index()][0]];
+    //add the new instantiations to the old ones
+    working_table.tuples.insert(working_table.tuples.end(),thesis.get_join_tables()->back().tuples.begin(),thesis.get_join_tables()->back().tuples.end());
+
+    
+    project(working_table, distinguished_variables[action.get_index()]);
+    return working_table;
+
 }
 
 /**

@@ -122,7 +122,7 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
                 }
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
-                cout << child_node.state_id.id()<< endl;
+                //cout << child_node.state_id.id()<< endl;
                 if (child_node.status == SearchNode::Status::NEW) {
                     // Inserted for the first time in the map
                     child_node.open(dist, new_h);

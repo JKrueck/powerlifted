@@ -459,10 +459,10 @@ void GenericJoinSuccessor::apply_lifted_action_effects(const ActionSchema &actio
                 
                 //remember add effects
                 add_effects.push_back(ga);
-                for(int i=0;i<eff.get_arguments().size();i++){
+                /*for(int i=0;i<eff.get_arguments().size();i++){
                     auto thesis_action_parameter = action.get_parameters().at(eff.get_arguments().at(i).get_index());
                     thesis_indices_stuff.insert({i,thesis_action_parameter.type});
-                }
+                }*/
             }
             
         }
