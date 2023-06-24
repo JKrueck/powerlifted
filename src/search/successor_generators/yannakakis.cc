@@ -274,20 +274,60 @@ Table YannakakisSuccessorGenerator::thesis_instantiate(const ActionSchema &actio
 
 Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis)
 {
-    int test = 2;
-
-    std::vector<Table> modified_tables;
-
-    std::vector<int> test12;
-    test12.push_back(0);
-    test12.push_back(1);
-
-    for(int i=0;i<thesis.get_diff()->size();i++){
-        if(thesis.get_diff()->at(i).size()!=0){
-            //Table new_table(thesis.get_diff()->at(i),test12);
+    std::map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_diff;
+    //Find the add-effect differences between the current state and the state when this action was last used
+    for(int i=0;i<state.get_relations().size();i++){
+        std::unordered_set<GroundAtom,TupleHash> diff;
+        if(state.get_tuples_of_relation(i).size()!=0){
+            std::unordered_set<GroundAtom,TupleHash> new_tuples = state.get_tuples_of_relation(i);
+            std::unordered_set<GroundAtom,TupleHash> old_tuples = thesis.get_state().get_tuples_of_relation(i);
             
+            //For now only consider add effects
+            //new_tuples.size()>old_tuples.size()
+            if(true){
+                //std::set_difference(new_tuples.begin(),new_tuples.end(),old_tuples.begin(),old_tuples.end(),std::inserter(diff,diff.begin()));
+
+                /*
+                Okay-ish runtime I guess
+                _.count has constant average case complexity and linear worst case
+                Worst case -> O(n*m); n size of new_tuples, m size of old_tuples
+                */
+                for(auto it:new_tuples){
+                    if(old_tuples.count(it)==0){
+                        diff.insert(it);
+                    }
+                }
+                if(diff.size()!=0){
+                    predicate_to_diff.insert({i,diff});
+                }
+            }
+            
+        }       
+    }
+    
+    //Create a new relations vector that only contains the add effect changes
+    std::vector<Relation> new_relations;
+    new_relations.resize(state.get_relations().size());
+    for(int i=0;i<state.get_relations().size();i++){
+        if(predicate_to_diff.count(i)!=0){
+            auto tuples = predicate_to_diff.at(i);
+            new_relations[i] = Relation(i,std::move(tuples));
+        }else{
+            auto tuples = state.get_tuples_of_relation(i);
+            new_relations[i] = Relation(i,std::move(tuples));
         }
     }
+    std::vector<bool> nullary = state.get_nullary_atoms();
+    DBState mod_state = DBState(std::move(new_relations), std::move(nullary));
+
+    const auto &actiondata = action_data[action.get_index()];
+    vector<Table> tables;
+    auto res = parse_precond_into_join_program(actiondata, mod_state, tables);
+    if (!res)
+        return Table::EMPTY_TABLE();
+
+    assert(!tables.empty());
+    assert(tables.size() == actiondata.relevant_precondition_atoms.size());
 }
 
 /**
@@ -320,7 +360,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
 
 
 
-    if(thesis.is_enabled()){
+    if(thesis.is_enabled() && action.get_index()==thesis.get_action_id()){
         Table thesis_return_table = thesis_instantiate2(action,state,task, thesis);
         filter_static(action, thesis_return_table);
         return thesis_return_table;

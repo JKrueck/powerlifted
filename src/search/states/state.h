@@ -3,7 +3,7 @@
 
 #include "../structures.h"
 #include "../database/table.h"
-#include "../successor_generators/successor_generator.h"
+
 
 #include <algorithm>
 #include <tuple>
@@ -12,7 +12,7 @@
 #include <vector>
 
 class Table;
-class ThesisClass;
+
 
 /**
  * @brief Represents a state in the search space. Intuitively, it is represented

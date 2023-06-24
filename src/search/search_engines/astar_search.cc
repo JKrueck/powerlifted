@@ -82,7 +82,6 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
         DBState state = packer.unpack(space.get_state(sid));
         if (check_goal(task, generator, timer_start, state, node, space)) return utils::ExitCode::SUCCESS;
         
-        
 
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
         // performance, we could implement some form of std iterator
@@ -106,13 +105,12 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
 
             for (const LiftedOperatorId& op_id:applicable) {
                 //Create one new Thesis object per state
-                ThesisClass thesis_successor(true,action);
+                ThesisClass thesis_successor(true,action,state);
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 
                 
                 thesis_successor.set_initial_tables(*(old_thesis.get_initial_tables()));
                 thesis_successor.set_join_tables(*(old_thesis.get_join_tables()));
-                //thesis_successor.set_action(action);
 
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);

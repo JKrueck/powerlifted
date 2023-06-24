@@ -5,10 +5,12 @@
 #include <unordered_set>
 #include <unordered_map>
 
+#include "../states/state.h"
 #include "../database/table.h"
 #include "../database/utils.h"
 #include "../structures.h"
 #include "../action_schema.h"
+
 
 
 // A few forward declarations :-)
@@ -18,6 +20,7 @@ class LiftedOperatorId;
 
 class Task;
 class Table;
+
 
 /* TODO:
     -deal with doubled action add effects
@@ -42,10 +45,13 @@ private:
     std::vector<std::unordered_map<int,std::vector<int>>> predicate_tuple_indices;
     bool thesis_enable;
     ActionSchema last_action;
-
+    int action_id;
+    DBState last_state;
     
 public:
     ThesisClass(bool enable, ActionSchema act) : thesis_enable(enable), last_action(act)
+    {}
+    ThesisClass(bool enable, ActionSchema act, DBState& s) : thesis_enable(enable), last_action(act), action_id(act.get_index()), last_state(s)
     {}
 
     //ThesisClass() = default;
@@ -55,6 +61,10 @@ public:
 
     void set_action(ActionSchema action){
         this->last_action = action;
+    }
+
+    int get_action_id(){
+        return this->action_id;
     }
 
     std::vector<Table>* get_initial_tables(){
@@ -111,6 +121,14 @@ public:
 
     std::unordered_map<int,std::vector<int>>* get_tuple_indices_at_idx(int idx){
        return &this->predicate_tuple_indices.at(idx);
+    }
+
+    /*void set_state(DBState& s)const{
+        last_state = &s;
+    }*/
+
+    DBState get_state() const {
+        return last_state;
     }
 };
 
