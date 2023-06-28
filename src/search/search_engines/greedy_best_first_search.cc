@@ -95,7 +95,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             //Storage of the correspondence between tuple indices in the join tables and predicate index
             std::unordered_map<int,std::vector<int>> thesis_indices;
             
-            auto applicable = generator.get_applicable_actions(action, state,task, thesis_successor);
+            auto applicable = generator.get_applicable_actions(action, state,task, old_thesis);
             
         
             
