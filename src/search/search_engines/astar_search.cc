@@ -109,7 +109,7 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 
                 
-                thesis_successor.set_initial_tables(*(old_thesis.get_initial_tables()));
+                //thesis_successor.set_initial_tables(*(old_thesis.get_initial_tables()));
                 thesis_successor.set_join_tables(*(old_thesis.get_join_tables()));
 
                 int dist = g + action.get_cost();

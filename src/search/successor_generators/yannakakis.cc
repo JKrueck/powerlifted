@@ -318,6 +318,15 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             new_relations[i] = Relation(i,std::move(tuples));
         }
     }
+    //Save for which tables we need to re compute the hash join
+    std::unordered_map<int,bool> compute_hash;
+    for(int i=0;i<new_relations.size();i++){
+        if(new_relations.at(i).tuples.size()!= 0){
+            compute_hash.insert({i,true});
+        }else{
+            compute_hash.insert({i,false});
+        }
+    }
     std::vector<bool> nullary = state.get_nullary_atoms();
     //Create a modified state with the new relations
     DBState mod_state = DBState(std::move(new_relations), std::move(nullary));
@@ -335,46 +344,54 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     const JoinTree &jt = join_trees[action.get_index()];
 
     std::unordered_map<int,std::vector<int>> thesis_indices;
+    int counter = 0;
     for (const auto &j : jt.get_order()) {
-        thesis_indices.insert({j.first,tables.at(j.first).tuple_index});
-        thesis_indices.insert({j.second,tables.at(j.second).tuple_index});
-        unordered_set<int> project_over;
-        for (auto x : tables[j.second].tuple_index) {
-            project_over.insert(x);
-        }
-        for (auto x : tables[j.first].tuple_index) {
-            if (distinguished_variables[action.get_index()].count(x) > 0) {
+        if(compute_hash.at(j.first) || compute_hash.at(j.second)){
+            thesis_indices.insert({j.first,tables.at(j.first).tuple_index});
+            thesis_indices.insert({j.second,tables.at(j.second).tuple_index});
+            unordered_set<int> project_over;
+            for (auto x : tables[j.second].tuple_index) {
                 project_over.insert(x);
             }
+            for (auto x : tables[j.first].tuple_index) {
+                if (distinguished_variables[action.get_index()].count(x) > 0) {
+                    project_over.insert(x);
+                }
+            }
+            Table &working_table = tables[j.second];
+            hash_join(working_table, tables[j.first]);
+
+            //save the result of the current hashjoin
+            //thesis.insert_join_table(working_table);
+
+            // Project must be after removal of inequality constraints, otherwise we might keep only the
+            // tuple violating some inequality. Variables in inequalities are also considered
+            // distinguished.
+
+            //Table copy = tables[j.second];
+            
+
+            filter_static(action, working_table);
+            //if(working_table.EMPTY_TABLE){
+                //copy = working_table;
+            //}
+            project(working_table, project_over);
+            if (working_table.tuples.empty()) {
+                return working_table;
+            }
+            //thesis_table = copy;
+            compute_hash.insert_or_assign(j.second,true);
+        }else{
+            tables[j.second] = thesis.get_join_tables()->at(counter);
         }
-        Table &working_table = tables[j.second];
-        hash_join(working_table, tables[j.first]);
-
-        //save the result of the current hashjoin
-        //thesis.insert_join_table(working_table);
-
-        // Project must be after removal of inequality constraints, otherwise we might keep only the
-        // tuple violating some inequality. Variables in inequalities are also considered
-        // distinguished.
-
-        //Table copy = tables[j.second];
-        
-
-        filter_static(action, working_table);
-        //if(working_table.EMPTY_TABLE){
-            //copy = working_table;
-        //}
-        project(working_table, project_over);
-        if (working_table.tuples.empty()) {
-            return working_table;
-        }
-        //thesis_table = copy;
+        counter++;
     }
 
     Table &working_table = tables[remaining_join[action.get_index()][0]];
     //add the new instantiations to the old ones
     working_table.tuples.insert(working_table.tuples.end(),thesis.get_join_tables()->back().tuples.begin(),thesis.get_join_tables()->back().tuples.end());
 
+    filter_static(action, working_table);
     
     project(working_table, distinguished_variables[action.get_index()]);
     return working_table;

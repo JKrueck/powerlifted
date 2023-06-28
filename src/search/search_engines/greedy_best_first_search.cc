@@ -46,9 +46,20 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
     if (check_goal(task, generator, timer_start, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
 
+    //Storage for classes per state
+    //intended to work similar to queue
+    std::unordered_map<int,ThesisClass> thesis_state_memory;
+    thesis_state_memory.insert({0,ThesisClass(false,task.get_action_schema_by_index(0))});
     while (not queue.empty()) {
+
+        std::vector<Table> thesis_tables;
+
         StateID sid = queue.remove_min();
         SearchNode &node = space.get_node(sid);
+
+        //Get the thesis object that belongs to the state form the queue -- for now hope the sid is unique
+        ThesisClass old_thesis = thesis_state_memory.at(sid.id());
+
         int h = node.h;
         int g = node.g;
         if (node.status == SearchNode::Status::CLOSED) {
@@ -77,31 +88,30 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
-
-
             //Storage for the Yannakis Table
             Table thes_table = Table::EMPTY_TABLE();
             //Storage for the hash-join matches
             std::unordered_set<int> thesis_matching;
             //Storage of the correspondence between tuple indices in the join tables and predicate index
             std::unordered_map<int,std::vector<int>> thesis_indices;
-            //Create one new Thesis object per state
-            ThesisClass thesis_successor(true,action);
             
-
-
-             auto applicable = generator.get_applicable_actions(action, state,task, thesis_successor);
+            auto applicable = generator.get_applicable_actions(action, state,task, thesis_successor);
             
-            //thesis_successor.insert_table(thes_table);
-            //thesis_successor.insert_tuple_indices(thesis_indices);
-            //thesis_successor.insert_match(thesis_matching);
+        
             
             
             statistics.inc_generated(applicable.size());
 
 
             for (const LiftedOperatorId& op_id:applicable) {
+               //Create one new Thesis object per state
+                ThesisClass thesis_successor(true,action,state);
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
+                
+                
+                //thesis_successor.set_initial_tables(*(old_thesis.get_initial_tables()));
+                thesis_successor.set_join_tables(*(old_thesis.get_join_tables()));
+
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);
@@ -121,12 +131,14 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                     child_node.open(dist, new_h);
                     statistics.inc_evaluated_states();
                     queue.do_insertion(child_node.state_id, make_pair(new_h, dist));
+                    thesis_state_memory.insert({child_node.state_id.id(),thesis_successor});
                 }
                 else {
                     if (dist < child_node.g) {
                         child_node.open(dist, new_h); // Reopening
                         statistics.inc_reopened();
                         queue.do_insertion(child_node.state_id, make_pair(new_h, dist));
+                        thesis_state_memory.insert_or_assign(child_node.state_id.id(),thesis_successor);
                     }
                 }
             }
