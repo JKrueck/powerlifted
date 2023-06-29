@@ -320,7 +320,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     }
     //Save for which tables we need to re compute the hash join
     std::unordered_map<int,bool> compute_hash;
-    for(int i=0;i<new_relations.size();i++){
+    for(long unsigned int i=0;i<new_relations.size();i++){
         if(new_relations.at(i).tuples.size()!= 0){
             compute_hash.insert({i,true});
         }else{
@@ -345,8 +345,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
 
     std::unordered_map<int,std::vector<int>> thesis_indices;
     int counter = 0;
-    for (const auto &j : jt.get_order()) {
-        if(compute_hash.at(j.first) || compute_hash.at(j.second)){
+    for (const auto &j : jt.get_order()) {//compute_hash.at(j.first) || compute_hash.at(j.second)
+        if(true){
             thesis_indices.insert({j.first,tables.at(j.first).tuple_index});
             thesis_indices.insert({j.second,tables.at(j.second).tuple_index});
             unordered_set<int> project_over;
@@ -361,8 +361,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             Table &working_table = tables[j.second];
             hash_join(working_table, tables[j.first]);
 
-            //save the result of the current hashjoin
-            //thesis.insert_join_table(working_table);
 
             // Project must be after removal of inequality constraints, otherwise we might keep only the
             // tuple violating some inequality. Variables in inequalities are also considered
@@ -370,16 +368,15 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
 
             //Table copy = tables[j.second];
             
+            thesis.get_join_tables()->at(counter) = working_table;
 
             filter_static(action, working_table);
-            //if(working_table.EMPTY_TABLE){
-                //copy = working_table;
-            //}
             project(working_table, project_over);
             if (working_table.tuples.empty()) {
                 return working_table;
             }
-            //thesis_table = copy;
+            
+            //compute_hash.insert_or_assign(j.first,true);
             compute_hash.insert_or_assign(j.second,true);
         }else{
             tables[j.second] = thesis.get_join_tables()->at(counter);
