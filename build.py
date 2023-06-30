@@ -19,6 +19,8 @@ def parse_options():
                         action="store_true", help="Build in debug mode.")
     parser.add_argument('--cxx-compiler',
                         default='default', help="Path to CXX compiler used by CMake.")
+    parser.add_argument('--hacky-server-flag',
+                        default='store_true', help="Activate local boost build on lemmy.")
     return parser.parse_args()
 
 def get_build_dir(debug):
@@ -46,6 +48,9 @@ def build(debug_flag, compiler):
     extra_options = []
     if compiler != 'default':
         extra_options = ['-DCMAKE_CXX_COMPILER='+compiler]
+
+    if options.hacky_server_flag:
+        extra_options += ["-DBoost_NO_SYSTEM_PATHS=TRUE", "-DBOOST_ROOT=/mnt/data_server/eisenhut/opt"]
 
     subprocess.check_call(['cmake', SEARCH_DIR,
                            '-DCMAKE_BUILD_TYPE='+BUILD_TYPE] + extra_options,
