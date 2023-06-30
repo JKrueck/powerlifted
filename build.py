@@ -20,7 +20,7 @@ def parse_options():
     parser.add_argument('--cxx-compiler',
                         default='default', help="Path to CXX compiler used by CMake.")
     parser.add_argument('--hacky-server-flag',
-                        default='store_true', help="Activate local boost build on lemmy.")
+                        action='store_true', help="Activate local boost build on lemmy.")
     return parser.parse_args()
 
 def get_build_dir(debug):
