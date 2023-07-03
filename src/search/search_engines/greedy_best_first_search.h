@@ -13,6 +13,12 @@ protected:
     int heuristic_layer{};
 public:
     using StatePackerT = typename PackedStateT::StatePackerT;
+    
+    bool thesis_enabled;
+    explicit GreedyBestFirstSearch(bool thesis_enabl) :
+        thesis_enabled(thesis_enabl)
+    {}
+    
 
     utils::ExitCode search(const Task &task, SuccessorGenerator &generator, Heuristic &heuristic) override;
 

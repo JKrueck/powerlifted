@@ -40,7 +40,8 @@ def run_search(build_dir, options, extra):
                                  options.state,
                                  str(options.seed),
                                  options.plan_file,
-                                 extra)
+                                 extra,
+                                 options.th)
 
         # If we found a plan, try to validate it
         if code == 0 and options.validate:
@@ -80,6 +81,10 @@ def set_extra_options(options):
     # Checks if unit-cost flag is true
     if options.unit_cost:
         PYTHON_EXTRA_OPTIONS += ["--unit-cost"]
+
+     # Checks if thesis flag is true
+    if options.th:
+        PYTHON_EXTRA_OPTIONS += ["--th"]
 
     return PYTHON_EXTRA_OPTIONS, CPP_EXTRA_OPTIONS
 

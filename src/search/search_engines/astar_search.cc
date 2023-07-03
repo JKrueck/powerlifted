@@ -88,11 +88,11 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
         for (const auto& action:task.get_action_schemas()) {
             
             //Storage for the Yannakis Table
-            Table thes_table = Table::EMPTY_TABLE();
+            //Table thes_table = Table::EMPTY_TABLE();
             //Storage for the hash-join matches
-            std::unordered_set<int> thesis_matching;
+            //std::unordered_set<int> thesis_matching;
             //Storage of the correspondence between tuple indices in the join tables and predicate index
-            std::unordered_map<int,std::vector<int>> thesis_indices;
+            //std::unordered_map<int,std::vector<int>> thesis_indices;
 
             auto applicable = generator.get_applicable_actions(action, state, task, old_thesis);
 

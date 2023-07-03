@@ -104,8 +104,13 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
 
             for (const LiftedOperatorId& op_id:applicable) {
-               //Create one new Thesis object per state
-                ThesisClass thesis_successor(true,action,state);
+                //Create one new Thesis object per state
+                ThesisClass thesis_successor(false,action,state);
+                if(this->thesis_enabled){
+                    thesis_successor.set_status(true);
+                }
+
+    
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 
                 

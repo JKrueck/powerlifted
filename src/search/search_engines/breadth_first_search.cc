@@ -31,10 +31,17 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
 
     if (check_goal(task, generator, timer_start, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
 
+    //intended to work similar to queue
+    std::unordered_map<int,ThesisClass> thesis_state_memory;
+    thesis_state_memory.insert({0,ThesisClass(false,task.get_action_schema_by_index(0))});
     while (not queue.empty()) {
         StateID sid = queue.front();
         queue.pop();
         SearchNode &node = space.get_node(sid);
+
+        //Get the thesis object that belongs to the state form the queue -- for now hope the sid is unique
+        ThesisClass old_thesis = thesis_state_memory.at(sid.id());
+
         if (node.status == SearchNode::Status::CLOSED) {
             continue;
         }
@@ -46,28 +53,39 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
 
         DBState state = packer.unpack(space.get_state(sid));
 
-        
+         //Storage for classes per state
+   
 
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
         // performance, we could implement some form of std iterator
         for (const auto& action : task.get_action_schemas()) {
 
             //Storage for the Yannakis Table
-            Table thes_table = Table::EMPTY_TABLE();
+            //Table thes_table = Table::EMPTY_TABLE();
             //Storage for the hash-join matches
-            std::unordered_set<int> thesis_matching;
+            //std::unordered_set<int> thesis_matching;
             //Storage of the correspondence between tuple indices in the join tables and predicate index
-            std::unordered_map<int,std::vector<int>> thesis_indices;
+            //std::unordered_map<int,std::vector<int>> thesis_indices;
             //Create one new Thesis object per state
-            ThesisClass thesis_successor(true,action);
+            //ThesisClass thesis_successor(true,action);
 
-            auto applicable = generator.get_applicable_actions(action, state,task, thesis_successor);
+            auto applicable = generator.get_applicable_actions(action, state,task, old_thesis);
             statistics.inc_generated(applicable.size());
 
             
 
             for (const LiftedOperatorId &op_id:applicable) {
+
+                //Create one new Thesis object per state
+                ThesisClass thesis_successor(false,action,state);
+                if(this->thesis_enabled){
+                    thesis_successor.set_status(true);
+                }
+
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
+
+                thesis_successor.set_join_tables(*(old_thesis.get_join_tables()));
+
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
                 if (child_node.status == SearchNode::Status::NEW) {
                     child_node.open(node.f+1);
@@ -75,6 +93,8 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
                     if (check_goal(task, generator, timer_start, s, child_node, space)) return utils::ExitCode::SUCCESS;
 
                     queue.emplace(child_node.state_id);
+
+                    thesis_state_memory.insert({child_node.state_id.id(),thesis_successor});
                 }
             }
         }

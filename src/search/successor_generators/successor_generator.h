@@ -103,8 +103,12 @@ public:
         this->thesis_match.push_back(std::move(match));
     }
 
-    const bool is_enabled(){
+    bool is_enabled() const{
         return thesis_enable;
+    }
+
+    void set_status(bool status){
+        this->thesis_enable = status;
     }
 
     void set_diff( std::vector<GroundAtom> set_diff){

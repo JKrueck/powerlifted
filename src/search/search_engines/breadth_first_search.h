@@ -11,6 +11,11 @@ protected:
     SearchSpace<PackedStateT> space;
 
 public:
+    bool thesis_enabled;
+    explicit BreadthFirstSearch(bool thesis_enabl) :
+        thesis_enabled(thesis_enabl)
+    {}
+
     using StatePackerT = typename PackedStateT::StatePackerT;
 
     utils::ExitCode search(const Task &task, SuccessorGenerator &generator, Heuristic &heuristic) override;

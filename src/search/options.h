@@ -18,6 +18,8 @@ class Options {
     bool novelty_early_stop;
     unsigned seed;
 
+    bool thesis_global_enable;
+
 public:
     Options(int argc, char** argv) {
         po::options_description description("Allowed options");
@@ -32,6 +34,7 @@ public:
             ("plan-file", po::value<std::string>()->default_value("FilePathUndefined"), "Plan file.")
             ("only-effects-novelty-check", po::value<bool>()->default_value(false), "Check only effects of applied actions when evaluation novelty of a state.")
             ("novelty-early-stop", po::value<bool>()->default_value(false), "Stop evaluating novelty as soon as w-value is defined.")
+            ("th",po::value<bool>()->default_value(false), "Use thesis stuff")
             ;
 
         po::variables_map vm;
@@ -59,6 +62,8 @@ public:
         only_effects_opt = vm["only-effects-novelty-check"].as<bool>();
         novelty_early_stop = vm["novelty-early-stop"].as<bool>();
         seed = vm["seed"].as<unsigned>();
+
+        thesis_global_enable = vm["th"].as<bool>();
 
     }
 
@@ -96,6 +101,10 @@ public:
 
     unsigned get_seed() const {
         return seed;
+    }
+
+    bool get_thesis_state()const {
+        return thesis_global_enable;
     }
 
 

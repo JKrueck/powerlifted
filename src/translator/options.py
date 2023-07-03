@@ -47,6 +47,7 @@ def parse_args():
         help="flag if the translator should output more statistical data than "
              "normal, in a format that is easier to parse for our evaluation "
              "scripts.")
+    argparser.add_argument("--th", action="store_true", help="flag if thesis stuff shoudl be used")
     return argparser.parse_args()
 
 

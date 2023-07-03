@@ -25,8 +25,8 @@ SearchFactory::create(const Options &opt, const std::string& method, const std::
         else return new AStarSearch<SparsePackedState>();
     }
     else if (boost::iequals(method, "bfs")) {
-        if (using_ext_state) return new BreadthFirstSearch<ExtensionalPackedState>();
-        else return new BreadthFirstSearch<SparsePackedState>();
+        if (using_ext_state) return new BreadthFirstSearch<ExtensionalPackedState>(opt.get_thesis_state());
+        else return new BreadthFirstSearch<SparsePackedState>(opt.get_thesis_state());
     }
     else if (boost::iequals(method, "bfws1")) {
         if (using_ext_state) return new BreadthFirstWidthSearch<ExtensionalPackedState>(1, opt, StandardNovelty::R_0);
@@ -77,8 +77,8 @@ SearchFactory::create(const Options &opt, const std::string& method, const std::
         else return new AlternatedBFWS<SparsePackedState>(2, opt);
     }
     else if (boost::iequals(method, "gbfs")) {
-        if (using_ext_state) return new GreedyBestFirstSearch<ExtensionalPackedState>();
-        else return new GreedyBestFirstSearch<SparsePackedState>();
+        if (using_ext_state) return new GreedyBestFirstSearch<ExtensionalPackedState>(opt.get_thesis_state());
+        else return new GreedyBestFirstSearch<SparsePackedState>(opt.get_thesis_state());
     }
     else if (boost::iequals(method, "lazy")) {
         if (using_ext_state) return new LazySearch<ExtensionalPackedState>(true, false);
