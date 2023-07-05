@@ -59,6 +59,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
         //Get the thesis object that belongs to the state form the queue -- for now hope the sid is unique
         ThesisClass old_thesis = thesis_state_memory.at(sid.id());
+        //remove it from memory
+        thesis_state_memory.erase(sid.id());
 
         int h = node.h;
         int g = node.g;
@@ -89,15 +91,36 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
             //Storage for the Yannakis Table
-            Table thes_table = Table::EMPTY_TABLE();
+            //Table thes_table = Table::EMPTY_TABLE();
             //Storage for the hash-join matches
-            std::unordered_set<int> thesis_matching;
+            //std::unordered_set<int> thesis_matching;
             //Storage of the correspondence between tuple indices in the join tables and predicate index
-            std::unordered_map<int,std::vector<int>> thesis_indices;
+            //std::unordered_map<int,std::vector<int>> thesis_indices;
+
             
             auto applicable = generator.get_applicable_actions(action, state,task, old_thesis);
-            
-        
+            //std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
+            /*if(action.get_name() == "dummy" && old_thesis.is_enabled()){
+                //cout << "\t State-Id: " << sid.id() << " Last Action: " << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name() << endl;
+                int stop = 1;
+                for( auto it:old_thesis.get_join_tables()->back().tuples){
+                    for(auto inst:it){
+                        cout << inst << endl;
+                    }
+                    cout << endl;
+                }
+                
+                
+                
+                for(auto it:applicable){
+                    cout << "\t";
+                    for(auto inst:it.get_instantiation()){
+                        cout << inst << " ";
+                    }
+                    cout << endl;
+                    
+                }
+            }*/
             
             
             statistics.inc_generated(applicable.size());
@@ -116,6 +139,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 
                 //thesis_successor.set_initial_tables(*(old_thesis.get_initial_tables()));
                 thesis_successor.set_join_tables(*(old_thesis.get_join_tables()));
+                
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
                 int dist = g + action.get_cost();
@@ -127,6 +151,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                         child_node.open(dist, new_h);
                         statistics.inc_dead_ends();
                         statistics.inc_pruned_states();
+
+                        thesis_state_memory.insert({child_node.state_id.id(),thesis_successor});
                     }
                     continue;
                 }
@@ -136,6 +162,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                     child_node.open(dist, new_h);
                     statistics.inc_evaluated_states();
                     queue.do_insertion(child_node.state_id, make_pair(new_h, dist));
+
                     thesis_state_memory.insert({child_node.state_id.id(),thesis_successor});
                 }
                 else {
@@ -143,6 +170,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                         child_node.open(dist, new_h); // Reopening
                         statistics.inc_reopened();
                         queue.do_insertion(child_node.state_id, make_pair(new_h, dist));
+
                         thesis_state_memory.insert_or_assign(child_node.state_id.id(),thesis_successor);
                     }
                 }

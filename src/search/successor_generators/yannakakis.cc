@@ -346,9 +346,11 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     std::unordered_map<int,std::vector<int>> thesis_indices;
     int counter = 0;
     for (const auto &j : jt.get_order()) {//compute_hash.at(j.first) || compute_hash.at(j.second)
-        if(true){
-            thesis_indices.insert({j.first,tables.at(j.first).tuple_index});
-            thesis_indices.insert({j.second,tables.at(j.second).tuple_index});
+        if(compute_hash.at(j.first) || compute_hash.at(j.second)){
+
+            //thesis_indices.insert({j.first,tables.at(j.first).tuple_index});
+            //thesis_indices.insert({j.second,tables.at(j.second).tuple_index});
+
             unordered_set<int> project_over;
             for (auto x : tables[j.second].tuple_index) {
                 project_over.insert(x);
@@ -366,9 +368,11 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             // tuple violating some inequality. Variables in inequalities are also considered
             // distinguished.
 
-            //Table copy = tables[j.second];
+            //save the result of the hashjoin by appending the new results to the old ones
+            for(auto it:working_table.tuples){
+                thesis.get_join_tables()->at(counter).tuples.push_back(it);
+            }
             
-            thesis.get_join_tables()->at(counter) = working_table;
 
             filter_static(action, working_table);
             project(working_table, project_over);
@@ -384,9 +388,10 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         counter++;
     }
 
-    Table &working_table = tables[remaining_join[action.get_index()][0]];
+    //Table &working_table = tables[remaining_join[action.get_index()][0]];
+    Table &working_table = thesis.get_join_tables()->back();
     //add the new instantiations to the old ones
-    working_table.tuples.insert(working_table.tuples.end(),thesis.get_join_tables()->back().tuples.begin(),thesis.get_join_tables()->back().tuples.end());
+    //working_table.tuples.insert(working_table.tuples.end(),thesis.get_join_tables()->back().tuples.begin(),thesis.get_join_tables()->back().tuples.end());
 
     filter_static(action, working_table);
     
@@ -427,7 +432,6 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
 
     if(thesis.is_enabled() && action.get_index()==thesis.get_action_id()){
         Table thesis_return_table = thesis_instantiate2(action,state,task, thesis);
-        filter_static(action, thesis_return_table);
         return thesis_return_table;
     }else{
         const auto &actiondata = action_data[action.get_index()];
@@ -448,7 +452,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         }
 
         //Save the fully reduced tables of this state
-        thesis.set_initial_tables(tables);
+        //thesis.set_initial_tables(tables);
 
         const JoinTree &jt = join_trees[action.get_index()];
 
@@ -467,7 +471,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             }
             Table &working_table = tables[j.second];
             hash_join(working_table, tables[j.first]);
-
+            
             //save the result of the current hashjoin
             thesis.insert_join_table(working_table);
 
