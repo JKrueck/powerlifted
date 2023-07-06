@@ -124,8 +124,9 @@ utils::ExitCode BreadthFirstWidthSearch<PackedStateT>::search(const Task &task,
             std::unordered_map<int,std::vector<int>> thesis_indices;
             //Create one new Thesis object per state
             ThesisClass thesis_successor(true,action);
-            
-             auto applicable = generator.get_applicable_actions(action, state,task, thesis_successor);
+
+            std::vector<std::vector<Table>> thesis_join_table_per_state;
+            auto applicable = generator.get_applicable_actions(action, state,task, thesis_successor, thesis_join_table_per_state);
             
             //thesis_successor.insert_table(thes_table);
             //thesis_successor.insert_tuple_indices(thesis_indices);

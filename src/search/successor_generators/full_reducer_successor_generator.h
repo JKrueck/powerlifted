@@ -12,7 +12,7 @@ public:
     explicit FullReducerSuccessorGenerator(const Task &task);
 
     Table instantiate(const ActionSchema &action, const DBState &state,
-                    const Task &task, ThesisClass &thesis) override;
+                    const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables) override;
 
 private:
     std::vector<std::vector<std::pair<int, int>>> full_reducer_order;

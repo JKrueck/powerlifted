@@ -37,6 +37,7 @@ private:
     std::vector<Table> thesis_initial_tables;
     //Storage for the results of the singular join steps
     std::vector<Table> thesis_join_tables;
+    std::vector<std::vector<Table>>* current_tables;
     //Storage for the hash-join matches; per action
     std::vector<std::unordered_set<int>> thesis_match;
     //Storage of the grounded action add effects; store add effect per predicate
@@ -134,6 +135,14 @@ public:
     DBState get_state() const {
         return last_state;
     }
+
+    void set_current_tables(std::vector<std::vector<Table>> *curr){
+        this->current_tables = curr;
+    }
+
+    std::vector<std::vector<Table>>* get_current_tables(){
+        return this->current_tables;
+    }
 };
 
 
@@ -165,7 +174,7 @@ public:
      * instantiation of the action schema.
      */
     virtual std::vector<LiftedOperatorId> get_applicable_actions(
-            const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis) = 0;
+            const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables) = 0;
 
     /**
      * Generate the state that results from applying the given action to the given state.

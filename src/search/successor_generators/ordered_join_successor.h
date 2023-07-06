@@ -24,7 +24,7 @@ public:
                                          std::vector<Table>& tables) override;
 
     Table instantiate(const ActionSchema &action, const DBState &state,const Task &task,
-                    ThesisClass &thesis) override;
+                    ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables) override;
 
 };
 

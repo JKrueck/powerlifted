@@ -31,6 +31,15 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
 
     if (check_goal(task, generator, timer_start, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
 
+    //Save the intermediate join tables at a global level and per action
+    std::vector<std::vector<Table>> thesis_join_table_memory;
+    thesis_join_table_memory.resize(task.get_action_schemas().size());
+    //As we always want to use the join tables from the prior state, we need to save all of them on a per state basis
+    //To-Do: Think about when we don´t need them anymore and can delete them from memory
+    std::unordered_map<int,std::vector<std::vector<Table>>> thesis_join_table_per_state; //great names...
+    thesis_join_table_per_state.insert({0,thesis_join_table_memory});
+
+    //Storage for classes per state
     //intended to work similar to queue
     std::unordered_map<int,ThesisClass> thesis_state_memory;
     thesis_state_memory.insert({0,ThesisClass(false,task.get_action_schema_by_index(0))});
@@ -41,6 +50,9 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
 
         //Get the thesis object that belongs to the state form the queue -- for now hope the sid is unique
         ThesisClass old_thesis = thesis_state_memory.at(sid.id());
+        std::vector<std::vector<Table>> thesis_current_tables = thesis_join_table_per_state.at(sid.id());
+        //remove the thesis object from memory
+        thesis_state_memory.erase(sid.id());
 
         if (node.status == SearchNode::Status::CLOSED) {
             continue;
@@ -69,7 +81,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
             //Create one new Thesis object per state
             //ThesisClass thesis_successor(true,action);
 
-            auto applicable = generator.get_applicable_actions(action, state,task, old_thesis);
+            auto applicable = generator.get_applicable_actions(action, state,task, old_thesis, thesis_current_tables);
             statistics.inc_generated(applicable.size());
 
             

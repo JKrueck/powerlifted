@@ -14,11 +14,11 @@ class YannakakisSuccessorGenerator : public GenericJoinSuccessor {
  */
   explicit YannakakisSuccessorGenerator(const Task &task);
     Table instantiate(const ActionSchema &action,
-                    const DBState &state,const Task &task, ThesisClass &thesis) final;
+                    const DBState &state,const Task &task, ThesisClass &thesis,  std::vector<std::vector<Table>> &thesis_tables) final;
     Table thesis_instantiate(const ActionSchema &action,
                     const DBState &state,const Task &task, Table &thesis_table, std::unordered_set<int> &thesis_matching);
 
-    Table thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis);
+    Table thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis,  std::vector<std::vector<Table>> &thesis_tables);
 
  private:
   std::vector<std::vector<std::pair<int, int>>> full_reducer_order;
