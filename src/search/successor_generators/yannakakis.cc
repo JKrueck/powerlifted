@@ -270,21 +270,41 @@ void YannakakisSuccessorGenerator::get_distinguished_variables(const ActionSchem
     return thesis.get_table_copy_at_idx(action.get_index());
 
 }*/
-
+void YannakakisSuccessorGenerator::filter_delete(ThesisClass &thesis,std::vector<GroundAtom> &diff_delete, int action_id){
+    std::vector<std::vector<Table>> test = *thesis.get_current_tables();
+    for(int i=0; i<thesis.get_current_tables()->at(action_id).size();i++){
+        cout << "Before del correction: "<< thesis.get_current_tables()->at(action_id).at(i).tuples.size() << endl;
+        for(int j=0; j<thesis.get_current_tables()->at(action_id).at(i).tuples.size();){
+            //Take the intersection between the deleted atoms and the tuple; if the result is non-zero than the original tuple delete it
+            for(auto diff_it:diff_delete){ 
+                GroundAtom result;
+                //result.reserve(tuple.size());
+                std::set_intersection(diff_it.begin(),diff_it.end(),thesis.get_current_tables()->at(action_id).at(i).tuples.at(j).begin(),thesis.get_current_tables()->at(action_id).at(i).tuples.at(j).end(), std::inserter(result,result.begin()));
+                if(result.size() > 0){
+                    auto pos = thesis.get_current_tables()->at(action_id).at(i).tuples.erase(thesis.get_current_tables()->at(action_id).at(i).tuples.begin()+j);
+                    j = pos - thesis.get_current_tables()->at(action_id).at(i).tuples.begin();
+                }else{
+                    j++;
+                }
+                test = *thesis.get_current_tables();
+            } 
+        }
+        cout << "After del correction: "<< thesis.get_current_tables()->at(action_id).at(i).tuples.size() << endl;
+    }
+}
 
 Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables)
 {
     cout << "used" << endl;
-    std::map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_diff;
+    std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_add_diff;
+    std::vector<GroundAtom> diff_delete;
     //Find the add-effect differences between the current state and the state when this action was last used
     for(long unsigned int i=0;i<state.get_relations().size();i++){
-        std::unordered_set<GroundAtom,TupleHash> diff;
+        std::unordered_set<GroundAtom,TupleHash> diff_add;
         if(state.get_tuples_of_relation(i).size()!=0){
             std::unordered_set<GroundAtom,TupleHash> new_tuples = state.get_tuples_of_relation(i);
             std::unordered_set<GroundAtom,TupleHash> old_tuples = thesis.get_state().get_tuples_of_relation(i);
             
-            //For now only consider add effects
-            //new_tuples.size()>old_tuples.size()
             if(true){
                 //std::set_difference(new_tuples.begin(),new_tuples.end(),old_tuples.begin(),old_tuples.end(),std::inserter(diff,diff.begin()));
 
@@ -295,23 +315,38 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 */
                 for(auto it:new_tuples){
                     if(old_tuples.count(it)==0){
-                        diff.insert(it);
+                        diff_add.insert(it);
                     }
                 }
-                if(diff.size()!=0){
-                    predicate_to_diff.insert({i,diff});
+                //Quick and dirty way to find deleted atoms -> probably need a smarter method for this ....
+                for(auto it:old_tuples){
+                    if(new_tuples.count(it)==0){
+                        //unorder_set isn´t useful at all with what im trying to do..
+                        //convert it to vector for now
+                        diff_delete.push_back(it);
+                        
+                    }
                 }
+                if(diff_add.size()!=0){
+                    predicate_to_add_diff.insert({i,diff_add});
+                }
+
+
             }
             
         }       
     }
+    if(diff_delete.size() != 0) {
+        filter_delete(thesis,diff_delete, action.get_index());
+    }
+    
     
     //Create a new relations vector that only contains the add effect changes
     std::vector<Relation> new_relations;
     new_relations.resize(state.get_relations().size());
     for(long unsigned int i=0;i<state.get_relations().size();i++){
-        if(predicate_to_diff.count(i)!=0){
-            auto tuples = predicate_to_diff.at(i);
+        if(predicate_to_add_diff.count(i)!=0){
+            auto tuples = predicate_to_add_diff.at(i);
             new_relations[i] = Relation(i,std::move(tuples));
         }else{
             auto tuples = state.get_tuples_of_relation(i);
@@ -367,6 +402,13 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             // Project must be after removal of inequality constraints, otherwise we might keep only the
             // tuple violating some inequality. Variables in inequalities are also considered
             // distinguished.
+
+
+            /*for(auto it:thesis.get_current_tables()->at(action.get_index()).at(counter).tuples ){
+                for(auto tuple:it){
+                    cout << tuple << endl;
+                }
+            }*/
 
             //save the result of the hashjoin by appending the new results to the old ones
             for(auto it:working_table.tuples){
@@ -435,7 +477,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
 
 
 
-    if(thesis.is_enabled() && action.get_index()==thesis.get_action_id()){
+    if(thesis.is_enabled() && action.get_index()==thesis.get_action_id() && thesis.get_current_tables()->at(action.get_index()).size()!=0){
         Table thesis_return_table = thesis_instantiate2(action,state,task, thesis, thesis_tables);
         return thesis_return_table;
     }else{
@@ -463,8 +505,8 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
 
         std::unordered_map<int,std::vector<int>> thesis_indices;
         for (const auto &j : jt.get_order()) {
-            thesis_indices.insert({j.first,tables.at(j.first).tuple_index});
-            thesis_indices.insert({j.second,tables.at(j.second).tuple_index});
+            //thesis_indices.insert({j.first,tables.at(j.first).tuple_index});
+            //thesis_indices.insert({j.second,tables.at(j.second).tuple_index});
             unordered_set<int> project_over;
             for (auto x : tables[j.second].tuple_index) {
                 project_over.insert(x);

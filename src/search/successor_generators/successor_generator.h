@@ -48,17 +48,30 @@ private:
     ActionSchema last_action;
     int action_id;
     DBState last_state;
+    int parent_state_id;
     
 public:
     ThesisClass(bool enable, ActionSchema act) : thesis_enable(enable), last_action(act)
     {}
-    ThesisClass(bool enable, ActionSchema act, DBState& s) : thesis_enable(enable), last_action(act), action_id(act.get_index()), last_state(s)
+    ThesisClass(bool enable, ActionSchema act, DBState& s) :   thesis_enable(enable), 
+                                                                        last_action(act),
+                                                                        action_id(act.get_index()), 
+                                                                        last_state(s)
     {}
 
     //ThesisClass() = default;
         
    
     //~ThesisClass();
+
+
+    void set_parent_state_id(int id){
+        this->parent_state_id = id;
+    }
+
+    int get_parent_state_id(){
+        return this->parent_state_id;
+    }
 
     void set_action(ActionSchema action){
         this->last_action = action;

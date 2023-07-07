@@ -59,7 +59,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     //Storage for classes per state
     //intended to work similar to queue
     std::unordered_map<int,ThesisClass> thesis_state_memory;
-    thesis_state_memory.insert({0,ThesisClass(false,task.get_action_schema_by_index(0))});
+    ThesisClass initial = ThesisClass(false,task.get_action_schema_by_index(0));
+    initial.set_parent_state_id(0);
+    thesis_state_memory.insert({0,initial});
 
     while (not queue.empty()) {
 
@@ -155,6 +157,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 thesis_successor.set_current_tables(&thesis_join_table_per_state.at(sid.id()));
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
+                thesis_successor.set_parent_state_id(child_node.state_id.id());
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);
                 statistics.inc_evaluations();
