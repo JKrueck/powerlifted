@@ -20,7 +20,7 @@ class YannakakisSuccessorGenerator : public GenericJoinSuccessor {
                     const DBState &state,const Task &task, Table &thesis_table, std::unordered_set<int> &thesis_matching);
 
     Table thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis,  std::vector<std::vector<Table>> &thesis_tables);
-    void  filter_delete(ThesisClass &thesis,std::vector<GroundAtom> &diff_delete, int action_id);
+    void  filter_delete( std::vector<std::vector<Table>> &thesis_tables ,std::vector<GroundAtom> &diff_delete, int action_id);
 
  private:
   std::vector<std::vector<std::pair<int, int>>> full_reducer_order;

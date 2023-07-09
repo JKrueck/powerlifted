@@ -270,26 +270,24 @@ void YannakakisSuccessorGenerator::get_distinguished_variables(const ActionSchem
     return thesis.get_table_copy_at_idx(action.get_index());
 
 }*/
-void YannakakisSuccessorGenerator::filter_delete(ThesisClass &thesis,std::vector<GroundAtom> &diff_delete, int action_id){
-    std::vector<std::vector<Table>> test = *thesis.get_current_tables();
-    for(int i=0; i<thesis.get_current_tables()->at(action_id).size();i++){
-        cout << "Before del correction: "<< thesis.get_current_tables()->at(action_id).at(i).tuples.size() << endl;
-        for(int j=0; j<thesis.get_current_tables()->at(action_id).at(i).tuples.size();){
+void YannakakisSuccessorGenerator::filter_delete( std::vector<std::vector<Table>> &thesis_tables,std::vector<GroundAtom> &diff_delete, int action_id){
+    for(long unsigned int i=0; i<thesis_tables.at(action_id).size();i++){
+        //cout << "Before del correction: "<< thesis_tables.at(action_id).at(i).tuples.size() << endl;
+        for(long unsigned int j=0; j<thesis_tables.at(action_id).at(i).tuples.size();){
             //Take the intersection between the deleted atoms and the tuple; if the result is non-zero than the original tuple delete it
             for(auto diff_it:diff_delete){ 
                 GroundAtom result;
                 //result.reserve(tuple.size());
-                std::set_intersection(diff_it.begin(),diff_it.end(),thesis.get_current_tables()->at(action_id).at(i).tuples.at(j).begin(),thesis.get_current_tables()->at(action_id).at(i).tuples.at(j).end(), std::inserter(result,result.begin()));
+                std::set_intersection(diff_it.begin(),diff_it.end(),thesis_tables.at(action_id).at(i).tuples.at(j).begin(),thesis_tables.at(action_id).at(i).tuples.at(j).end(), std::inserter(result,result.begin()));
                 if(result.size() > 0){
-                    auto pos = thesis.get_current_tables()->at(action_id).at(i).tuples.erase(thesis.get_current_tables()->at(action_id).at(i).tuples.begin()+j);
-                    j = pos - thesis.get_current_tables()->at(action_id).at(i).tuples.begin();
+                    auto pos = thesis_tables.at(action_id).at(i).tuples.erase(thesis_tables.at(action_id).at(i).tuples.begin()+j);
+                    j = pos - thesis_tables.at(action_id).at(i).tuples.begin();
                 }else{
                     j++;
                 }
-                test = *thesis.get_current_tables();
             } 
         }
-        cout << "After del correction: "<< thesis.get_current_tables()->at(action_id).at(i).tuples.size() << endl;
+        //cout << "After del correction: "<< thesis_tables.at(action_id).at(i).tuples.size() << endl;
     }
 }
 
@@ -337,7 +335,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         }       
     }
     if(diff_delete.size() != 0) {
-        filter_delete(thesis,diff_delete, action.get_index());
+        filter_delete(thesis_tables,diff_delete, action.get_index());
     }
     
     
@@ -413,7 +411,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             //save the result of the hashjoin by appending the new results to the old ones
             for(auto it:working_table.tuples){
                 //thesis.get_join_tables()->at(counter).tuples.push_back(it);
-                thesis.get_current_tables()->at(action.get_index()).at(counter).tuples.push_back(it);
+                thesis_tables.at(action.get_index()).at(counter).tuples.push_back(it);
             }
             
 
@@ -427,18 +425,26 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             compute_hash_join.insert_or_assign(j.second,true);
         }else{
             //tables[j.second] = thesis.get_join_tables()->at(counter);
-            tables[j.second] = thesis.get_current_tables()->at(action.get_index()).at(counter);
+            tables[j.second] = thesis_tables.at(action.get_index()).at(counter);
         }
         counter++;
     }
 
     //Table &working_table = tables[remaining_join[action.get_index()][0]];
     //Table &working_table = thesis.get_join_tables()->back();
-    Table &working_table = thesis.get_current_tables()->at(action.get_index()).back();
+    //Table &working_table = thesis_tables.at(action.get_index()).back();
     //add the new instantiations to the old ones
     //working_table.tuples.insert(working_table.tuples.end(),thesis.get_join_tables()->back().tuples.begin(),thesis.get_join_tables()->back().tuples.end());
-
-    thesis_tables = *thesis.get_current_tables();
+    
+    // For the case where the action schema is cyclic
+    Table &working_table = tables[remaining_join[action.get_index()][0]];
+    for (size_t i = 1; i < remaining_join[action.get_index()].size(); ++i) {
+        hash_join(working_table, tables[remaining_join[action.get_index()][i]]);
+        filter_static(action, working_table);
+        if (working_table.tuples.empty()) {
+            return working_table;
+        }
+    }
 
     filter_static(action, working_table);
     
@@ -477,7 +483,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
 
 
 
-    if(thesis.is_enabled() && action.get_index()==thesis.get_action_id() && thesis.get_current_tables()->at(action.get_index()).size()!=0){
+    if(thesis.is_enabled() && thesis_tables.at(action.get_index()).size()!=0){
         Table thesis_return_table = thesis_instantiate2(action,state,task, thesis, thesis_tables);
         return thesis_return_table;
     }else{

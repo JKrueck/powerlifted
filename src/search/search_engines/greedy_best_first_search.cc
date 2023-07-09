@@ -72,8 +72,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
         //Get the thesis object that belongs to the state form the queue -- for now hope the sid is unique
         ThesisClass old_thesis = thesis_state_memory.at(sid.id());
-        std::vector<std::vector<Table>> thesis_current_tables = thesis_join_table_per_state.at(sid.id());
-        cout << thesis_current_tables.size() << endl;
+        //std::vector<std::vector<Table>> thesis_current_tables = thesis_join_table_per_state.at(sid.id());
+        //cout << thesis_current_tables.size() << endl;
         //remove the thesis object from memory
         thesis_state_memory.erase(sid.id());
 
@@ -113,8 +113,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             //std::unordered_map<int,std::vector<int>> thesis_indices;
 
             
-            auto applicable = generator.get_applicable_actions(action, state,task, old_thesis, thesis_current_tables);
-            std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
+            auto applicable = generator.get_applicable_actions(action, state,task, old_thesis, thesis_join_table_per_state.at(old_thesis.get_parent_state_id()));
+            //std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
             /*if(action.get_name() == "dummy" && old_thesis.is_enabled()){
                 //cout << "\t State-Id: " << sid.id() << " Last Action: " << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name() << endl;
                 int stop = 1;
@@ -154,10 +154,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 
                 //thesis_successor.set_initial_tables(*(old_thesis.get_initial_tables()));
                 //thesis_successor.set_join_tables(*(old_thesis.get_join_tables()));
-                thesis_successor.set_current_tables(&thesis_join_table_per_state.at(sid.id()));
+                //thesis_successor.set_current_tables(&thesis_join_table_per_state.at(sid.id()));
+                thesis_successor.set_parent_state_id(sid.id());
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
-                thesis_successor.set_parent_state_id(child_node.state_id.id());
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);
                 statistics.inc_evaluations();
@@ -209,7 +209,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         }
         //After we have determined the join-tables of all actions for the current state save it again
         //doing this with pointer was a pain, so pointerless for now
-        thesis_join_table_per_state.insert_or_assign(sid.id(),thesis_current_tables);
+        //DISREGARD
+        //thesis_join_table_per_state.insert_or_assign(sid.id(),thesis_current_tables);
     }
 
     print_no_solution_found(timer_start);
