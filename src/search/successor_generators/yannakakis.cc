@@ -334,7 +334,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             
         }       
     }
-    if(diff_delete.size() != 0) {
+    //diff_delete.size() != 0
+    if(false) {
         filter_delete(thesis_tables,diff_delete, action.get_index());
     }
     
