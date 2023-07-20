@@ -110,7 +110,7 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
                 
                 
                 //thesis_successor.set_initial_tables(*(old_thesis.get_initial_tables()));
-                thesis_successor.set_join_tables(*(old_thesis.get_join_tables()));
+                //thesis_successor.set_join_tables(*(old_thesis.get_join_tables()));
 
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);

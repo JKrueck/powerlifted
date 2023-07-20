@@ -105,14 +105,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
-            //Storage for the Yannakis Table
-            //Table thes_table = Table::EMPTY_TABLE();
-            //Storage for the hash-join matches
-            //std::unordered_set<int> thesis_matching;
-            //Storage of the correspondence between tuple indices in the join tables and predicate index
-            //std::unordered_map<int,std::vector<int>> thesis_indices;
-
-            
+    
             auto applicable = generator.get_applicable_actions(action, state,task, old_thesis, thesis_join_table_per_state.at(old_thesis.get_parent_state_id()));
             //std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
             /*if(action.get_name() == "dummy" && old_thesis.is_enabled()){

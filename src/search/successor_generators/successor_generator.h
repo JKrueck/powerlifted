@@ -23,7 +23,7 @@ class Table;
 
 
 /* TODO:
-    -deal with doubled action add effects
+    
 
 
 
@@ -33,11 +33,6 @@ class ThesisClass
 {
 
 private:
-    //Storage for fully reduced tables
-    std::vector<Table> thesis_initial_tables;
-    //Storage for the results of the singular join steps
-    std::vector<Table> thesis_join_tables;
-    std::vector<std::vector<Table>>* current_tables;
     //Storage for the hash-join matches; per action
     std::vector<std::unordered_set<int>> thesis_match;
     //Storage of the grounded action add effects; store add effect per predicate
@@ -47,6 +42,7 @@ private:
     bool thesis_enable;
     ActionSchema last_action;
     int action_id;
+    //It should be an option to not save the whole state but use the dedicated state unpacker of powerlifted
     DBState last_state;
     int parent_state_id;
     
@@ -81,31 +77,6 @@ public:
         return this->action_id;
     }
 
-    std::vector<Table>* get_initial_tables(){
-        return &this->thesis_initial_tables;
-    }
-
-    std::vector<Table>* get_join_tables(){
-        return &this->thesis_join_tables;
-    }
-
-    std::vector<Table> get_tables_copy(){
-        return this->thesis_initial_tables;
-    }
-
-
-    void insert_join_table(Table tab){
-        this->thesis_join_tables.push_back(tab);
-    }
-
-
-    void set_initial_tables(std::vector<Table> tab){
-        this->thesis_initial_tables = tab;
-    }
-
-    void set_join_tables(std::vector<Table> tab){
-        this->thesis_join_tables = tab;
-    }
 
 
     std::unordered_set<int>* get_matches_at_idx(int idx){
@@ -149,13 +120,6 @@ public:
         return last_state;
     }
 
-    void set_current_tables(std::vector<std::vector<Table>> *curr){
-        this->current_tables = curr;
-    }
-
-    std::vector<std::vector<Table>>* get_current_tables(){
-        return this->current_tables;
-    }
 };
 
 

@@ -274,12 +274,12 @@ void YannakakisSuccessorGenerator::filter_delete( std::vector<std::vector<Table>
     for(long unsigned int i=0; i<thesis_tables.at(action_id).size();i++){
         //cout << "Before del correction: "<< thesis_tables.at(action_id).at(i).tuples.size() << endl;
         for(long unsigned int j=0; j<thesis_tables.at(action_id).at(i).tuples.size();){
-            //Take the intersection between the deleted atoms and the tuple; if the result is non-zero than the original tuple delete it
+            //Take the intersection between the deleted atoms and the tuple; if the result is non-zero delete it
             for(auto diff_it:diff_delete){ 
                 GroundAtom result;
-                //result.reserve(tuple.size());
                 std::set_intersection(diff_it.begin(),diff_it.end(),thesis_tables.at(action_id).at(i).tuples.at(j).begin(),thesis_tables.at(action_id).at(i).tuples.at(j).end(), std::inserter(result,result.begin()));
                 if(result.size() > 0){
+                    //keep the counter on the right position
                     auto pos = thesis_tables.at(action_id).at(i).tuples.erase(thesis_tables.at(action_id).at(i).tuples.begin()+j);
                     j = pos - thesis_tables.at(action_id).at(i).tuples.begin();
                 }else{
@@ -293,7 +293,7 @@ void YannakakisSuccessorGenerator::filter_delete( std::vector<std::vector<Table>
 
 Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables)
 {
-    cout << "used" << endl;
+    //cout << "used" << endl;
     std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_add_diff;
     std::vector<GroundAtom> diff_delete;
     //Find the add-effect differences between the current state and the state when this action was last used
@@ -334,8 +334,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             
         }       
     }
-    //diff_delete.size() != 0
-    if(false) {
+    if(diff_delete.size() != 0) {
         filter_delete(thesis_tables,diff_delete, action.get_index());
     }
     

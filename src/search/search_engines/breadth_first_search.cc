@@ -96,7 +96,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
 
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
 
-                thesis_successor.set_join_tables(*(old_thesis.get_join_tables()));
+                //thesis_successor.set_join_tables(*(old_thesis.get_join_tables()));
                 
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
