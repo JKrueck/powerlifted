@@ -284,6 +284,9 @@ void YannakakisSuccessorGenerator::filter_delete( std::vector<std::vector<Table>
                     j = pos - thesis_tables.at(action_id).at(i).tuples.begin();
                 }else{
                     j++;
+                    if(j>=thesis_tables.at(action_id).at(i).tuples.size()){
+                        break;
+                    }
                 }
             } 
         }
@@ -334,10 +337,11 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             
         }       
     }
+    //cout << "Finished dealing with add effects" << endl;
     if(diff_delete.size() != 0) {
         filter_delete(thesis_tables,diff_delete, action.get_index());
     }
-    
+    //cout << "Finished dealing with del effects" << endl;
     
     //Create a new relations vector that only contains the add effect changes
     std::vector<Relation> new_relations;
