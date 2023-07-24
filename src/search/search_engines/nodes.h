@@ -10,6 +10,8 @@
 #include <utility>
 
 
+
+
 class StateID {
     friend std::ostream &operator<<(std::ostream &os, StateID id);
     template <typename StateT>
@@ -29,8 +31,19 @@ public:
     bool operator==(const StateID &other) const { return value == other.value; }
     bool operator!=(const StateID &other) const { return !(*this == other); }
     bool operator<(const StateID &other) const { return value < other.value; }
+
 };
 
+struct ThesisStateIDHasher
+{
+  std::size_t operator()(const StateID& k) const
+  {
+    using std::size_t;
+    using std::hash;
+
+    return (hash<int>()(k.id()) << 1);
+  }
+};
 
 class SearchNode {
 public:
