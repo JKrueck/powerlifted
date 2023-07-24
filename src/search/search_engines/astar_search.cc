@@ -94,7 +94,7 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
             //Storage of the correspondence between tuple indices in the join tables and predicate index
             //std::unordered_map<int,std::vector<int>> thesis_indices;
             std::vector<std::vector<Table>> thesis_join_table_per_state;
-            auto applicable = generator.get_applicable_actions(action, state, task, old_thesis, thesis_join_table_per_state);
+            auto applicable = generator.get_applicable_actions(action, state, task, old_thesis, thesis_join_table_per_state, state);
 
             //thesis_successor.insert_table(thes_table);
             //thesis_successor.insert_tuple_indices(thesis_indices);
@@ -105,7 +105,7 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
 
             for (const LiftedOperatorId& op_id:applicable) {
                 //Create one new Thesis object per state
-                ThesisClass thesis_successor(true,action,state);
+                ThesisClass thesis_successor(true,action);
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 
                 

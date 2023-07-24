@@ -63,6 +63,11 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     initial.set_parent_state_id(0);
     thesis_state_memory.insert({0,initial});
 
+    //saving what was the previous state globally and then using the packer to pass it to yannakakis instead of 
+    //always saving the previous state in ThesisClass
+    std::unordered_map<StateID,StateID,ThesisStateIDHasher> thesis_previous_state;
+    thesis_previous_state.insert_or_assign(StateID::no_state, StateID::no_state);
+
     while (not queue.empty()) {
 
         StateID sid = queue.remove_min();
@@ -105,9 +110,16 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
-    
-            auto applicable = generator.get_applicable_actions(action, state,task, old_thesis, thesis_join_table_per_state.at(old_thesis.get_parent_state_id()));
-            std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
+            DBState old_state;
+            if(sid.id()!= 0){
+                old_state = packer.unpack(space.get_state(thesis_previous_state.at(sid)));
+            }else{
+                old_state = state;
+            }
+            
+            auto applicable = generator.get_applicable_actions(action, state,task, old_thesis,
+                                thesis_join_table_per_state.at(old_thesis.get_parent_state_id()),old_state);
+            //std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
             /*if(action.get_name() == "dummy" && old_thesis.is_enabled()){
                 //cout << "\t State-Id: " << sid.id() << " Last Action: " << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name() << endl;
                 int stop = 1;
@@ -136,7 +148,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
             for (const LiftedOperatorId& op_id:applicable) {
                 //Create one new Thesis object per state
-                ThesisClass thesis_successor(false,action,state);
+                ThesisClass thesis_successor(false,action);
                 if(this->thesis_enabled){
                     thesis_successor.set_status(true);
                 }
@@ -167,6 +179,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                         std::vector<std::vector<Table>> thesis_join_table_memory;
                         thesis_join_table_memory.resize(task.get_action_schemas().size());
                         thesis_join_table_per_state.insert({child_node.state_id.id(),thesis_join_table_memory});
+                        thesis_previous_state.insert({child_node.state_id,sid});
                     }
                     continue;
                 }
@@ -183,6 +196,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                     std::vector<std::vector<Table>> thesis_join_table_memory;
                     thesis_join_table_memory.resize(task.get_action_schemas().size());
                     thesis_join_table_per_state.insert({child_node.state_id.id(),thesis_join_table_memory});
+                    thesis_previous_state.insert({child_node.state_id,sid});
                 }
                 else {
                     if (dist < child_node.g) {
@@ -196,6 +210,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                         std::vector<std::vector<Table>> thesis_join_table_memory;
                         thesis_join_table_memory.resize(task.get_action_schemas().size());
                         thesis_join_table_per_state.insert({child_node.state_id.id(),thesis_join_table_memory});
+                        thesis_previous_state.insert({child_node.state_id,sid});
                     }
                 }
             }

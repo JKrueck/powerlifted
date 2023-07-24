@@ -294,7 +294,7 @@ void YannakakisSuccessorGenerator::filter_delete( std::vector<std::vector<Table>
     }
 }
 
-Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables)
+Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables, DBState &old_state)
 {
     //cout << "used" << endl;
     std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_add_diff;
@@ -304,7 +304,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         std::unordered_set<GroundAtom,TupleHash> diff_add;
         if(state.get_tuples_of_relation(i).size()!=0){
             std::unordered_set<GroundAtom,TupleHash> new_tuples = state.get_tuples_of_relation(i);
-            std::unordered_set<GroundAtom,TupleHash> old_tuples = thesis.get_state().get_tuples_of_relation(i);
+            std::unordered_set<GroundAtom,TupleHash> old_tuples = old_state.get_tuples_of_relation(i);
             
             if(true){
                 //std::set_difference(new_tuples.begin(),new_tuples.end(),old_tuples.begin(),old_tuples.end(),std::inserter(diff,diff.begin()));
@@ -373,6 +373,13 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     auto res = parse_precond_into_join_program(actiondata, mod_state, tables);
     if (!res)
         return Table::EMPTY_TABLE();
+
+    for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
+            size_t s = semi_join(tables[sj.second], tables[sj.first]);
+            if (s == 0) {
+                return Table::EMPTY_TABLE();
+            }
+    }
 
     assert(!tables.empty());
     assert(tables.size() == actiondata.relevant_precondition_atoms.size());
@@ -478,7 +485,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
  * @param staticInformation  Static predicates of the task
  * @return
  */
-Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables)
+Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables, DBState &old_state)
 {
 
     if (action.is_ground()) {
@@ -488,7 +495,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
 
 
     if(thesis.is_enabled() && thesis_tables.at(action.get_index()).size()!=0){
-        Table thesis_return_table = thesis_instantiate2(action,state,task, thesis, thesis_tables);
+        Table thesis_return_table = thesis_instantiate2(action,state,task, thesis, thesis_tables, old_state);
         return thesis_return_table;
     }else{
         const auto &actiondata = action_data[action.get_index()];

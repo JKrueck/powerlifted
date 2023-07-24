@@ -40,19 +40,14 @@ private:
     //Storage of the correspondence between tuple indices in the join tables and predicate index; per action
     std::vector<std::unordered_map<int,std::vector<int>>> predicate_tuple_indices;
     bool thesis_enable;
-    ActionSchema last_action;
+    //ActionSchema last_action;
     int action_id;
     //It should be an option to not save the whole state but use the dedicated state unpacker of powerlifted
-    DBState last_state;
+    //DBState last_state;
     int parent_state_id;
     
 public:
-    ThesisClass(bool enable, ActionSchema act) : thesis_enable(enable), last_action(act)
-    {}
-    ThesisClass(bool enable, ActionSchema act, DBState& s) :   thesis_enable(enable), 
-                                                                        last_action(act),
-                                                                        action_id(act.get_index()), 
-                                                                        last_state(s)
+    ThesisClass(bool enable, ActionSchema act) :   thesis_enable(enable),action_id(act.get_index())
     {}
 
     //ThesisClass() = default;
@@ -69,9 +64,9 @@ public:
         return this->parent_state_id;
     }
 
-    void set_action(ActionSchema action){
+    /*void set_action(ActionSchema action){
         this->last_action = action;
-    }
+    }*/
 
     int get_action_id(){
         return this->action_id;
@@ -116,9 +111,9 @@ public:
         last_state = &s;
     }*/
 
-    DBState get_state() const {
+    /*DBState get_state() const {
         return last_state;
-    }
+    }*/
 
 };
 
@@ -151,7 +146,7 @@ public:
      * instantiation of the action schema.
      */
     virtual std::vector<LiftedOperatorId> get_applicable_actions(
-            const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables) = 0;
+            const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables, DBState &old_state) = 0;
 
     /**
      * Generate the state that results from applying the given action to the given state.
