@@ -72,23 +72,17 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         StateID sid = queue.remove_min();
         SearchNode &node = space.get_node(sid);
 
-        if(sid.id()==1128){
-            cout << "ITS HERE" << endl;
-            cout << "State Id: " << sid.id() << endl;
-            cout << thesis_state_memory.count(sid.id()) << endl;
-        }
 
         
 
         //Get the thesis object that belongs to the state form the queue -- for now hope the sid is unique
         
         ThesisClass old_thesis = thesis_state_memory.at(sid.id());
-        //std::vector<std::vector<Table>> thesis_current_tables = thesis_join_table_per_state.at(sid.id());
-        //cout << thesis_current_tables.size() << endl;
-        //remove the thesis object from memory
-        
-        thesis_state_memory.erase(sid.id());
 
+        //remove the thesis object from memory
+        /*if(!hack){ 
+            thesis_state_memory.erase(sid.id());
+        }*/
         int h = node.h;
         int g = node.g;
         if (node.status == SearchNode::Status::CLOSED) {
@@ -96,8 +90,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         }
         node.close();
         statistics.report_f_value_progress(h); // In GBFS f = h.
+        
         statistics.inc_expanded();
-
+        
         if (h < heuristic_layer) {
             heuristic_layer = h;
             cout << "New heuristic value expanded: h=" << h
@@ -110,7 +105,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         DBState state = packer.unpack(space.get_state(sid));
 
         
-
+       
         if (check_goal(task, generator, timer_start, state, node, space)) return utils::ExitCode::SUCCESS;
 
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
@@ -122,8 +117,11 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             }else{
                 old_state = state;
             }
+            
             auto applicable = generator.get_applicable_actions(action, state,task, old_thesis,
                                 thesis_join_table_per_state.at(old_thesis.get_parent_state_id()),old_state);
+            
+            
             //std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
             /*if(action.get_name() == "dummy" && old_thesis.is_enabled()){
                 //cout << "\t State-Id: " << sid.id() << " Last Action: " << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name() << endl;
@@ -149,7 +147,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             
             
             statistics.inc_generated(applicable.size());
-
+            
             for (const LiftedOperatorId& op_id:applicable) {
                 //Create one new Thesis object per state
                 ThesisClass thesis_successor(false,action);
@@ -159,11 +157,11 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 
-                
                 //thesis_successor.set_initial_tables(*(old_thesis.get_initial_tables()));
                 //thesis_successor.set_join_tables(*(old_thesis.get_join_tables()));
                 //thesis_successor.set_current_tables(&thesis_join_table_per_state.at(sid.id()));
                 thesis_successor.set_parent_state_id(sid.id());
+
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);
@@ -176,12 +174,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                         statistics.inc_pruned_states();
 
                         thesis_state_memory.insert({child_node.state_id.id(),thesis_successor});
-                        if(child_node.state_id.id()==1128){
-                            cout << "Deadend node 1128 was found" << endl;
-                        }
-                        if(sid.id()==1128){
-                            cout << "Node 1128 found deadend node " << child_node.state_id.id() << endl;
-                        }
 
                         //create a new join_table memory for the new state
                         std::vector<std::vector<Table>> thesis_join_table_memory;
@@ -198,12 +190,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                     queue.do_insertion(child_node.state_id, make_pair(new_h, dist));
 
                     thesis_state_memory.insert({child_node.state_id.id(),thesis_successor});
-                    if(child_node.state_id.id()==1128){
-                            cout << "Node 1128 was generated" << endl;
-                    }
-                    if(sid.id()==1128){
-                        cout << "Node 1128 generated node " << child_node.state_id.id() << endl;
-                    }
                     //create a new join_table memory for the new state
                     std::vector<std::vector<Table>> thesis_join_table_memory;
                     thesis_join_table_memory.resize(task.get_action_schemas().size());
@@ -217,12 +203,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                         queue.do_insertion(child_node.state_id, make_pair(new_h, dist));
 
                         thesis_state_memory.insert_or_assign(child_node.state_id.id(),thesis_successor);
-                        if(child_node.state_id.id()==1128){
-                            cout << "Node 1128 was reopened" << endl;
-                        }
-                        if(sid.id()==1128){
-                            cout << "Node 1128 reopened node " << child_node.state_id.id() << endl;
-                        }
                         //create a new join_table memory for the new state
                         std::vector<std::vector<Table>> thesis_join_table_memory;
                         thesis_join_table_memory.resize(task.get_action_schemas().size());
@@ -236,6 +216,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         //doing this with pointer was a pain, so pointerless for now
         //DISREGARD
         //thesis_join_table_per_state.insert_or_assign(sid.id(),thesis_current_tables);
+        
     }
 
     print_no_solution_found(timer_start);

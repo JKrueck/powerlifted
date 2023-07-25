@@ -282,6 +282,9 @@ void YannakakisSuccessorGenerator::filter_delete( std::vector<std::vector<Table>
                     //keep the counter on the right position
                     auto pos = thesis_tables.at(action_id).at(i).tuples.erase(thesis_tables.at(action_id).at(i).tuples.begin()+j);
                     j = pos - thesis_tables.at(action_id).at(i).tuples.begin();
+                    if(j>=thesis_tables.at(action_id).at(i).tuples.size()){
+                        break;
+                    }
                 }else{
                     j++;
                     if(j>=thesis_tables.at(action_id).at(i).tuples.size()){
@@ -373,6 +376,9 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     auto res = parse_precond_into_join_program(actiondata, mod_state, tables);
     if (!res)
         return Table::EMPTY_TABLE();
+    
+    assert(!tables.empty());
+    assert(tables.size() == actiondata.relevant_precondition_atoms.size());
 
     for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
             size_t s = semi_join(tables[sj.second], tables[sj.first]);
@@ -380,9 +386,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 return Table::EMPTY_TABLE();
             }
     }
-
-    assert(!tables.empty());
-    assert(tables.size() == actiondata.relevant_precondition_atoms.size());
 
 
     const JoinTree &jt = join_trees[action.get_index()];
@@ -487,7 +490,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
  */
 Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables, DBState &old_state)
 {
-
     if (action.is_ground()) {
         throw std::runtime_error("Shouldn't be calling instantiate() on a ground action");
     }
@@ -519,7 +521,6 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         //thesis.set_initial_tables(tables);
 
         const JoinTree &jt = join_trees[action.get_index()];
-
         std::unordered_map<int,std::vector<int>> thesis_indices;
         for (const auto &j : jt.get_order()) {
             //thesis_indices.insert({j.first,tables.at(j.first).tuple_index});
@@ -555,7 +556,6 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             }
             //thesis_table = copy;
         }
-
         // For the case where the action schema is cyclic
         Table &working_table = tables[remaining_join[action.get_index()][0]];
         for (size_t i = 1; i < remaining_join[action.get_index()].size(); ++i) {
