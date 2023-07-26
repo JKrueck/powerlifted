@@ -121,7 +121,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             auto applicable = generator.get_applicable_actions(action, state,task, old_thesis,
                                 thesis_join_table_per_state.at(old_thesis.get_parent_state_id()),old_state);
             
-            thesis_join_table_per_state.at(sid.id()) = thesis_join_table_per_state.at(old_thesis.get_parent_state_id());
+            thesis_join_table_per_state.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_per_state.at(old_thesis.get_parent_state_id()).at(action.get_index()));
             //std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
             /*if(action.get_name() == "dummy" && old_thesis.is_enabled()){
                 //cout << "\t State-Id: " << sid.id() << " Last Action: " << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name() << endl;
