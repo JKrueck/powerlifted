@@ -358,15 +358,22 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             new_relations[i] = Relation(i,std::move(tuples));
         }
     }
-    //Save for which tables we need to re compute the hash join
+    //Save for which tables we need to re compute the hash join -- there can be more tables than predicates because of static preds
     std::unordered_map<int,bool> compute_hash_join;
-    for(long unsigned int i=0;i<new_relations.size();i++){
-        if(new_relations.at(i).tuples.size()!= 0){
+    for (unsigned long i=0; i<action.get_precondition().size();i++){
+        if(new_relations.at(action.get_precondition().at(i).get_predicate_symbol_idx()).tuples.size()!= 0){
             compute_hash_join.insert({i,true});
         }else{
             compute_hash_join.insert({i,false});
         }
     }
+    /*for(long unsigned int i=0;i<new_relations.size();i++){
+        if(new_relations.at(i).tuples.size()!= 0){
+            compute_hash_join.insert({i,true});
+        }else{
+            compute_hash_join.insert({i,false});
+        }
+    }*/
     std::vector<bool> nullary = state.get_nullary_atoms();
     //Create a modified state with the new relations
     DBState mod_state = DBState(std::move(new_relations), std::move(nullary));
@@ -379,6 +386,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     
     assert(!tables.empty());
     assert(tables.size() == actiondata.relevant_precondition_atoms.size());
+
+   
 
     for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
             size_t s = semi_join(tables[sj.second], tables[sj.first]);

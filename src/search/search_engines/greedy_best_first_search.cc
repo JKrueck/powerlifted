@@ -75,10 +75,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
         
 
-        //Get the thesis object that belongs to the state form the queue -- for now hope the sid is unique
         
-        ThesisClass old_thesis = thesis_state_memory.at(sid.id());
-
         //remove the thesis object from memory
         /*if(!hack){ 
             thesis_state_memory.erase(sid.id());
@@ -104,7 +101,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         assert(sid.id() >= 0 && (unsigned) sid.id() < space.size());
         DBState state = packer.unpack(space.get_state(sid));
 
-        
+        //Get the thesis object that belongs to the state form the queue -- for now hope the sid is unique
+        ThesisClass old_thesis = thesis_state_memory.at(sid.id());
+        //remove the thesis object from memory
+        thesis_state_memory.erase(sid.id());
        
         if (check_goal(task, generator, timer_start, state, node, space)) return utils::ExitCode::SUCCESS;
 
