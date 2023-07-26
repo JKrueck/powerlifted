@@ -121,12 +121,12 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             auto applicable = generator.get_applicable_actions(action, state,task, old_thesis,
                                 thesis_join_table_per_state.at(old_thesis.get_parent_state_id()),old_state);
             
-            
+            thesis_join_table_per_state.at(sid.id()) = thesis_join_table_per_state.at(old_thesis.get_parent_state_id());
             //std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
             /*if(action.get_name() == "dummy" && old_thesis.is_enabled()){
                 //cout << "\t State-Id: " << sid.id() << " Last Action: " << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name() << endl;
                 int stop = 1;
-                for( auto it:old_thesis.get_join_tables()->back().tuples){
+                for( auto it: thesis_join_table_per_state.at(old_thesis.get_parent_state_id())){
                     for(auto inst:it){
                         cout << inst << endl;
                     }
@@ -161,6 +161,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 //thesis_successor.set_join_tables(*(old_thesis.get_join_tables()));
                 //thesis_successor.set_current_tables(&thesis_join_table_per_state.at(sid.id()));
                 thesis_successor.set_parent_state_id(sid.id());
+                //save the new intermediate join tables
+                
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
                 int dist = g + action.get_cost();
@@ -195,6 +197,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                     thesis_join_table_memory.resize(task.get_action_schemas().size());
                     thesis_join_table_per_state.insert({child_node.state_id.id(),thesis_join_table_memory});
                     thesis_previous_state.insert_or_assign(child_node.state_id,sid);
+
+                    
                 }
                 else {
                     if (dist < child_node.g) {
@@ -216,7 +220,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         //doing this with pointer was a pain, so pointerless for now
         //DISREGARD
         //thesis_join_table_per_state.insert_or_assign(sid.id(),thesis_current_tables);
-        
     }
 
     print_no_solution_found(timer_start);
