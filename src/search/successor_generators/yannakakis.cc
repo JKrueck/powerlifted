@@ -283,13 +283,13 @@ void YannakakisSuccessorGenerator::filter_delete( std::vector<std::vector<Table>
                     auto pos = thesis_tables.at(action_id).at(i).tuples.erase(thesis_tables.at(action_id).at(i).tuples.begin()+j);
                     j = pos - thesis_tables.at(action_id).at(i).tuples.begin();
                     thesis_was_changed.at(i) = true;
-                    if(j>thesis_tables.at(action_id).at(i).tuples.size()){
+                    if(j>=thesis_tables.at(action_id).at(i).tuples.size()){
                         break;
                     }
                 }else{
                     j++;
                     thesis_was_changed.at(i) = false;
-                    if(j>thesis_tables.at(action_id).at(i).tuples.size()){
+                    if(j>=thesis_tables.at(action_id).at(i).tuples.size()){
                         break;
                     }
                 }
