@@ -270,12 +270,18 @@ void YannakakisSuccessorGenerator::get_distinguished_variables(const ActionSchem
     return thesis.get_table_copy_at_idx(action.get_index());
 
 }*/
+//definitely need something better for this
+//everything needs to be sorted in the same way or the diff operation doesnt work
 void YannakakisSuccessorGenerator::filter_delete( std::vector<std::vector<Table>> &thesis_tables,std::vector<GroundAtom> &diff_delete, int action_id, std::vector<bool> &thesis_was_changed){
+    for(auto diff_it:diff_delete){
+        std::sort(diff_it.begin(),diff_it.end());
+    }
     for(long unsigned int i=0; i<thesis_tables.at(action_id).size();i++){
         //cout << "Before del correction: "<< thesis_tables.at(action_id).at(i).tuples.size() << endl;
         for(long unsigned int j=0; j<thesis_tables.at(action_id).at(i).tuples.size();){
             //Take the intersection between the deleted atoms and the tuple; if the result is non-zero delete it
             for(auto diff_it:diff_delete){ 
+                std::sort(thesis_tables.at(action_id).at(i).tuples.at(j).begin(),thesis_tables.at(action_id).at(i).tuples.at(j).end());
                 GroundAtom result;
                 std::set_difference(diff_it.begin(),diff_it.end(),thesis_tables.at(action_id).at(i).tuples.at(j).begin(),thesis_tables.at(action_id).at(i).tuples.at(j).end(), std::inserter(result,result.begin()));
                 if(result.size() == 0){
@@ -301,7 +307,7 @@ void YannakakisSuccessorGenerator::filter_delete( std::vector<std::vector<Table>
 
 Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables, DBState &old_state)
 {
-    //cout << "used" << endl;
+    cout << "used" << endl;
     std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_add_diff;
     std::vector<GroundAtom> diff_delete;
     //Find the add-effect differences between the current state and the state when this action was last used
@@ -366,48 +372,60 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     //Save for which tables we need to re compute the hash join -- there can be more tables than predicates because of static preds
     std::unordered_map<int,bool> compute_hash_join;
     for (unsigned long i=0; i<action.get_precondition().size();i++){
-        if(new_relations.at(action.get_precondition().at(i).get_predicate_symbol_idx()).tuples.size()!= 0){
+        if(predicate_to_add_diff.count(action.get_precondition().at(i).get_predicate_symbol_idx())!= 0){
             compute_hash_join.insert({i,true});
         }else{
             compute_hash_join.insert({i,false});
         }
     }
-    for (unsigned long i=0; i<thesis_tables.at(action.get_index()).size();i++){
-        if(thesis_was_changed.at(i)){
-            compute_hash_join.insert_or_assign(i,true);
-        }
-    }
-    /*for(long unsigned int i=0;i<new_relations.size();i++){
-        if(new_relations.at(i).tuples.size()!= 0){
-            compute_hash_join.insert({i,true});
-        }else{
-            compute_hash_join.insert({i,false});
-        }
-    }*/
+    
+   
     std::vector<bool> nullary = state.get_nullary_atoms();
     //Create a modified state with the new relations
+    /*DBState mod_state;
+    if(action.get_index()==8){
+        int stop1313 = 1;
+        mod_state = state;
+        cout << "Parent State: " << thesis.get_parent_state_id() << endl;
+    }else{
+        mod_state = DBState(std::move(new_relations), std::move(nullary));
+    }*/
     DBState mod_state = DBState(std::move(new_relations), std::move(nullary));
 
     const auto &actiondata = action_data[action.get_index()];
     vector<Table> tables;
     auto res = parse_precond_into_join_program(actiondata, mod_state, tables);
-    if (!res)
+    if (!res){
+        //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
+        //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
+        std::vector<Table> thesis_empty_joins;
+        thesis_tables.at(action.get_index()) = std::move(thesis_empty_joins);
         return Table::EMPTY_TABLE();
-    
+    }
     assert(!tables.empty());
     assert(tables.size() == actiondata.relevant_precondition_atoms.size());
-
    
-
     for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
             size_t s = semi_join(tables[sj.second], tables[sj.first]);
             if (s == 0) {
+                //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
+                //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
+                std::vector<Table> thesis_empty_joins;
+                thesis_tables.at(action.get_index()) = std::move(thesis_empty_joins);
+                cout << "tes3" << endl;
                 return Table::EMPTY_TABLE();
             }
     }
 
-
+    sample rock ist ganz komisch
     const JoinTree &jt = join_trees[action.get_index()];
+
+    for (unsigned long i=0; i<thesis_tables.at(action.get_index()).size();i++){
+        if(thesis_was_changed.at(i)){
+            compute_hash_join.insert_or_assign(jt.get_order().at(i).second,true);
+        }
+    }
+
 
     std::unordered_map<int,std::vector<int>> thesis_indices;
     int counter = 0;
@@ -451,6 +469,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             filter_static(action, working_table);
             project(working_table, project_over);
             if (working_table.tuples.empty()) {
+                cout << "test" << endl;
                 return working_table;
             }
             
@@ -475,6 +494,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         hash_join(working_table, tables[remaining_join[action.get_index()][i]]);
         filter_static(action, working_table);
         if (working_table.tuples.empty()) {
+            cout << "test2" << endl;
             return working_table;
         }
     }
@@ -514,14 +534,13 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
     }
 
 
-
     if(thesis.is_enabled() && thesis_tables.at(action.get_index()).size()!=0){
         Table thesis_return_table = thesis_instantiate2(action,state,task, thesis, thesis_tables, old_state);
         return thesis_return_table;
     }else{
-        if(action.get_index() == 2){
-            int stop = 1;
-        }
+        if(action.get_index()==8){
+            cout << "Parent State: " << thesis.get_parent_state_id() << endl;
+        }   
         const auto &actiondata = action_data[action.get_index()];
 
         vector<Table> tables;

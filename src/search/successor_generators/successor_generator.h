@@ -41,12 +41,13 @@ private:
     std::vector<std::unordered_map<int,std::vector<int>>> predicate_tuple_indices;
     bool thesis_enable;
     //ActionSchema last_action;
-    int action_id;
+    
     //It should be an option to not save the whole state but use the dedicated state unpacker of powerlifted
     //DBState last_state;
     int parent_state_id;
     
 public:
+    int action_id;
     ThesisClass(bool enable, ActionSchema act) :   thesis_enable(enable),action_id(act.get_index())
     {}
 
