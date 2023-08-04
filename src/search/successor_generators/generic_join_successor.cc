@@ -514,6 +514,7 @@ std::vector<LiftedOperatorId> GenericJoinSuccessor::get_applicable_actions(
             free_var_indices, map_indices_to_position, tuple_with_const, ordered_tuple);
         applicable.emplace_back(action.get_index(), std::move(ordered_tuple));
     }
+    
     return applicable;
 }
 
