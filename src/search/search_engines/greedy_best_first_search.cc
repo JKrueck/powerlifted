@@ -107,14 +107,14 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         //remove the thesis object from memory
         thesis_state_memory.erase(sid.id());
 
-        if(sid.id() != 0) {
+        /*if(sid.id() != 0) {
             cout << "action used to get here: " << old_thesis.get_action_id()<< endl;
             cout << "with instantiation: ";
             for (auto it:test_map.at(sid.id())){
                 cout << it << " ";
             }
             cout << endl;
-        }
+        }*/
         
 
         //get all hash tables that were computed in the previous state
@@ -137,15 +137,15 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
            
-            std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
-            cout << "instantiations: "<< endl;
+            //std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
+            /*cout << "instantiations: "<< endl;
             for(auto it:applicable){
                 cout << "\t";
                 for(auto it2:it.get_instantiation()){
                     cout << it2 << " ";
                 }  
                 cout << endl;
-            }
+            }*/
             /*if(action.get_name() == "dummy" && old_thesis.is_enabled()){
                 //cout << "\t State-Id: " << sid.id() << " Last Action: " << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name() << endl;
                 int stop = 1;
