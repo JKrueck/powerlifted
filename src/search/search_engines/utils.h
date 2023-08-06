@@ -16,11 +16,12 @@ class SparseStatePacker;
 class Task;
 
 
-void print_no_solution_found(const clock_t& timer_start);
+void print_no_solution_found(const clock_t& timer_start, double thesis_time_needed);
 
 void print_goal_found(
     const SuccessorGenerator& generator,
-    const clock_t& timer_start);
+    const clock_t& timer_start,
+    double thesis_time_needed);
 
 
 void extract_plan(

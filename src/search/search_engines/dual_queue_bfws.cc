@@ -61,7 +61,8 @@ utils::ExitCode DualQueueBFWS<PackedStateT>::search(const Task &task,
 
     map_state_to_evaluators.insert({root_node.state_id.id(), NodeNovelty(gc_h0, unachieved_atoms_s0)});
 
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
+    double thesis_time = 0.0;
+    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time)) return utils::ExitCode::SUCCESS;
 
     int goalcount_layer = gc_h0;
     while ((not regular_open_list.empty()) or (not preferred_open_list.empty())) {
@@ -141,7 +142,7 @@ utils::ExitCode DualQueueBFWS<PackedStateT>::search(const Task &task,
                 statistics.inc_evaluated_states();
 
                 child_node.open(dist, novelty_value);
-                if (check_goal(task, generator, timer_start, s, child_node, space)) return utils::ExitCode::SUCCESS;
+                if (check_goal(task, generator, timer_start, s, child_node, space, thesis_time)) return utils::ExitCode::SUCCESS;
                 if (is_preferred) {
                     preferred_open_list.do_insertion(child_node.state_id,
                                                      {novelty_value, unsatisfied_goals, dist});
@@ -154,7 +155,7 @@ utils::ExitCode DualQueueBFWS<PackedStateT>::search(const Task &task,
         }
     }
 
-    print_no_solution_found(timer_start);
+    print_no_solution_found(timer_start, thesis_time);
 
     return utils::ExitCode::SEARCH_UNSOLVABLE;
 

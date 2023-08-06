@@ -91,7 +91,8 @@ utils::ExitCode BreadthFirstWidthSearch<PackedStateT>::search(const Task &task,
 
     map_state_to_evaluators.insert({root_node.state_id.id(), NodeNovelty(gc_h0, unachieved_atoms_s0)});
 
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
+    double thesis_time = 0.0;
+    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time)) return utils::ExitCode::SUCCESS;
 
     while (not queue.empty()) {
         StateID sid = queue.remove_min();
@@ -176,14 +177,14 @@ utils::ExitCode BreadthFirstWidthSearch<PackedStateT>::search(const Task &task,
                     continue;
 
                 child_node.open(dist, novelty_value);
-                if (check_goal(task, generator, timer_start, s, child_node, space)) return utils::ExitCode::SUCCESS;
+                if (check_goal(task, generator, timer_start, s, child_node, space, thesis_time)) return utils::ExitCode::SUCCESS;
                 queue.do_insertion(child_node.state_id, {novelty_value, unsatisfied_goals, dist});
                 map_state_to_evaluators.insert({child_node.state_id.id(), NodeNovelty(unsatisfied_goals, unsatisfied_relevant_atoms)});
             }
         }
     }
 
-    print_no_solution_found(timer_start);
+    print_no_solution_found(timer_start, thesis_time);
 
     if (prune_states)
         return utils::ExitCode::SEARCH_UNSOLVED_INCOMPLETE;

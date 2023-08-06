@@ -125,7 +125,8 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
 
     map_state_to_evaluators.insert({root_node.state_id.id(), NodeNovelty(gc_h0, unachieved_atoms_s0)});
 
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
+    double thesis_time = 0.0;
+    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time)) return utils::ExitCode::SUCCESS;
 
     int heuristic_layer = initial_h;
     while (not open_list.empty()) {
@@ -213,7 +214,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                 if (child_node.status==SearchNode::Status::NEW) {
                     // Inserted for the first time in the map
                     child_node.open(dist, h);
-                    if (check_goal(task, generator, timer_start, s, child_node, space))
+                    if (check_goal(task, generator, timer_start, s, child_node, space, thesis_time))
                         return utils::ExitCode::SUCCESS;
                     open_list.do_insertion(child_node.state_id,
                                            h,
@@ -238,7 +239,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
         }
     }
 
-    print_no_solution_found(timer_start);
+    print_no_solution_found(timer_start,thesis_time);
 
     return utils::ExitCode::SEARCH_UNSOLVABLE;
 

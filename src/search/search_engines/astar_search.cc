@@ -40,7 +40,8 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
     statistics.report_f_value_progress(heuristic_layer);
     queue.do_insertion(root_node.state_id, make_pair(heuristic_layer+0, heuristic_layer));
 
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
+    double thesis_time = 0.0;
+    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time)) return utils::ExitCode::SUCCESS;
     
     int counter = 0;
 
@@ -80,7 +81,7 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
         assert(sid.id() >= 0 && (unsigned) sid.id() < space.size());
 
         DBState state = packer.unpack(space.get_state(sid));
-        if (check_goal(task, generator, timer_start, state, node, space)) return utils::ExitCode::SUCCESS;
+        if (check_goal(task, generator, timer_start, state, node, space, thesis_time)) return utils::ExitCode::SUCCESS;
         
 
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
@@ -143,7 +144,7 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
         counter++;
     }
 
-    print_no_solution_found(timer_start);
+    print_no_solution_found(timer_start, thesis_time);
 
     return utils::ExitCode::SEARCH_UNSOLVABLE;
 }

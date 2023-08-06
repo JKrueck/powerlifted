@@ -278,6 +278,7 @@ void YannakakisSuccessorGenerator::filter_delete( std::vector<std::vector<Table>
     }
     for(long unsigned int i=0; i<thesis_tables.at(action_id).size();i++){
         //cout << "Before del correction: "<< thesis_tables.at(action_id).at(i).tuples.size() << endl;
+        bool flag = false;
         for(long unsigned int j=0; j<thesis_tables.at(action_id).at(i).tuples.size();){
             //copy for sorting
             Table thesis_sorted_table = thesis_tables.at(action_id).at(i);
@@ -285,25 +286,25 @@ void YannakakisSuccessorGenerator::filter_delete( std::vector<std::vector<Table>
             for(auto diff_it:diff_delete){ 
                 std::sort(thesis_sorted_table.tuples.at(j).begin(),thesis_sorted_table.tuples.at(j).end());
                 GroundAtom result;
-                std::set_difference(diff_it.begin(),diff_it.end(),thesis_sorted_table.tuples.at(j).begin(),thesis_sorted_table.tuples.at(j).end(), std::inserter(result,result.begin()));
-                if(result.size() == 0){
+                std::set_intersection(diff_it.begin(),diff_it.end(),thesis_sorted_table.tuples.at(j).begin(),thesis_sorted_table.tuples.at(j).end(), std::inserter(result,result.begin()));
+                if(result.size() != 0){
                     //keep the counter on the right position
                     auto pos = thesis_tables.at(action_id).at(i).tuples.erase(thesis_tables.at(action_id).at(i).tuples.begin()+j);
                     j = pos - thesis_tables.at(action_id).at(i).tuples.begin();
-                    thesis_was_changed.at(i) = true;
+                    flag = true;
                     if(j>=thesis_tables.at(action_id).at(i).tuples.size()){
                         break;
                     }
                 }else{
                     j++;
-                    thesis_was_changed.at(i) = false;
                     if(j>=thesis_tables.at(action_id).at(i).tuples.size()){
                         break;
                     }
                 }
-            } 
+            }
+            
         }
-        //cout << "After del correction: "<< thesis_tables.at(action_id).at(i).tuples.size() << endl;
+        thesis_was_changed.at(i) = flag; 
     }
 }
 
@@ -356,8 +357,10 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     thesis_was_changed.resize(thesis_tables.at(action.get_index()).size());
     if(diff_delete.size() != 0) {
         filter_delete(thesis_tables,diff_delete, action.get_index(), thesis_was_changed);
+        //cout << "Finished dealing with del effects" << endl;
     }
-    //cout << "Finished dealing with del effects" << endl;
+    
+   
     
     //Create a new relations vector that only contains the add effect changes
     std::vector<Relation> new_relations;
@@ -402,6 +405,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
         std::vector<Table> thesis_empty_joins;
         thesis_tables.at(action.get_index()) = std::move(thesis_empty_joins);
+        //cout << "err1" << endl;
         return Table::EMPTY_TABLE();
     }
     assert(!tables.empty());
@@ -413,6 +417,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
                 //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
                 std::vector<Table> thesis_empty_joins;
+                //cout << "err2" << endl;
                 thesis_tables.at(action.get_index()) = std::move(thesis_empty_joins);
                 return Table::EMPTY_TABLE();
             }
@@ -443,8 +448,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     for (const auto &j : jt.get_order()) {//compute_hash_join.at(j.first) || compute_hash_join.at(j.second)
         if(compute_hash_join.at(j.first) || compute_hash_join.at(j.second)){
 
-            //thesis_indices.insert({j.first,tables.at(j.first).tuple_index});
-            //thesis_indices.insert({j.second,tables.at(j.second).tuple_index});
+            //cout << "computed new" << endl;
 
             unordered_set<int> project_over;
             for (auto x : tables[j.second].tuple_index) {
@@ -480,13 +484,16 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             filter_static(action, working_table);
             project(working_table, project_over);
             if (working_table.tuples.empty()) {
+                std::vector<Table> thesis_empty_joins;
+                //cout << "err3" << endl;
+                thesis_tables.at(action.get_index()) = std::move(thesis_empty_joins);
                 return working_table;
             }
             
             //compute_hash_join.insert_or_assign(j.first,true);
             compute_hash_join.insert_or_assign(j.second,true);
         }else{
-            //tables[j.second] = thesis.get_join_tables()->at(counter);
+            //cout << "used old" << endl;
             tables[j.second] = thesis_tables.at(action.get_index()).at(counter);
         }
         counter++;
@@ -500,6 +507,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     
     
     Table &working_table = tables[remaining_join[action.get_index()][0]];
+    //remaining_join[action.get_index()].size()==1
     if(remaining_join[action.get_index()].size()==1){
         working_table = thesis_tables.at(action.get_index()).back();
     }else{
@@ -512,7 +520,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             }
         }
     }
-    
     
 
     /*if(action.get_index()==1){
@@ -578,6 +585,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
             size_t s = semi_join(tables[sj.second], tables[sj.first]);
             if (s == 0) {
+                cout << " yann err1" << endl;
                 return Table::EMPTY_TABLE();
             }
         }
@@ -617,6 +625,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             //}
             project(working_table, project_over);
             if (working_table.tuples.empty()) {
+                cout << " yann err2" << endl;
                 return working_table;
             }
             //thesis_table = copy;
@@ -627,6 +636,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             hash_join(working_table, tables[remaining_join[action.get_index()][i]]);
             filter_static(action, working_table);
             if (working_table.tuples.empty()) {
+                cout << " yann err3" << endl;
                 return working_table;
             }
         }

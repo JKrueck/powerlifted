@@ -48,7 +48,8 @@ utils::ExitCode LazySearch<PackedStateT>::search(const Task &task,
     statistics.report_f_value_progress(heuristic_layer);
     regular_open_list.do_insertion(root_node.state_id, make_pair(heuristic_layer, 0));
 
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
+    double thesis_time = 0.0;
+    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time)) return utils::ExitCode::SUCCESS;
 
     while ((not regular_open_list.empty()) or (not preferred_open_list.empty())) {
         StateID sid = get_top_node(preferred_open_list, regular_open_list); //regular_open_list.remove_min();
@@ -83,7 +84,7 @@ utils::ExitCode LazySearch<PackedStateT>::search(const Task &task,
         }
         assert(sid.id() >= 0 && (unsigned) sid.id() < space.size());
 
-        if (check_goal(task, generator, timer_start, state, node, space)) return utils::ExitCode::SUCCESS;
+        if (check_goal(task, generator, timer_start, state, node, space, thesis_time)) return utils::ExitCode::SUCCESS;
 
 
 
@@ -120,7 +121,7 @@ utils::ExitCode LazySearch<PackedStateT>::search(const Task &task,
                 if (child_node.status==SearchNode::Status::NEW) {
                     // Inserted for the first time in the map
                     child_node.open(dist, h);
-                    if (check_goal(task, generator, timer_start, state, node, space))
+                    if (check_goal(task, generator, timer_start, state, node, space, thesis_time))
                         return utils::ExitCode::SUCCESS;
 
                     if (all_operators_preferred or is_preferred) {
@@ -143,7 +144,7 @@ utils::ExitCode LazySearch<PackedStateT>::search(const Task &task,
         }
     }
 
-    print_no_solution_found(timer_start);
+    print_no_solution_found(timer_start, thesis_time);
 
     return utils::ExitCode::SEARCH_UNSOLVABLE;
 }

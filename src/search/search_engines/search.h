@@ -38,7 +38,8 @@ public:
                     clock_t timer_start,
                     const DBState &state,
                     const SearchNode &node,
-                    const SearchSpace<PackedStateT> &space) const;
+                    const SearchSpace<PackedStateT> &space,
+                    double thesis_time) const;
 
 protected:
 

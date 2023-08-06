@@ -29,7 +29,8 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
     statistics.report_f_value_progress(root_node.f);
     queue.emplace(root_node.state_id);
 
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
+    double thesis_time = 0.0;
+    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time)) return utils::ExitCode::SUCCESS;
 
     //Save the intermediate join tables at a global level and per action
     std::vector<std::vector<Table>> thesis_join_table_memory;
@@ -104,7 +105,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
                 if (child_node.status == SearchNode::Status::NEW) {
                     child_node.open(node.f+1);
 
-                    if (check_goal(task, generator, timer_start, s, child_node, space)) return utils::ExitCode::SUCCESS;
+                    if (check_goal(task, generator, timer_start, s, child_node, space, thesis_time)) return utils::ExitCode::SUCCESS;
 
                     queue.emplace(child_node.state_id);
 
@@ -114,7 +115,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
         }
     }
 
-    print_no_solution_found(timer_start);
+    print_no_solution_found(timer_start, thesis_time);
 
     return utils::ExitCode::SEARCH_UNSOLVABLE;
 }

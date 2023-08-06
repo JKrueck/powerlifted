@@ -38,10 +38,11 @@ bool SearchBase::check_goal(const Task &task,
                        clock_t timer_start,
                        const DBState &state,
                        const SearchNode &node,
-                       const SearchSpace<PackedStateT> &space) const {
+                       const SearchSpace<PackedStateT> &space,
+                       double thesis_time) const {
     if (!task.is_goal(state)) return false;
 
-    print_goal_found(generator, timer_start);
+    print_goal_found(generator, timer_start, thesis_time);
     auto plan = space.extract_plan(node);
     print_plan(plan, task);
     return true;
@@ -50,8 +51,8 @@ bool SearchBase::check_goal(const Task &task,
 // explicit instantiations
 template bool SearchBase::check_goal<SparsePackedState>(
         const Task &task, const SuccessorGenerator &generator, clock_t timer_start,
-        const DBState &state, const SearchNode &node, const SearchSpace<SparsePackedState> &space) const;
+        const DBState &state, const SearchNode &node, const SearchSpace<SparsePackedState> &space, double thesis_time) const;
 
 template bool SearchBase::check_goal<ExtensionalPackedState>(
         const Task &task, const SuccessorGenerator &generator, clock_t timer_start,
-        const DBState &state, const SearchNode &node, const SearchSpace<ExtensionalPackedState> &space) const;
+        const DBState &state, const SearchNode &node, const SearchSpace<ExtensionalPackedState> &space, double thesis_time) const;

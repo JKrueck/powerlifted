@@ -22,7 +22,8 @@ template <class PackedStateT>
 utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                                                 SuccessorGenerator &generator,
                                                 Heuristic &heuristic)
-{
+{   
+    double thesis_time = 0.0;
     cout << "Starting greedy best first search" << endl;
     clock_t timer_start = clock();
     StatePackerT packer(task);
@@ -44,7 +45,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     statistics.report_f_value_progress(heuristic_layer);
     queue.do_insertion(root_node.state_id, make_pair(heuristic_layer, 0));
 
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
+    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time)) return utils::ExitCode::SUCCESS;
 
     
 
@@ -74,7 +75,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         StateID sid = queue.remove_min();
         SearchNode &node = space.get_node(sid);
 
-        
+        cout << "current state: " << sid.id() << endl;
 
         
         //remove the thesis object from memory
@@ -108,7 +109,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         thesis_state_memory.erase(sid.id());
 
         /*if(sid.id() != 0) {
-            cout << "action used to get here: " << old_thesis.get_action_id()<< endl;
+            cout << "action used to get here: " << old_thesis.get_action_id() << "->" << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name()<< endl;
             cout << "with instantiation: ";
             for (auto it:test_map.at(sid.id())){
                 cout << it << " ";
@@ -120,7 +121,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         //get all hash tables that were computed in the previous state
         thesis_join_table_at_state = thesis_join_table_memory.at(old_thesis.get_parent_state_id());
        
-        if (check_goal(task, generator, timer_start, state, node, space)) return utils::ExitCode::SUCCESS;
+        if (check_goal(task, generator, timer_start, state, node, space, thesis_time)) return utils::ExitCode::SUCCESS;
 
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
         // performance, we could implement some form of std iterator
@@ -131,13 +132,17 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             }else{
                 old_state = state;
             }
+            time_t thesis_timer = clock();
             auto applicable = generator.get_applicable_actions(action, state,task, old_thesis,
                                 thesis_join_table_at_state,old_state);
             
-
+            thesis_time += clock() - thesis_timer;
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
            
-            //std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
+            
+            std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
+            
+            
             /*cout << "instantiations: "<< endl;
             for(auto it:applicable){
                 cout << "\t";
@@ -188,10 +193,14 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
+                /*if(child_node.state_id.id()!=692){
+                    continue;
+                }*/
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);
                 statistics.inc_evaluations();
                 test_map.insert({child_node.state_id.id(),op_id.get_instantiation()});
+                
                 if (new_h == UNSOLVABLE_STATE) {
                     if (child_node.status == SearchNode::Status::NEW) {
                         // Only increase statistics for new dead-ends
@@ -243,6 +252,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                         thesis_previous_state.insert_or_assign(child_node.state_id,sid);
                     }
                 }
+                
             }
         }
         //After we have determined the join-tables of all actions for the current state save it again
@@ -251,7 +261,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         //thesis_join_table_per_state.insert_or_assign(sid.id(),thesis_current_tables);
     }
 
-    print_no_solution_found(timer_start);
+    print_no_solution_found(timer_start, thesis_time);
 
     return utils::ExitCode::SEARCH_UNSOLVABLE;
 }
