@@ -169,7 +169,7 @@ FullReducerSuccessorGenerator::FullReducerSuccessorGenerator(const Task &task)
  * @param staticInformation  Static predicates of the task
  * @return
  */
-Table FullReducerSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state, const Task &task,ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables, DBState &old_state
+Table FullReducerSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state, const Task &task,ThesisClass &thesis, std::vector<std::vector<std::pair<Table,bool>>> &thesis_tables, DBState &old_state
                                                 )
 {
     if (action.is_ground()) {

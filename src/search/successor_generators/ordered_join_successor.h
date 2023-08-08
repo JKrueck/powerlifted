@@ -24,7 +24,7 @@ public:
                                          std::vector<Table>& tables) override;
 
     Table instantiate(const ActionSchema &action, const DBState &state,const Task &task,
-                    ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables, DBState &old_state) override;
+                    ThesisClass &thesis,std::vector<std::vector<std::pair<Table,bool>>> &thesis_tables, DBState &old_state) override;
 
 };
 

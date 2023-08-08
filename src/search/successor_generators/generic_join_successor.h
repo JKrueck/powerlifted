@@ -45,7 +45,7 @@ public:
     explicit GenericJoinSuccessor(const Task &task);
 
     virtual Table instantiate(const ActionSchema &action, const DBState &state,
-            const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables, DBState &old_state);
+            const Task &task, ThesisClass &thesis, std::vector<std::vector<std::pair<Table,bool>>> &thesis_tables, DBState &old_state);
 
     /**
     * Create the set of tables corresponding to the precondition of the given action.
@@ -73,7 +73,7 @@ public:
 
 
     std::vector<LiftedOperatorId> get_applicable_actions(
-            const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables, DBState &old_state) override;
+            const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<std::pair<Table,bool>>> &thesis_tables, DBState &old_state) override;
 
     const GroundAtom tuple_to_atom(const std::vector<int> &tuple, const Atom &eff);
 
@@ -83,6 +83,7 @@ public:
     const std::vector<std::pair<int, GroundAtom>> &get_added_atoms() const override {
         return added_atoms;
     }
+
 
 protected:
     const StaticInformation& static_information;

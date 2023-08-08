@@ -94,7 +94,7 @@ utils::ExitCode AStarSearch<PackedStateT>::search(const Task &task,
             //std::unordered_set<int> thesis_matching;
             //Storage of the correspondence between tuple indices in the join tables and predicate index
             //std::unordered_map<int,std::vector<int>> thesis_indices;
-            std::vector<std::vector<Table>> thesis_join_table_per_state;
+            std::vector<std::vector<std::pair<Table,bool>>> thesis_join_table_per_state;
             auto applicable = generator.get_applicable_actions(action, state, task, old_thesis, thesis_join_table_per_state, state);
 
             //thesis_successor.insert_table(thes_table);

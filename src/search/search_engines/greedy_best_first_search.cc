@@ -47,20 +47,18 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
     if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time)) return utils::ExitCode::SUCCESS;
 
-    
-
     //Save the intermediate join tables at a global level and per action
-    std::vector<std::vector<Table>> thesis_join_table_at_state;
+    std::vector<std::vector<std::pair<Table,bool>>> thesis_join_table_at_state;
     thesis_join_table_at_state.resize(task.get_action_schemas().size());
     //As we always want to use the join tables from the prior state, we need to save all of them on a per state basis
     //To-Do: Think about when we don´t need them anymore and can delete them from memory
-    std::unordered_map<int,std::vector<std::vector<Table>>> thesis_join_table_memory; //great names...
+    std::unordered_map<int, std::vector<std::vector<std::pair<Table,bool>>>> thesis_join_table_memory; //great names...
     thesis_join_table_memory.insert({0,thesis_join_table_at_state});
 
     //Storage for classes per state
     //intended to work similar to queue
     std::unordered_map<int,ThesisClass> thesis_state_memory;
-    ThesisClass initial = ThesisClass(false,task.get_action_schema_by_index(0));
+    ThesisClass initial = ThesisClass(this->thesis_enabled,task.get_action_schema_by_index(0));
     initial.set_parent_state_id(0);
     thesis_state_memory.insert({0,initial});
 
@@ -117,7 +115,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             cout << endl;
         }*/
         
-
+        //generator.thesis_compute_del_impacts(task);
         //get all hash tables that were computed in the previous state
         thesis_join_table_at_state = thesis_join_table_memory.at(old_thesis.get_parent_state_id());
        
@@ -179,23 +177,44 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             for (const LiftedOperatorId& op_id:applicable) {
                 //Create one new Thesis object per state
                 ThesisClass thesis_successor(false,action);
+                time_t thesis_timer = clock();
                 if(this->thesis_enabled){
                     thesis_successor.set_status(true);
+                    std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_add_diff;
+                    std::unordered_map<int,bool> diff_delete;
+                    for(auto thesis_effects:action.get_effects()){
+                        if(thesis_effects.is_negated()){
+                            //GroundAtom thesis_delete_effect;
+                            //for(auto thesis_argument_it:thesis_effects.get_arguments()){
+                                //thesis_delete_effect.push_back(op_id.get_instantiation().at(thesis_argument_it.get_index()));
+                            //}
+                            diff_delete.insert_or_assign(thesis_effects.get_predicate_symbol_idx(),true);
+                        }else{
+                            GroundAtom thesis_add_effect;
+                            std::unordered_set<GroundAtom,TupleHash> thesis_set_storage;
+                            for(auto thesis_argument_it:thesis_effects.get_arguments()){
+                                thesis_add_effect.push_back(op_id.get_instantiation().at(thesis_argument_it.get_index()));
+                            }
+                            thesis_set_storage.insert(thesis_add_effect);
+                            predicate_to_add_diff.insert({thesis_effects.get_predicate_symbol_idx(),thesis_set_storage});
+                        }
+                    }
+                    thesis_time += clock() - thesis_timer;
+                    thesis_successor.set_add_effect_map(predicate_to_add_diff);
+                    thesis_successor.set_delete_effects(diff_delete);
                 }
+                thesis_successor.set_parent_state_id(sid.id());
+                thesis_successor.action_id = action.get_index();
 
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 
-                //thesis_successor.set_initial_tables(*(old_thesis.get_initial_tables()));
-                //thesis_successor.set_join_tables(*(old_thesis.get_join_tables()));
-                //thesis_successor.set_current_tables(&thesis_join_table_per_state.at(sid.id()));
-                thesis_successor.set_parent_state_id(sid.id());
-                thesis_successor.action_id = action.get_index();
+                
                 
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
-                /*if(child_node.state_id.id()!=692){
+                if(child_node.state_id.id()!=1){
                     continue;
-                }*/
+                }
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);
                 statistics.inc_evaluations();

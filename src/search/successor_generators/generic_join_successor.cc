@@ -26,7 +26,7 @@ GenericJoinSuccessor::GenericJoinSuccessor(const Task &task)
 }
 
 Table GenericJoinSuccessor::instantiate(const ActionSchema &action,
-                                        const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables, DBState &old_state)
+                                        const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<std::pair<Table,bool>>> &thesis_tables, DBState &old_state)
 {
 
     if (action.is_ground()) {
@@ -352,8 +352,6 @@ DBState GenericJoinSuccessor::generate_successor(
 
    
 
-
-    thesis_class->set_diff(diff);
     
     //Table new_thesis_table = thesis_class.get_table();
 
@@ -484,7 +482,7 @@ void GenericJoinSuccessor::apply_lifted_action_effects(const ActionSchema &actio
  * we know the actions are applicable.
  */
 std::vector<LiftedOperatorId> GenericJoinSuccessor::get_applicable_actions(
-        const ActionSchema &action, const DBState &state, const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables, DBState &old_state)
+        const ActionSchema &action, const DBState &state, const Task &task, ThesisClass &thesis, std::vector<std::vector<std::pair<Table,bool>>> &thesis_tables, DBState &old_state)
 {
     std::vector<LiftedOperatorId> applicable;
     if (is_trivially_inapplicable(state, action)) {

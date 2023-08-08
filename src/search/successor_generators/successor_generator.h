@@ -33,18 +33,14 @@ class ThesisClass
 {
 
 private:
-    //Storage for the hash-join matches; per action
-    std::vector<std::unordered_set<int>> thesis_match;
-    //Storage of the grounded action add effects; store add effect per predicate
-    std::vector<GroundAtom>diff;
-    //Storage of the correspondence between tuple indices in the join tables and predicate index; per action
-    std::vector<std::unordered_map<int,std::vector<int>>> predicate_tuple_indices;
     bool thesis_enable;
-    //ActionSchema last_action;
-    
     //It should be an option to not save the whole state but use the dedicated state unpacker of powerlifted
     //DBState last_state;
     int parent_state_id;
+    
+    //added and deleted atoms in comparison to the parent state of this object
+    std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> thesis_add_effect_map;
+    std::unordered_map<int,bool> thesis_delete_effects;
     
 public:
     int action_id;
@@ -55,6 +51,22 @@ public:
         
    
     //~ThesisClass();
+
+    void set_add_effect_map(std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> map){
+        this->thesis_add_effect_map = std::move(map);
+    }
+
+    std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> get_add_effect_map(){
+        return this->thesis_add_effect_map;
+    }
+
+    void set_delete_effects(std::unordered_map<int,bool> del_eff){
+        this->thesis_delete_effects = std::move(del_eff);
+    }
+
+    std::unordered_map<int,bool>  get_del_eff(){
+        return this->thesis_delete_effects;
+    }
 
 
     void set_parent_state_id(int id){
@@ -73,17 +85,6 @@ public:
         return this->action_id;
     }
 
-
-
-    std::unordered_set<int>* get_matches_at_idx(int idx){
-        return &this->thesis_match.at(idx);
-    }
-
-    //don´t now if the move is good here
-    void insert_match(std::unordered_set<int> match){
-        this->thesis_match.push_back(std::move(match));
-    }
-
     bool is_enabled() const{
         return thesis_enable;
     }
@@ -92,21 +93,7 @@ public:
         this->thesis_enable = status;
     }
 
-    void set_diff( std::vector<GroundAtom> set_diff){
-        this->diff = set_diff;
-    }
 
-    std::vector<GroundAtom>* get_diff(){
-        return &this->diff;
-    }
-
-    void insert_tuple_indices(std::unordered_map<int,std::vector<int>> indices){
-        this->predicate_tuple_indices.push_back(indices);
-    }
-
-    std::unordered_map<int,std::vector<int>>* get_tuple_indices_at_idx(int idx){
-       return &this->predicate_tuple_indices.at(idx);
-    }
 
     /*void set_state(DBState& s)const{
         last_state = &s;
@@ -137,6 +124,7 @@ public:
 
     std::vector<std::pair<int, std::vector<int>>> added_atoms;
 
+
     /**
      * Compute the instantiations of the given action schema that are applicable in
      * the given state.
@@ -147,7 +135,7 @@ public:
      * instantiation of the action schema.
      */
     virtual std::vector<LiftedOperatorId> get_applicable_actions(
-            const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<Table>> &thesis_tables, DBState &old_state) = 0;
+            const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<std::pair<Table,bool>>> &thesis_tables, DBState &old_state) = 0;
 
     /**
      * Generate the state that results from applying the given action to the given state.
