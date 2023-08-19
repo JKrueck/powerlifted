@@ -173,7 +173,8 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
             ThesisClass thesis_successor(true,action);
 
             std::vector<std::vector<std::pair<Table,bool>>> thesis_join_table_per_state;
-            auto applicable = generator.get_applicable_actions(action, state,task, thesis_successor, thesis_join_table_per_state, state);
+            std::vector<std::vector<Table>> thesis_semijoin;
+            auto applicable = generator.get_applicable_actions(action, state,task, thesis_successor, thesis_join_table_per_state, thesis_semijoin, state);
             
             //thesis_successor.insert_table(thes_table);
             //thesis_successor.insert_tuple_indices(thesis_indices);

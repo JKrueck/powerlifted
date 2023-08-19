@@ -135,7 +135,7 @@ public:
      * instantiation of the action schema.
      */
     virtual std::vector<LiftedOperatorId> get_applicable_actions(
-            const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<std::pair<Table,bool>>> &thesis_tables, DBState &old_state) = 0;
+            const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<std::pair<Table,bool>>> &thesis_tables, std::vector<std::vector<Table>> &thesis_semijoin, DBState &old_state) = 0;
 
     /**
      * Generate the state that results from applying the given action to the given state.
