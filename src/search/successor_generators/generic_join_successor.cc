@@ -487,6 +487,14 @@ std::vector<LiftedOperatorId> GenericJoinSuccessor::get_applicable_actions(
 {
     std::vector<LiftedOperatorId> applicable;
     if (is_trivially_inapplicable(state, action)) {
+        if(thesis.is_enabled()){
+            //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
+            //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
+            std::vector<std::pair<Table,bool>> thesis_empty_joins;
+            std::vector<Table> thesis_empty_semijoins;
+            thesis_tables.at(action.get_index()) = std::move(thesis_empty_joins);
+            thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
+        }
         return applicable;
     }
 

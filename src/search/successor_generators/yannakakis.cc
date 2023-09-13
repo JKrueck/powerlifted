@@ -413,9 +413,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     assert(tables.size() == actiondata.relevant_precondition_atoms.size());
     
     int counter = 0;
-    for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
-
-            
+    for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {     
             if(compute_semi_join.at(sj.first) || compute_semi_join.at(sj.second)){
                 size_t s = semi_join(tables[sj.second], tables[sj.first]);
 
@@ -439,11 +437,23 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     }
                     compute_semi_join.insert_or_assign(sj.second,true);
                 }else{
+                    //if the semijoin between the new elements and the old ones is empty AND the semijoin in the last state was empty
+                    // -> use the results from last time
+                    if(thesis_semijoin.at(action.get_index()).at(counter).tuples.size()!=0){
+                        tables[sj.second] = thesis_semijoin.at(action.get_index()).at(counter);
+                        break;
+                    }
+
+
+
+
                     //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
                     //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
                     std::vector<std::pair<Table,bool>> thesis_empty_joins;
+                    std::vector<Table> thesis_empty_semijoins;
                     cout << "err2" << endl;
                     thesis_tables.at(action.get_index()) = std::move(thesis_empty_joins);
+                    thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
                     return Table::EMPTY_TABLE();
                 }
 
@@ -471,14 +481,14 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         }
     }
 
-    for(auto tab:tables){
+    /*for(auto tab:tables){
         for(auto tup:tab.tuples){
             for(auto it:tup){
                 cout << it << " ";
             }
         }
         cout << endl;
-    }
+    }*/
     
     const JoinTree &jt = join_trees[action.get_index()];
 
@@ -682,18 +692,9 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             size_t s = semi_join(tables[sj.second], tables[sj.first]);
             thesis_semijoin.at(action.get_index()).push_back(tables[sj.second]);
             if (s == 0) {
-                //cout << " yann err1" << endl;
+                cout << " yann err1" << endl;
                 return Table::EMPTY_TABLE();
             }
-        }
-        
-        for(auto tab:tables){
-            for(auto tup:tab.tuples){
-                for(auto it:tup){
-                    cout << it << " ";
-                }
-            }
-            cout << endl;
         }
     
         const JoinTree &jt = join_trees[action.get_index()];

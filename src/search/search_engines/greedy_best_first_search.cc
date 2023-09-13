@@ -222,9 +222,11 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
-                //if(child_node.state_id.id()!=52){
-                    //continue;
-                //}
+                /*if((child_node.state_id.id()!=52)){
+                    if((child_node.state_id.id()!=159)){
+                        continue;
+                    }
+                }*/
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);
                 statistics.inc_evaluations();
