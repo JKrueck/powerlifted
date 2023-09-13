@@ -114,14 +114,14 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         //remove the thesis object from memory
         thesis_state_memory.erase(sid.id());
 
-        /*if(sid.id() != 0) {
+        if(sid.id() != 0) {
             cout << "action used to get here: " << old_thesis.get_action_id() << "->" << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name()<< endl;
             cout << "with instantiation: ";
             for (auto it:test_map.at(sid.id())){
                 cout << it << " ";
             }
             cout << endl;
-        }*/
+        }
         
         //generator.thesis_compute_del_impacts(task);
         //get all hash tables that were computed in the previous state
