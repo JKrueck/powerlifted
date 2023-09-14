@@ -692,7 +692,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             size_t s = semi_join(tables[sj.second], tables[sj.first]);
             thesis_semijoin.at(action.get_index()).push_back(tables[sj.second]);
             if (s == 0) {
-                cout << " yann err1" << endl;
+                //cout << " yann err1" << endl;
                 return Table::EMPTY_TABLE();
             }
         }
