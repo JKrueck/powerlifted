@@ -41,8 +41,9 @@ private:
     //added and deleted atoms in comparison to the parent state of this object
     std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> thesis_add_effect_map;
     std::unordered_map<int,bool> thesis_delete_effects;
-    
+
 public:
+    std::unordered_map<int,std::vector<int>> deleted_facts;
     int action_id;
     ThesisClass(bool enable, ActionSchema act) :   thesis_enable(enable),action_id(act.get_index())
     {}

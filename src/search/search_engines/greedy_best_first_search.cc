@@ -81,7 +81,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         StateID sid = queue.remove_min();
         SearchNode &node = space.get_node(sid);
 
-        //cout << "current state: " << sid.id() << endl;
+        cout << "current state: " << sid.id() << endl;
 
         
         //remove the thesis object from memory
@@ -114,14 +114,14 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         //remove the thesis object from memory
         thesis_state_memory.erase(sid.id());
 
-        /*if(sid.id() != 0) {
+        if(sid.id() != 0) {
             cout << "action used to get here: " << old_thesis.get_action_id() << "->" << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name()<< endl;
             cout << "with instantiation: ";
             for (auto it:test_map.at(sid.id())){
                 cout << it << " ";
             }
             cout << endl;
-        }*/
+        }
         
         //generator.thesis_compute_del_impacts(task);
         //get all hash tables that were computed in the previous state
@@ -148,7 +148,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
            
             
-            //std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
+            std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
             
             
             /*cout << "instantiations: "<< endl;
@@ -198,7 +198,13 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                             //for(auto thesis_argument_it:thesis_effects.get_arguments()){
                                 //thesis_delete_effect.push_back(op_id.get_instantiation().at(thesis_argument_it.get_index()));
                             //}
+                            
                             diff_delete.insert_or_assign(thesis_effects.get_predicate_symbol_idx(),true);
+                            std::vector<int> thesis_deleted_fact;
+                            for(auto arg:thesis_effects.get_arguments()){
+                                thesis_deleted_fact.push_back(op_id.get_instantiation().at(arg.get_index()));
+                            }
+                            thesis_successor.deleted_facts.insert({thesis_effects.get_predicate_symbol_idx(),thesis_deleted_fact});
                         }else{
                             GroundAtom thesis_add_effect;
                             std::unordered_set<GroundAtom,TupleHash> thesis_set_storage;
@@ -222,11 +228,24 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
-                /*if((child_node.state_id.id()!=52)){
-                    if((child_node.state_id.id()!=159)){
-                        continue;
+                /*if((child_node.state_id.id()!=1)){
+                    if((child_node.state_id.id()!=5)){
+                        if((child_node.state_id.id()!=17)){
+                            if((child_node.state_id.id()!=34)){
+                                if((child_node.state_id.id()!=44)){
+                                    if((child_node.state_id.id()!=47)){
+                                        if((child_node.state_id.id()!=51)){
+                                            if((child_node.state_id.id()!=53)){
+                                                continue;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }*/
+               
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);
                 statistics.inc_evaluations();
