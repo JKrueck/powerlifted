@@ -2,6 +2,8 @@
 #define SEARCH_YANNAKAKIS_H
 
 #include "generic_join_successor.h"
+#include "../hash_structures.h"
+#include <boost/functional/hash/hash.hpp>
 
 class JoinTree;
 

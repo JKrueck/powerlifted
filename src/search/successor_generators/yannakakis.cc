@@ -279,7 +279,9 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         }
     }
     
-    
+    std::vector<int> test(5,1);
+    TupleHash hashtest();
+    auto test_hash = boost::hash_range(test.begin(),test.end());
     
    
     std::vector<bool> nullary = state.get_nullary_atoms();
@@ -299,6 +301,15 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     }
     assert(!tables.empty());
     assert(tables.size() == actiondata.relevant_precondition_atoms.size());
+    
+    std::unordered_map<GroundAtom,int,TupleHash> position_map;
+    for(auto table:tables){
+        int tuple_counter = 0;
+        for(auto it:table.tuples){
+            position_map.insert_or_assign(it,tuple_counter);
+            tuple_counter++;
+        }
+    }
     
     std::unordered_map<int,int> thesis_affected_by_del;
     int idiot_counter = 0;
@@ -356,8 +367,15 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                 
                                 if(result.size()!=0){
                                     thesis_semijoin.at(action.get_index()).at(counter).tuples.erase(thesis_semijoin.at(action.get_index()).at(counter).tuples.begin()+j);
+                                    std::unordered_map<size_t,bool> entry_check;
+                                    for(auto it:thesis_semijoin.at(action.get_index()).at(counter).tuples){
+                                        entry_check.insert_or_assign(boost::hash_range(it.begin(),it.end()),true);
+                                    }
                                     for(auto it:tables[sj.second].tuples){
-                                        thesis_semijoin.at(action.get_index()).at(counter).tuples.push_back(it);
+                                        if(entry_check.count(boost::hash_range(it.begin(),it.end()))==0){
+                                            thesis_semijoin.at(action.get_index()).at(counter).tuples.push_back(it);
+                                        }
+                                        
                                     }
                                     break;
                                 }
@@ -612,7 +630,9 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
 
         for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
             size_t s = semi_join(tables[sj.second], tables[sj.first]);
-            thesis_semijoin.at(action.get_index()).push_back(tables[sj.second]);
+            if(thesis.is_enabled()){
+                thesis_semijoin.at(action.get_index()).push_back(tables[sj.second]);
+            }
             if (s == 0) {
                 //cout << " yann err1" << endl;
                 return Table::EMPTY_TABLE();
