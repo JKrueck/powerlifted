@@ -114,14 +114,16 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         //remove the thesis object from memory
         thesis_state_memory.erase(sid.id());
 
-        if(sid.id() != 0) {
+        //cout << "Memory needed for table storage: " << sizeof(thesis_semijoin_table_memory) + sizeof(thesis_join_table_memory) << " Bytes"<< endl;
+
+        /*if(sid.id() != 0) {
             cout << "action used to get here: " << old_thesis.get_action_id() << "->" << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name()<< endl;
             cout << "with instantiation: ";
             for (auto it:test_map.at(sid.id())){
                 cout << it << " ";
             }
             cout << endl;
-        }
+        }*/
         
         //generator.thesis_compute_del_impacts(task);
         //get all hash tables that were computed in the previous state
@@ -152,13 +154,16 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             
             
             /*cout << "instantiations: "<< endl;
-            for(auto it:applicable){
-                cout << "\t";
-                for(auto it2:it.get_instantiation()){
-                    cout << it2 << " ";
-                }  
-                cout << endl;
+            if(sid.id()==692){
+                for(auto it:applicable){
+                    cout << "\t";
+                    for(auto it2:it.get_instantiation()){
+                        cout << it2 << " ";
+                    }  
+                    cout << endl;
+                }
             }*/
+           
             /*if(action.get_name() == "dummy" && old_thesis.is_enabled()){
                 //cout << "\t State-Id: " << sid.id() << " Last Action: " << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name() << endl;
                 int stop = 1;
@@ -228,9 +233,14 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
-                /*if((child_node.state_id.id()!=1)){
-                    if((child_node.state_id.id()!=5)){
-                        if((child_node.state_id.id()!=17)){
+
+               //if((child_node.state_id.id()!=692)){
+                //continue;
+               //}
+
+                /*if((child_node.state_id.id()!=692)){
+                    if((child_node.state_id.id()!=706)){
+                        if((child_node.state_id.id()!=1)){
                             if((child_node.state_id.id()!=34)){
                                 if((child_node.state_id.id()!=44)){
                                     if((child_node.state_id.id()!=47)){
@@ -248,6 +258,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);
+                //cout << "Heuristic value of state " << child_node.state_id.id() <<": "<< new_h << endl;
                 statistics.inc_evaluations();
                 test_map.insert({child_node.state_id.id(),op_id.get_instantiation()});
                 

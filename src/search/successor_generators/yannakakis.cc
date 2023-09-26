@@ -240,24 +240,24 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
 
     //if an add-effect does not appear in any join, only the added atom will be in the corresponding table in the end
     //if the action schema is cyclic this creates a bug in the partial reducer as the old atoms are missing
-    std::vector<bool> thesis_hack(action.get_precondition().size(),false);
+    std::unordered_map<int,bool> thesis_hack;
     int mega_idiot_counter = 0;
-    for(auto table:action.get_precondition()){
+    for(auto precon:action.get_precondition()){
         for(auto join:jt.get_order()){
             if(join.first == mega_idiot_counter || join.second == mega_idiot_counter){
-                thesis_hack[mega_idiot_counter] = true;
+                thesis_hack.insert_or_assign(precon.get_predicate_symbol_idx(),true);
+                break;
             }
         }
         mega_idiot_counter++;
     }
-    
    
     
     //Create a new relations vector that only contains the add effect changes
     std::vector<Relation> new_relations;
     new_relations.resize(state.get_relations().size());
     for(long unsigned int i=0;i<state.get_relations().size();i++){
-        if(predicate_to_add_diff.count(i)!=0 && thesis_hack.at(i)){
+        if(predicate_to_add_diff.count(i)!=0 && thesis_hack.count(i)!= 0){
             auto tuples = predicate_to_add_diff.at(i);
             new_relations[i] = Relation(i,std::move(tuples));
         }else{
@@ -424,7 +424,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     // -> use the results from last time
                     if(thesis_semijoin.at(action.get_index()).at(counter).tuples.size()!=0){
                         //If the table that is empty because of the semi-join was not impacted by a delete effect
-                        if(diff_delete.count(sj.second)!=0 && !diff_delete.at(sj.second)){
+                        if(true){//diff_delete.count(sj.second)!=0 && !diff_delete.at(sj.second)
                             tables[sj.second] = thesis_semijoin.at(action.get_index()).at(counter);
                             break;
                         }
@@ -456,19 +456,19 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     }
 
     //Temporary Solution for checking if this does work at all
-    std::vector<bool> semijoin_was_updated(tables.size(),false);
+    /*std::vector<bool> semijoin_was_updated(tables.size(),false);
     for(int i=0; i<semijoin_was_updated.size();i++){
-        for(int j=0;j<thesis_semijoin.at(action.get_index()).size() ;j++){
+        for(int j=(thesis_semijoin.at(action.get_index()).size()+1)/2;j>=0 ;j--){
             if(full_reducer_order.at(action.get_index()).at(j).second == i){//&& predicate_to_add_diff.count(action.get_precondition().at(i).get_predicate_symbol_idx())==0
                 tables[i] = thesis_semijoin.at(action.get_index()).at(j);
                 semijoin_was_updated.at(i) = true;
                 break;
             }
         }
-    }
+    }*/
     
     
-
+    
 
 
     //reset delete impact map
@@ -482,7 +482,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 or
             2) The table at position j.second was impacted by the previous action or was generated as a result of such a table
         */
-        if(compute_hash_join.at(j.first) || compute_hash_join.at(j.second)){
+        if(true){ //compute_hash_join.at(j.first) || compute_hash_join.at(j.second)
 
             unordered_set<int> project_over;
             for (auto x : tables[j.second].tuple_index) {
