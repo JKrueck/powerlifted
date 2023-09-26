@@ -383,8 +383,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             }
                             diff_delete.insert_or_assign(sj.second,true);
                             
-                        }
-                        if(thesis_affected_by_del.count(sj.second) != 0){
+                        }else if(thesis_affected_by_del.count(sj.second) != 0){
                             int predicate_impacted;
                             if(thesis_affected_by_del.count(sj.second)!=0){
                                 predicate_impacted = thesis_affected_by_del.at(sj.second);
