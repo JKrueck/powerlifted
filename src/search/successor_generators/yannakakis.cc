@@ -232,7 +232,7 @@ void YannakakisSuccessorGenerator::filter_delete( std::vector<std::vector<Table>
 Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis,
                             std::vector<std::vector<std::pair<Table,bool>>> &thesis_tables, std::vector<std::vector<Table>> &thesis_semijoin, DBState &old_state)
 {
-    cout << "used" << endl;
+    //cout << "used" << endl;
     std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_add_diff = thesis.get_add_effect_map();
     std::unordered_map<int,bool>  diff_delete = thesis.get_del_eff();
 
@@ -270,7 +270,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     std::unordered_map<int,bool> compute_semi_join;
     for (unsigned long i=0; i<action.get_precondition().size();i++){
         if(predicate_to_add_diff.count(action.get_precondition().at(i).get_predicate_symbol_idx())!= 0 
-            || diff_delete.count(i)!= 0){
+            || diff_delete.count(action.get_precondition().at(i).get_predicate_symbol_idx())!= 0){
             compute_hash_join.insert({i,true});
             compute_semi_join.insert({i,true});
         }else{
@@ -456,17 +456,25 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     }
 
     //Temporary Solution for checking if this does work at all
-    /*std::vector<bool> semijoin_was_updated(tables.size(),false);
+    std::vector<bool> semijoin_was_updated(tables.size(),false);
     for(int i=0; i<semijoin_was_updated.size();i++){
-        for(int j=(thesis_semijoin.at(action.get_index()).size()+1)/2;j>=0 ;j--){
-            if(full_reducer_order.at(action.get_index()).at(j).second == i){//&& predicate_to_add_diff.count(action.get_precondition().at(i).get_predicate_symbol_idx())==0
-                tables[i] = thesis_semijoin.at(action.get_index()).at(j);
-                semijoin_was_updated.at(i) = true;
-                break;
+        if(compute_semi_join.at(i)){
+            bool flag = false;
+            for(int j=full_reducer_order.at(action.get_index()).size()-1;j>=0 ;j--){
+                if(full_reducer_order.at(action.get_index()).at(j).second == i){//&& predicate_to_add_diff.count(action.get_precondition().at(i).get_predicate_symbol_idx())==0
+                    //tables[i].tuples.clear();
+                    tables[i] = thesis_semijoin.at(action.get_index()).at(j);
+                    semijoin_was_updated.at(i) = true;
+                    flag = true;
+                    break;
+                }
+            }
+            if(!flag){
+                tables[i].tuples.clear();
+                select_tuples(state,action.get_precondition().at(i),tables[i].tuples,std::vector<int>());
             }
         }
-    }*/
-    
+    }
     
     
 
