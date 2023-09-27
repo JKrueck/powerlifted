@@ -123,7 +123,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 cout << it << " ";
             }
             cout << endl;
-        }/*
+        }*/
         
         //generator.thesis_compute_del_impacts(task);
         //get all hash tables that were computed in the previous state
