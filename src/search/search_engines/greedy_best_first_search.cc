@@ -144,6 +144,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             time_t thesis_timer = clock();
             auto applicable = generator.get_applicable_actions(action, state,task, old_thesis,
                                 thesis_join_table_at_state,thesis_semijoin_table_at_state,old_state);
+
+            //Sort the instantiations by their hash
+            std::sort(applicable.begin(),applicable.end());
             
             thesis_time += clock() - thesis_timer;
             thesis_semijoin_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_semijoin_table_at_state.at(action.get_index()));
@@ -154,7 +157,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             
             
             /*cout << "instantiations: "<< endl;
-            if(sid.id()==692){
+            if(sid.id()!=0){
                 for(auto it:applicable){
                     cout << "\t";
                     for(auto it2:it.get_instantiation()){

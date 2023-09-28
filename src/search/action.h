@@ -4,6 +4,7 @@
 #include <utility>
 #include <vector>
 #include <ostream>
+#include <boost/functional/hash/hash.hpp>
 
 /*
  * The Action class represents a grounded action.
@@ -36,6 +37,10 @@ public:
 
     bool operator==(const LiftedOperatorId &other) const { return index == other.index; }
     bool operator!=(const LiftedOperatorId &other) const { return !(*this == other); }
+    bool operator<(const LiftedOperatorId &other) const {return  (boost::hash_range(other.get_instantiation().begin(),other.get_instantiation().end()))
+                                                                <(boost::hash_range(this->get_instantiation().begin(),this->get_instantiation().end()));}
+    bool operator>(const LiftedOperatorId &other) const {return  (boost::hash_range(other.get_instantiation().begin(),other.get_instantiation().end()))
+                                                                >(boost::hash_range(this->get_instantiation().begin(),this->get_instantiation().end()));}
 };
 
 std::ostream &operator<<(std::ostream &os, const LiftedOperatorId& id);
