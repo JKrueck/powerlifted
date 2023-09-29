@@ -124,7 +124,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             }
             cout << endl;
         }*/
-        
+    
         //generator.thesis_compute_del_impacts(task);
         //get all hash tables that were computed in the previous state
         thesis_join_table_at_state = thesis_join_table_memory.at(old_thesis.get_parent_state_id());

@@ -294,8 +294,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     if (!res){
         //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
         //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
-        std::vector<std::pair<Table,bool>> thesis_empty_joins;
-        thesis_tables.at(action.get_index()) = std::move(thesis_empty_joins);
+        std::vector<Table> thesis_empty_joins;
+        thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_joins);
         cout << "err1" << endl;
         return Table::EMPTY_TABLE();
     }
@@ -326,6 +326,10 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         //des ergebnis des semi-joins schon im speicher ist
         //ES GIBT TUPLE HASHES!!!!
 
+    if(action.get_index() == 0){
+        int stop = 0;
+    }
+
     int counter = 0;
     for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {     
             if(compute_semi_join.at(sj.first) || compute_semi_join.at(sj.second)){
@@ -334,11 +338,18 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 //if the semijoin with the new atoms was not empty
                 if(s!=0){
                     //if neither table that was part of the semi-join was impacted by a delete effect
-                    if(thesis_affected_by_del.count(sj.first) == 0 && thesis_affected_by_del.count(sj.second) == 0 ){
-                        if(counter<(full_reducer_order.at(action.get_index()).size()+1)/2){
+                    if(thesis_affected_by_del.count(sj.second) == 0){
+                        if(true){//counter<(full_reducer_order.at(action.get_index()).size()+1)/2
                         //append the current result to the old one 
+                            std::unordered_map<size_t,bool> entry_check;
+                            for(auto it:thesis_semijoin.at(action.get_index()).at(counter).tuples){
+                                entry_check.insert_or_assign(boost::hash_range(it.begin(),it.end()),true);
+                            }
                             for(auto it:tables[sj.second].tuples){
-                                thesis_semijoin.at(action.get_index()).at(counter).tuples.push_back(it);
+                                if(entry_check.count(boost::hash_range(it.begin(),it.end()))==0){
+                                    thesis_semijoin.at(action.get_index()).at(counter).tuples.push_back(it);
+                                }
+                                
                             }
                         }
                         
@@ -346,7 +357,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         //tables[sj.second] =  thesis_semijoin.at(action.get_index()).at(counter);
                     }else{
                         int j=0;
-                        if(thesis_affected_by_del.count(sj.first) != 0){
+                        if(false){//thesis_affected_by_del.count(sj.first) != 0
                             int predicate_impacted;
                             if(thesis_affected_by_del.count(sj.first)!=0){
                                 predicate_impacted = thesis_affected_by_del.at(sj.first);
@@ -387,10 +398,10 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             int predicate_impacted;
                             if(thesis_affected_by_del.count(sj.second)!=0){
                                 predicate_impacted = thesis_affected_by_del.at(sj.second);
-                                thesis_affected_by_del.insert_or_assign(sj.first, thesis_affected_by_del.at(sj.second));
+                                //thesis_affected_by_del.insert_or_assign(sj.first, thesis_affected_by_del.at(sj.second));
                             }else{
                                 predicate_impacted = action.get_precondition().at(sj.second).get_predicate_symbol_idx();
-                                thesis_affected_by_del.insert_or_assign(action.get_precondition().at(sj.first).get_predicate_symbol_idx(),action.get_precondition().at(sj.second).get_predicate_symbol_idx());
+                                //thesis_affected_by_del.insert_or_assign(action.get_precondition().at(sj.first).get_predicate_symbol_idx(),action.get_precondition().at(sj.second).get_predicate_symbol_idx());
                             }
                             for(auto it:thesis_semijoin.at(action.get_index()).at(counter).tuples){
                                 std::vector<int> checking =it;
@@ -404,8 +415,15 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                 
                                 if(result.size()!=0){
                                     thesis_semijoin.at(action.get_index()).at(counter).tuples.erase(thesis_semijoin.at(action.get_index()).at(counter).tuples.begin()+j);
+                                    std::unordered_map<size_t,bool> entry_check;
+                                    for(auto it:thesis_semijoin.at(action.get_index()).at(counter).tuples){
+                                        entry_check.insert_or_assign(boost::hash_range(it.begin(),it.end()),true);
+                                    }
                                     for(auto it:tables[sj.second].tuples){
-                                        thesis_semijoin.at(action.get_index()).at(counter).tuples.push_back(it);
+                                        if(entry_check.count(boost::hash_range(it.begin(),it.end()))==0){
+                                            thesis_semijoin.at(action.get_index()).at(counter).tuples.push_back(it);
+                                        }
+                                        
                                     }
                                     break;
                                 }
@@ -435,10 +453,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
 
                     //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
                     //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
-                    std::vector<std::pair<Table,bool>> thesis_empty_joins;
                     std::vector<Table> thesis_empty_semijoins;
                     cout << "err2" << endl;
-                    thesis_tables.at(action.get_index()) = std::move(thesis_empty_joins);
                     thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
                     return Table::EMPTY_TABLE();
                 }
@@ -528,9 +544,9 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             filter_static(action, working_table);
             project(working_table, project_over);
             if (working_table.tuples.empty()) {
-                std::vector<std::pair<Table,bool>> thesis_empty_joins;
+                std::vector<Table> thesis_empty_joins;
                 //cout << "err3" << endl;
-                thesis_tables.at(action.get_index()) = std::move(thesis_empty_joins);
+                thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_joins);
                 return working_table;
             }
             
@@ -620,7 +636,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
     //}
 
 
-    if(thesis.is_enabled() && thesis_tables.at(action.get_index()).size()!=0){
+    if(thesis.is_enabled() && thesis_semijoin.at(action.get_index()).size()!=0){
         Table thesis_return_table = thesis_instantiate2(action,state,task, thesis, thesis_tables, thesis_semijoin,old_state);
         return thesis_return_table;
     }else{ 
@@ -629,8 +645,10 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
 
         vector<Table> tables;
         auto res = parse_precond_into_join_program(actiondata, state, tables);
-        if (!res)
+        if (!res){
+            cout << "Here too" << endl;
             return Table::EMPTY_TABLE();
+        }
 
         assert(!tables.empty());
         assert(tables.size() == actiondata.relevant_precondition_atoms.size());
