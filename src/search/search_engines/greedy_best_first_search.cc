@@ -237,27 +237,19 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
 
-               //if((child_node.state_id.id()!=692)){
-                //continue;
-               //}
-
-                /*if((child_node.state_id.id()!=692)){
-                    if((child_node.state_id.id()!=706)){
-                        if((child_node.state_id.id()!=1)){
-                            if((child_node.state_id.id()!=34)){
-                                if((child_node.state_id.id()!=44)){
-                                    if((child_node.state_id.id()!=47)){
-                                        if((child_node.state_id.id()!=51)){
-                                            if((child_node.state_id.id()!=53)){
-                                                continue;
-                                            }
-                                        }
-                                    }
+                /*if((child_node.state_id.id()!=3)){
+                    if((child_node.state_id.id()!=8)){
+                        if((child_node.state_id.id()!=26)){
+                            if((child_node.state_id.id()!=34 )){
+                                if(child_node.state_id.id()!=42){
+                                    continue;
                                 }
+                                
                             }
                         }
                     }
                 }*/
+
                
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);

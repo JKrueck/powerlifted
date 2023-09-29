@@ -296,7 +296,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
         std::vector<Table> thesis_empty_joins;
         thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_joins);
-        cout << "err1" << endl;
+        //cout << "err1" << endl;
         return Table::EMPTY_TABLE();
     }
     assert(!tables.empty());
@@ -326,7 +326,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         //des ergebnis des semi-joins schon im speicher ist
         //ES GIBT TUPLE HASHES!!!!
 
-    if(action.get_index() == 0){
+    if(action.get_index() == 7){
         int stop = 0;
     }
 
@@ -442,7 +442,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     // -> use the results from last time
                     if(thesis_semijoin.at(action.get_index()).at(counter).tuples.size()!=0){
                         //If the table that is empty because of the semi-join was not impacted by a delete effect
-                        if(true){//diff_delete.count(sj.second)!=0 && !diff_delete.at(sj.second)
+                        if(!diff_delete.at(sj.second)){//diff_delete.count(sj.second)!=0 && !diff_delete.at(sj.second)
                             tables[sj.second] = thesis_semijoin.at(action.get_index()).at(counter);
                             break;
                         }
@@ -454,7 +454,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
                     //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
                     std::vector<Table> thesis_empty_semijoins;
-                    cout << "err2" << endl;
+                    //cout << "err2" << endl;
                     thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
                     return Table::EMPTY_TABLE();
                 }
@@ -646,21 +646,27 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         vector<Table> tables;
         auto res = parse_precond_into_join_program(actiondata, state, tables);
         if (!res){
-            cout << "Here too" << endl;
+            //cout << "Here too" << endl;
             return Table::EMPTY_TABLE();
         }
 
         assert(!tables.empty());
         assert(tables.size() == actiondata.relevant_precondition_atoms.size());
 
+        if(action.get_index() == 7){
+            int stop = 0;
+        }
+
         for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
             size_t s = semi_join(tables[sj.second], tables[sj.first]);
-            if(thesis.is_enabled()){
-                thesis_semijoin.at(action.get_index()).push_back(tables[sj.second]);
-            }
             if (s == 0) {
                 //cout << " yann err1" << endl;
+                std::vector<Table> thesis_empty_joins;
+                thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_joins);
                 return Table::EMPTY_TABLE();
+            }
+            if(thesis.is_enabled()){
+                thesis_semijoin.at(action.get_index()).push_back(tables[sj.second]);
             }
         }
     
