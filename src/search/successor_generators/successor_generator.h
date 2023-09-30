@@ -41,6 +41,7 @@ private:
     //added and deleted atoms in comparison to the parent state of this object
     std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> thesis_add_effect_map;
     std::unordered_map<int,bool> thesis_delete_effects;
+    std::vector<int> thesis_instantiation;
 
 public:
     std::unordered_map<int,std::vector<int>> deleted_facts;
@@ -94,15 +95,17 @@ public:
         this->thesis_enable = status;
     }
 
+    void set_instantiation(const std::vector<int>& inst){
+        for(auto it:inst){
+            thesis_instantiation.push_back(it);
+        }
+    }
 
+    std::vector<int> get_instantiation(){
+        return thesis_instantiation;
+    }
 
-    /*void set_state(DBState& s)const{
-        last_state = &s;
-    }*/
-
-    /*DBState get_state() const {
-        return last_state;
-    }*/
+            
 
 };
 

@@ -83,7 +83,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
         //cout << "current state: " << sid.id() << endl;
 
-        
+
         //remove the thesis object from memory
         /*if(!hack){ 
             thesis_state_memory.erase(sid.id());
@@ -131,6 +131,40 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         thesis_semijoin_table_at_state = thesis_semijoin_table_memory.at(old_thesis.get_parent_state_id());
        
         if (check_goal(task, generator, timer_start, state, node, space, thesis_time)) return utils::ExitCode::SUCCESS;
+
+        time_t thesis_timer = clock();
+        if(this->thesis_enabled && sid.id()!=0){
+            old_thesis.set_status(true);
+            std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_add_diff;
+            std::unordered_map<int,bool> diff_delete;
+            for(auto thesis_effects:task.get_action_schema_by_index(old_thesis.get_action_id()).get_effects()){
+                if(thesis_effects.is_negated()){
+                    //GroundAtom thesis_delete_effect;
+                    //for(auto thesis_argument_it:thesis_effects.get_arguments()){
+                        //thesis_delete_effect.push_back(op_id.get_instantiation().at(thesis_argument_it.get_index()));
+                    //}
+                    
+                    diff_delete.insert_or_assign(thesis_effects.get_predicate_symbol_idx(),true);
+                    std::vector<int> thesis_deleted_fact;
+                    for(auto arg:thesis_effects.get_arguments()){
+                        thesis_deleted_fact.push_back(old_thesis.get_instantiation().at(arg.get_index()));
+                    }
+                    old_thesis.deleted_facts.insert({thesis_effects.get_predicate_symbol_idx(),thesis_deleted_fact});
+                }else{
+                    GroundAtom thesis_add_effect;
+                    std::unordered_set<GroundAtom,TupleHash> thesis_set_storage;
+                    for(auto thesis_argument_it:thesis_effects.get_arguments()){
+                        thesis_add_effect.push_back(old_thesis.get_instantiation().at(thesis_argument_it.get_index()));
+                    }
+                    thesis_set_storage.insert(thesis_add_effect);
+                    predicate_to_add_diff.insert({thesis_effects.get_predicate_symbol_idx(),thesis_set_storage});
+                }
+            }
+            thesis_time += clock() - thesis_timer;
+            old_thesis.set_add_effect_map(predicate_to_add_diff);
+            old_thesis.set_delete_effects(diff_delete);
+        }
+
 
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
         // performance, we could implement some form of std iterator
@@ -195,40 +229,11 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             for (const LiftedOperatorId& op_id:applicable) {
                 //Create one new Thesis object per state
                 ThesisClass thesis_successor(false,action);
-                time_t thesis_timer = clock();
-                if(this->thesis_enabled){
-                    thesis_successor.set_status(true);
-                    std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_add_diff;
-                    std::unordered_map<int,bool> diff_delete;
-                    for(auto thesis_effects:action.get_effects()){
-                        if(thesis_effects.is_negated()){
-                            //GroundAtom thesis_delete_effect;
-                            //for(auto thesis_argument_it:thesis_effects.get_arguments()){
-                                //thesis_delete_effect.push_back(op_id.get_instantiation().at(thesis_argument_it.get_index()));
-                            //}
-                            
-                            diff_delete.insert_or_assign(thesis_effects.get_predicate_symbol_idx(),true);
-                            std::vector<int> thesis_deleted_fact;
-                            for(auto arg:thesis_effects.get_arguments()){
-                                thesis_deleted_fact.push_back(op_id.get_instantiation().at(arg.get_index()));
-                            }
-                            thesis_successor.deleted_facts.insert({thesis_effects.get_predicate_symbol_idx(),thesis_deleted_fact});
-                        }else{
-                            GroundAtom thesis_add_effect;
-                            std::unordered_set<GroundAtom,TupleHash> thesis_set_storage;
-                            for(auto thesis_argument_it:thesis_effects.get_arguments()){
-                                thesis_add_effect.push_back(op_id.get_instantiation().at(thesis_argument_it.get_index()));
-                            }
-                            thesis_set_storage.insert(thesis_add_effect);
-                            predicate_to_add_diff.insert({thesis_effects.get_predicate_symbol_idx(),thesis_set_storage});
-                        }
-                    }
-                    thesis_time += clock() - thesis_timer;
-                    thesis_successor.set_add_effect_map(predicate_to_add_diff);
-                    thesis_successor.set_delete_effects(diff_delete);
-                }
+                
+                
                 thesis_successor.set_parent_state_id(sid.id());
                 thesis_successor.action_id = action.get_index();
+                thesis_successor.set_instantiation(op_id.get_instantiation());
 
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 
