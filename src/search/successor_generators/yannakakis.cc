@@ -442,7 +442,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     // -> use the results from last time
                     if(thesis_semijoin.at(action.get_index()).at(counter).tuples.size()!=0){
                         //If the table that is empty because of the semi-join was not impacted by a delete effect
-                        if(!diff_delete.at(sj.second)){//diff_delete.count(sj.second)!=0 && !diff_delete.at(sj.second)
+                        if(diff_delete.count(sj.second)!=0 && !diff_delete.at(sj.second)){//diff_delete.count(sj.second)!=0 && !diff_delete.at(sj.second)
                             tables[sj.second] = thesis_semijoin.at(action.get_index()).at(counter);
                             break;
                         }
