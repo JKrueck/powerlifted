@@ -28,6 +28,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     clock_t timer_start = clock();
     StatePackerT packer(task);
 
+    bool skip = true;
+
     GreedyOpenList queue;
 
     SearchNode& root_node = space.insert_or_get_previous_node(packer.pack(task.initial_state), LiftedOperatorId::no_operator, StateID::no_state);
@@ -66,7 +68,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     //Storage for classes per state
     //intended to work similar to queue
     std::unordered_map<int,ThesisClass> thesis_state_memory;
-    ThesisClass initial = ThesisClass(this->thesis_enabled,task.get_action_schema_by_index(0));
+    ThesisClass initial = ThesisClass(false,task.get_action_schema_by_index(0));//this->thesis_enabled
     initial.set_parent_state_id(0);
     thesis_state_memory.insert({0,initial});
 
@@ -83,6 +85,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
         //cout << "current state: " << sid.id() << endl;
 
+        if(sid.id()!=0){
+            skip = false;
+        }
+
 
         //remove the thesis object from memory
         /*if(!hack){ 
@@ -97,6 +103,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         statistics.report_f_value_progress(h); // In GBFS f = h.
         
         statistics.inc_expanded();
+        bool print = false;
+        if(sid.id()==0){
+            print = true;
+        }
         
         if (h < heuristic_layer) {
             heuristic_layer = h;
@@ -104,7 +114,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                  << " [expansions: " << statistics.get_expanded()
                  << ", evaluations: " << statistics.get_evaluations()
                  << ", generations: " << statistics.get_generated()
+                 << ", state " << sid.id()
                  << ", time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << "]" << '\n';
+            print = true;    
         }
         assert(sid.id() >= 0 && (unsigned) sid.id() < space.size());
         DBState state = packer.unpack(space.get_state(sid));
@@ -116,7 +128,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
         //cout << "Memory needed for table storage: " << sizeof(thesis_semijoin_table_memory) + sizeof(thesis_join_table_memory) << " Bytes"<< endl;
 
-        /*if(sid.id() != 0) {
+        /*if(sid.id() != 0 && print) {
+            cout << "parent state: " << old_thesis.get_parent_state_id() << endl;
             cout << "action used to get here: " << old_thesis.get_action_id() << "->" << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name()<< endl;
             cout << "with instantiation: ";
             for (auto it:test_map.at(sid.id())){
@@ -169,6 +182,11 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
+
+            if ((sid.id()==890)) {
+                int stop13 = 1;
+            }
+
             DBState old_state;
             if(sid.id()!= 0){
                 old_state = packer.unpack(space.get_state(thesis_previous_state.at(sid)));
@@ -186,9 +204,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             thesis_semijoin_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_semijoin_table_at_state.at(action.get_index()));
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
            
-            
-            //std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
-            
+            /*if ((print) || (sid.id()==890)) {
+                std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
+            }*/
             
             /*cout << "instantiations: "<< endl;
             if(sid.id()!=0){
@@ -242,14 +260,20 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
 
-                /*if((child_node.state_id.id()!=3)){
-                    if((child_node.state_id.id()!=8)){
-                        if((child_node.state_id.id()!=26)){
-                            if((child_node.state_id.id()!=34 )){
-                                if(child_node.state_id.id()!=42){
-                                    continue;
+                //if((child_node.state_id.id()!=62)&& skip){
+                  //  continue;
+                //}
+
+                /*if((child_node.state_id.id()!=1)){
+                    if((child_node.state_id.id()!=37)){
+                        if(child_node.state_id.id()!=45){
+                            if((child_node.state_id.id()!=227)){
+                                if((child_node.state_id.id()!=232 )){
+                                    if(child_node.state_id.id()!=890){
+                                        continue;
+                                    }
+                                    
                                 }
-                                
                             }
                         }
                     }

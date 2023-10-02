@@ -653,9 +653,9 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         assert(!tables.empty());
         assert(tables.size() == actiondata.relevant_precondition_atoms.size());
 
-        if(action.get_index() == 7){
-            int stop = 0;
-        }
+        //if(action.get_index() == 7){
+          //  int stop = 0;
+        //}
 
         for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
             size_t s = semi_join(tables[sj.second], tables[sj.first]);
