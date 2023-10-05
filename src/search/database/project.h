@@ -3,6 +3,8 @@
 
 #include <unordered_set>
 
+#include "../utils.h"
+
 class Table;
 
 void project(Table &t, const std::unordered_set<int> &over);

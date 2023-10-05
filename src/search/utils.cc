@@ -7,6 +7,15 @@
 using namespace std;
 
 
+int advance_iterator(std::set<int>::iterator it, int amount){
+    for(int i=0;i<amount;i++){
+        it++;
+    }
+    return *it;
+}
+
+
+
 bool is_product_within_limit(long factor1, long factor2, long limit) {
     assert(factor1 >= 0);
     assert(factor2 >= 0);

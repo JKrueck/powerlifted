@@ -1,6 +1,10 @@
 #ifndef SEARCH_UTILS_H
 #define SEARCH_UTILS_H
 
+#include <set>
+
+extern int advance_iterator(std::set<int>::iterator it, int amount);
+
 /* Test if the product of two numbers is bounded by a third number.
    Safe against overflow. The caller must guarantee
    0 <= factor1, factor2 <= limit; failing this is an error. */

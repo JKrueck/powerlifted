@@ -83,7 +83,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         StateID sid = queue.remove_min();
         SearchNode &node = space.get_node(sid);
 
-        //cout << "current state: " << sid.id() << endl;
+        cout << "current state: " << sid.id() << endl;
 
         if(sid.id()!=0){
             skip = false;
@@ -204,9 +204,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             thesis_semijoin_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_semijoin_table_at_state.at(action.get_index()));
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
            
-            /*if ((print) || (sid.id()==890)) {
+            if ((print) || true ) {
                 std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
-            }*/
+            }
             
             /*cout << "instantiations: "<< endl;
             if(sid.id()!=0){

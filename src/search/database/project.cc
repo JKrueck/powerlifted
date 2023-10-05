@@ -23,12 +23,13 @@ void project(Table &t, const std::unordered_set<int> &over) {
                 matches.push_back(i);
 
     unordered_set<vector<int>, TupleHash> keys;
-    vector<vector<int>> new_tuples;
+    vector<set<int>> new_tuples;
 
-    for (const vector<int> &tuple : t.tuples) {
+    for (const set<int> &tuple : t.tuples) {
         vector<int> key(matches.size());
         for (size_t i = 0; i < matches.size(); i++) {
-            key[i] = tuple[matches[i]];
+            key[i] = advance_iterator(tuple.begin(),matches[i]);
+            //tuple[matches[i]];
         }
         if (keys.count(key) == 0) {
             keys.insert(key);

@@ -28,12 +28,23 @@ size_t semi_join(Table &t1, const Table &t2) {
     }
 
     // Otherwise, we perform the join and the projection
-    vector<vector<int>> new_tuples;
-    for (const vector<int> &tuple_t1 : t1.tuples) {
-        for (const vector<int> &tuple_t2 : t2.tuples) {
+    vector<std::set<int>> new_tuples;
+    for (const std::set<int> &tuple_t1 : t1.tuples) {
+        for (const std::set<int> &tuple_t2 : t2.tuples) {
             bool match = true;
             for (const pair<int, int>& m : matches) {
-                if (tuple_t1[m.first] != tuple_t2[m.second]) {
+                // Increment the iterators until they reach the right position in their sets
+                // THIS PROBABLY DOES NOT WORK LIKE THIS AAAAA
+                // MAYBE IT DOES?????
+                std::set<int>::iterator test1 = tuple_t1.begin();
+                std::set<int>::iterator test2 = tuple_t2.begin();
+                for(int i=0;i<m.first;i++){
+                    test1++;
+                }
+                for(int i=0;i<m.second;i++){
+                    test2++;
+                }
+                if (*test1 != *test2) {
                     match = false;
                     break;
                 }

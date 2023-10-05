@@ -193,7 +193,7 @@ void YannakakisSuccessorGenerator::get_distinguished_variables(const ActionSchem
 
 //definitely need something better for this
 //everything needs to be sorted in the same way or the diff operation doesnt work
-void YannakakisSuccessorGenerator::filter_delete( std::vector<std::vector<Table>> &thesis_tables,std::vector<GroundAtom> &diff_delete, int action_id, std::vector<bool> &thesis_was_changed){
+/*void YannakakisSuccessorGenerator::filter_delete( std::vector<std::vector<Table>> &thesis_tables,std::vector<GroundAtom> &diff_delete, int action_id, std::vector<bool> &thesis_was_changed){
     for(auto diff_it:diff_delete){
         std::sort(diff_it.begin(),diff_it.end());
     }
@@ -227,7 +227,7 @@ void YannakakisSuccessorGenerator::filter_delete( std::vector<std::vector<Table>
         }
         thesis_was_changed.at(i) = flag; 
     }
-}
+}*/
 
 Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis,
                             std::vector<std::vector<std::pair<Table,bool>>> &thesis_tables, std::vector<std::vector<Table>> &thesis_semijoin, DBState &old_state)
@@ -279,9 +279,9 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         }
     }
     
-    std::vector<int> test(5,1);
-    TupleHash hashtest();
-    auto test_hash = boost::hash_range(test.begin(),test.end());
+    //std::vector<int> test(5,1);
+    //TupleHash hashtest();
+    //auto test_hash = boost::hash_range(test.begin(),test.end());
     
    
     std::vector<bool> nullary = state.get_nullary_atoms();
@@ -301,15 +301,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     }
     assert(!tables.empty());
     assert(tables.size() == actiondata.relevant_precondition_atoms.size());
-    
-    std::unordered_map<GroundAtom,int,TupleHash> position_map;
-    for(auto table:tables){
-        int tuple_counter = 0;
-        for(auto it:table.tuples){
-            position_map.insert_or_assign(it,tuple_counter);
-            tuple_counter++;
-        }
-    }
     
     std::unordered_map<int,int> thesis_affected_by_del;
     int idiot_counter = 0;
@@ -356,45 +347,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         //As it only impacted by add-effects, the new result is the combination of the old result and the current result
                         //tables[sj.second] =  thesis_semijoin.at(action.get_index()).at(counter);
                     }else{
-                        int j=0;
-                        if(false){//thesis_affected_by_del.count(sj.first) != 0
-                            int predicate_impacted;
-                            if(thesis_affected_by_del.count(sj.first)!=0){
-                                predicate_impacted = thesis_affected_by_del.at(sj.first);
-                                thesis_affected_by_del.insert_or_assign(sj.second,thesis_affected_by_del.at(sj.first));
-                            }else{
-                                predicate_impacted = action.get_precondition().at(sj.first).get_predicate_symbol_idx();
-                                thesis_affected_by_del.insert_or_assign(sj.second,action.get_precondition().at(sj.first).get_predicate_symbol_idx());
-                            }
-                            for(auto it:thesis_semijoin.at(action.get_index()).at(counter).tuples){
-                                std::vector<int> checking =it;
-                                std::sort(checking.begin(),checking.end());
-                                std::vector<int> result;
-                                
-                                std::set_intersection(checking.begin(),checking.end(),
-                                    thesis.deleted_facts.at(predicate_impacted).begin(),
-                                    thesis.deleted_facts.at(predicate_impacted).end(),
-                                    std::inserter(result,result.begin()));
-                                
-                                if(result.size()!=0){
-                                    thesis_semijoin.at(action.get_index()).at(counter).tuples.erase(thesis_semijoin.at(action.get_index()).at(counter).tuples.begin()+j);
-                                    std::unordered_map<size_t,bool> entry_check;
-                                    for(auto it:thesis_semijoin.at(action.get_index()).at(counter).tuples){
-                                        entry_check.insert_or_assign(boost::hash_range(it.begin(),it.end()),true);
-                                    }
-                                    for(auto it:tables[sj.second].tuples){
-                                        if(entry_check.count(boost::hash_range(it.begin(),it.end()))==0){
-                                            thesis_semijoin.at(action.get_index()).at(counter).tuples.push_back(it);
-                                        }
-                                        
-                                    }
-                                    break;
-                                }
-                                j++;
-                            }
-                            diff_delete.insert_or_assign(sj.second,true);
-                            
-                        }else if(thesis_affected_by_del.count(sj.second) != 0){
+                        if(thesis_affected_by_del.count(sj.second) != 0){
                             int predicate_impacted;
                             if(thesis_affected_by_del.count(sj.second)!=0){
                                 predicate_impacted = thesis_affected_by_del.at(sj.second);
@@ -403,39 +356,49 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                 predicate_impacted = action.get_precondition().at(sj.second).get_predicate_symbol_idx();
                                 //thesis_affected_by_del.insert_or_assign(action.get_precondition().at(sj.first).get_predicate_symbol_idx(),action.get_precondition().at(sj.second).get_predicate_symbol_idx());
                             }
-                            for(auto it:thesis_semijoin.at(action.get_index()).at(counter).tuples){
-                                std::vector<int> checking =it;
-                                std::sort(checking.begin(),checking.end());
-                                std::vector<int> result;
-                                
-                                std::set_intersection(checking.begin(),checking.end(),
-                                    thesis.deleted_facts.at(predicate_impacted).begin(),
-                                    thesis.deleted_facts.at(predicate_impacted).end(),
-                                    std::inserter(result,result.begin()));
-                                
-                                if(result.size()!=0){
-                                    thesis_semijoin.at(action.get_index()).at(counter).tuples.erase(thesis_semijoin.at(action.get_index()).at(counter).tuples.begin()+j);
-                                    std::unordered_map<size_t,bool> entry_check;
-                                    for(auto it:thesis_semijoin.at(action.get_index()).at(counter).tuples){
-                                        entry_check.insert_or_assign(boost::hash_range(it.begin(),it.end()),true);
-                                    }
-                                    for(auto it:tables[sj.second].tuples){
-                                        if(entry_check.count(boost::hash_range(it.begin(),it.end()))==0){
-                                            thesis_semijoin.at(action.get_index()).at(counter).tuples.push_back(it);
+                            bool skip = false;
+                            std::vector<std::set<int>>::iterator tups = thesis_semijoin.at(action.get_index()).at(counter).tuples.begin();
+                            for(;tups!=thesis_semijoin.at(action.get_index()).at(counter).tuples.end();){
+                                for(auto dels:thesis.deleted_facts){
+                                    for(auto del_entries:dels.second){
+                                        if(tups->count(del_entries)!=0){
+                                            tups = thesis_semijoin.at(action.get_index()).at(counter).tuples.erase(tups);
+                                            skip = true;
                                         }
-                                        
+                                        if(skip){
+                                            break;
+                                        }
                                     }
-                                    break;
+                                    if(skip){
+                                        break;
+                                    }
                                 }
-                                j++;
+                                if(skip){
+                                    skip = false;
+                                }else{
+                                    ++tups;
+                                }
                             }
-                            diff_delete.insert_or_assign(sj.first,true);
+                                
+                                
+                            std::unordered_map<size_t,bool> entry_check;
+                            for(auto it:thesis_semijoin.at(action.get_index()).at(counter).tuples){
+                                entry_check.insert_or_assign(boost::hash_range(it.begin(),it.end()),true);
+                            }
+                            for(auto it:tables[sj.second].tuples){
+                                if(entry_check.count(boost::hash_range(it.begin(),it.end()))==0){
+                                    thesis_semijoin.at(action.get_index()).at(counter).tuples.push_back(it);
+                                }
+                                
+                            }
+                            break;
+
                         }
-
-
-                        //thesis_semijoin.at(action.get_index()).at(counter) = tables[sj.second];
-                       
+                        diff_delete.insert_or_assign(sj.first,true);
                     }
+
+
+                    //thesis_semijoin.at(action.get_index()).at(counter) = tables[sj.second];
                     compute_semi_join.insert_or_assign(sj.second,true);
                 }else{
                     //if the semijoin between the new elements and the old ones is empty AND the semijoin in the last state was empty
@@ -583,7 +546,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
 
 }
 
-void YannakakisSuccessorGenerator::thesis_compute_del_impacts(const Task &task){
+/*void YannakakisSuccessorGenerator::thesis_compute_del_impacts(const Task &task){
     //std::vector<std::vector<std::pair<int,int>>> thesis_del_impacts;
     this->thesis_del_impacts.resize(task.get_action_schemas().size());
     for(auto it:task.get_action_schemas()){
@@ -600,7 +563,7 @@ void YannakakisSuccessorGenerator::thesis_compute_del_impacts(const Task &task){
         
     }
 
-}
+}*/
 
 /**
  *
@@ -720,7 +683,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             //}
             project(working_table, project_over);
             if (working_table.tuples.empty()) {
-                //cout << " yann err2" << endl;
+                cout << counter << endl;
                 return working_table;
             }
             counter++;

@@ -40,7 +40,7 @@ add_executable(search
         structures.h
         search_engines/search_factory.cc search_engines/search_factory.h
         search_engines/search.cc search_engines/search.h
-        search_engines/breadth_first_search.cc search_engines/breadth_first_search.h
+        #search_engines/breadth_first_search.cc search_engines/breadth_first_search.h
         search_engines/greedy_best_first_search.cc search_engines/greedy_best_first_search.h
         search_engines/nodes.cc search_engines/nodes.h
         search_engines/utils.cc search_engines/utils.h
@@ -48,7 +48,7 @@ add_executable(search
         action.cc action.h
         successor_generators/successor_generator.h
         database/table.cc database/table.h
-        database/join.cc database/join.h
+        #database/join.cc database/join.h
         database/utils.cc database/utils.h
         heuristics/goalcount.cc  heuristics/goalcount.h
         heuristics/heuristic.h
@@ -62,7 +62,7 @@ add_executable(search
         database/semi_join.h database/semi_join.cc
         database/hash_join.cc database/hash_join.h
         hash_structures.cc hash_structures.h
-        database/hash_semi_join.cc database/hash_semi_join.h
+        #database/hash_semi_join.cc database/hash_semi_join.h
         utils.cc utils.h
         successor_generators/random_successor.h successor_generators/random_successor.cc
         successor_generators/yannakakis.cc successor_generators/yannakakis.h
@@ -83,17 +83,17 @@ add_executable(search
         algorithms/dynamic_bitset.h
         search_statistics.cc search_statistics.h
         options.h open_lists/greedy_open_list.h
-        search_engines/breadth_first_width_search.cc search_engines/breadth_first_width_search.h
+        #search_engines/breadth_first_width_search.cc search_engines/breadth_first_width_search.h
         novelty/standard_novelty.cc novelty/standard_novelty.h
         open_lists/tiebreaking_open_list.h
         novelty/achieved_ground_atoms.h
         novelty/atom_counter.h
-        search_engines/dual_queue_bfws.cc search_engines/dual_queue_bfws.h
+        #search_engines/dual_queue_bfws.cc search_engines/dual_queue_bfws.h
         novelty/node_novelty.h
-        search_engines/alternated_bfws.cc search_engines/alternated_bfws.h
-        search_engines/lazy_search.cc search_engines/lazy_search.h
-        search_engines/lazy_search.cc search_engines/lazy_search.h
-        search_engines/astar_search.cc search_engines/astar_search.h
+        #search_engines/alternated_bfws.cc search_engines/alternated_bfws.h
+        #search_engines/lazy_search.cc search_engines/lazy_search.h
+        #search_engines/lazy_search.cc search_engines/lazy_search.h
+        #search_engines/astar_search.cc search_engines/astar_search.h
         datalog/datalog.cc datalog/datalog.h
         datalog/arguments.h
         datalog/datalog_atom.cc datalog/datalog_atom.h

@@ -25,6 +25,13 @@ GenericJoinSuccessor::GenericJoinSuccessor(const Task &task)
     action_data = precompile_action_data(task.get_action_schemas());
 }
 
+int GenericJoinSuccessor::advance_iterator(std::set<int>::iterator it, int amount){
+    for(int i=0;i<amount;i++){
+        it++;
+    }
+    return *it;
+}
+
 Table GenericJoinSuccessor::instantiate(const ActionSchema &action,
                                         const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<std::pair<Table,bool>>> &thesis_tables, std::vector<std::vector<Table>> &thesis_semijoin, DBState &old_state)
 {
@@ -91,10 +98,10 @@ void GenericJoinSuccessor::filter_static(const ActionSchema &action,
                 if (it != tup_idx.end()){
                     int index = distance(tup_idx.begin(), it);
 
-                    vector<vector<int>> newtuples;
+                    vector<set<int>> newtuples;
                     for (const auto &t : working_table.tuples) {
-                        if ((atom.is_negated() && t[index] != const_idx)
-                                || (!atom.is_negated() && t[index] == const_idx)){
+                        if ((atom.is_negated() && advance_iterator(t.begin(),index)!= const_idx)
+                                || (!atom.is_negated() && advance_iterator(t.begin(),index) == const_idx)){
                             newtuples.push_back(t);
                         }
                     }
@@ -111,10 +118,10 @@ void GenericJoinSuccessor::filter_static(const ActionSchema &action,
                     int index1 = distance(tup_idx.begin(), it_1);
                     int index2 = distance(tup_idx.begin(), it_2);
 
-                    vector<vector<int>> newtuples;
+                    vector<set<int>> newtuples;
                     for (const auto &t : working_table.tuples) {
-                        if ((atom.is_negated() && t[index1] != t[index2])
-                                || (!atom.is_negated() && t[index1] == t[index2])){
+                        if ((atom.is_negated() && advance_iterator(t.begin(),index1) != advance_iterator(t.begin(),index2))
+                                || (!atom.is_negated() && advance_iterator(t.begin(),index1) == advance_iterator(t.begin(),index2))){
                             newtuples.push_back(t);
                         }
                     }
@@ -148,7 +155,7 @@ void GenericJoinSuccessor::get_indices_and_constants_in_preconditions(vector<int
  */
 void GenericJoinSuccessor::select_tuples(const DBState &s,
                                          const Atom &a,
-                                         std::vector<GroundAtom> &tuples,
+                                         std::vector<set<int>> &tuples,
                                          const std::vector<int> &constants)
 {
     for (const GroundAtom &atom : s.get_relations()[a.get_predicate_symbol_idx()].tuples) {
@@ -160,7 +167,11 @@ void GenericJoinSuccessor::select_tuples(const DBState &s,
                 break;
             }
         }
-        if (match_constants) tuples.push_back(atom);
+        set<int> temp;
+        for(auto it:atom){
+            temp.insert(it);
+        }
+        if (match_constants) tuples.push_back(temp);
     }
 }
 
@@ -210,7 +221,7 @@ PrecompiledActionData GenericJoinSuccessor::precompile_action_data(const ActionS
         }
 
         // Otherwise the atom is static, so we precompile the table corresponding to it
-        vector<GroundAtom> tuples;
+        vector<set<int>> tuples;
         vector<int> constants, indices;
 
         get_indices_and_constants_in_preconditions(indices, constants, atom);
@@ -254,7 +265,7 @@ bool GenericJoinSuccessor::parse_precond_into_join_program(
         const Atom &atom = adata.relevant_precondition_atoms[i];
         assert(!is_static(atom.get_predicate_symbol_idx()));
 
-        vector<GroundAtom> tuples;
+        vector<set<int>> tuples;
         vector<int> constants, indices;
 
         // TODO the call next line should be performed at preprocessing as well. We should keep in
@@ -360,12 +371,15 @@ DBState GenericJoinSuccessor::generate_successor(
 
 void GenericJoinSuccessor::order_tuple_by_free_variable_order(const vector<int> &free_var_indices,
                                                             const vector<int> &map_indices_to_position,
-                                                            const vector<int> &tuple_with_const,
+                                                            const set<int> &tuple_with_const,
                                                             vector<int> &ordered_tuple) {
     for (size_t i = 0; i < free_var_indices.size(); ++i) {
-        ordered_tuple[free_var_indices[i]] = tuple_with_const[map_indices_to_position[i]];
+        ordered_tuple[free_var_indices[i]] = advance_iterator(tuple_with_const.begin(),map_indices_to_position[i]);
+        //tuple_with_const[map_indices_to_position[i]];
     }
 }
+
+
 void GenericJoinSuccessor::compute_map_indices_to_table_positions(const Table &instantiations,
                                                                 vector<int> &free_var_indices,
                                                                 vector<int> &map_indices_to_position) {
@@ -515,7 +529,7 @@ std::vector<LiftedOperatorId> GenericJoinSuccessor::get_applicable_actions(
     compute_map_indices_to_table_positions(
         instantiations, free_var_indices, map_indices_to_position);
 
-    for (const vector<int> &tuple_with_const : instantiations.tuples) {
+    for (const set<int> &tuple_with_const : instantiations.tuples) {
         vector<int> ordered_tuple(free_var_indices.size());
         order_tuple_by_free_variable_order(
             free_var_indices, map_indices_to_position, tuple_with_const, ordered_tuple);

@@ -39,7 +39,7 @@ class Table;
  * @see database/join.cc
  */
 class GenericJoinSuccessor : public SuccessorGenerator {
-    using tuple_t = std::vector<int>;
+    using tuple_t = std::set<int>;
 
 public:
     explicit GenericJoinSuccessor(const Task &task);
@@ -102,7 +102,7 @@ protected:
 
     static void select_tuples(const DBState &s,
                               const Atom &a,
-                              std::vector<GroundAtom> &tuples,
+                              std::vector<std::set<int>> &tuples,
                               const std::vector<int> &constants);
 
     static void filter_static(const ActionSchema &action,
@@ -123,7 +123,7 @@ protected:
 
     static void order_tuple_by_free_variable_order(const std::vector<int> &free_var_indices,
                                             const std::vector<int> &map_indices_to_position,
-                                            const std::vector<int> &tuple_with_const,
+                                            const std::set<int> &tuple_with_const,
                                             std::vector<int> &ordered_tuple) ;
 
     static bool is_trivially_inapplicable(const DBState &state, const ActionSchema &action) ;
@@ -142,9 +142,13 @@ protected:
     bool is_ground_action_applicable(const ActionSchema &action,
                                      const DBState &state) const;
 
+
+    static int advance_iterator(std::set<int>::iterator it, int amount);
+
     static void compute_map_indices_to_table_positions(const Table &instantiations,
                                                        std::vector<int> &free_var_indices,
                                                        std::vector<int> &map_indices_to_position) ;
+
 };
 
 class PrecompiledActionData {

@@ -2,6 +2,7 @@
 #define SEARCH_HASH_STRUCTURES_H
 
 #include <vector>
+#include <set>
 
 
 /**
@@ -12,6 +13,9 @@
  */
 struct TupleHash {
   std::size_t operator()(const std::vector<int> &c) const;
+};
+struct TupleSetHash {
+  std::size_t operator()(const std::set<int> &c) const;
 };
 
 #endif // SEARCH_HASH_STRUCTURES_H

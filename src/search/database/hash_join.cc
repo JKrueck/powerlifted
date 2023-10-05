@@ -9,14 +9,18 @@
 
 using namespace std;
 
-std::vector<int> project_tuple(
-    const std::vector<int>& tuple,
+std::set<int> project_tuple(
+    const std::set<int>& tuple,
     const std::vector<int>& pattern)
 {
     auto sz = pattern.size();
-    vector<int> projected(sz);
+    std::set<int> projected;
     for (size_t i = 0; i < sz; ++i) {
-        projected[i] = tuple[pattern[i]];
+        std::set<int>::iterator pos = tuple.begin();
+        for(int j=0;j<pattern[i];j++){
+            pos++;
+        }
+        projected.insert(*pos);
     }
     return projected;
 }
@@ -32,29 +36,28 @@ void hash_join(Table &t1, const Table &t2) {
      *    in the hash table.
      */
     std::vector<int> matches1, matches2;
-    
     compute_matching_columns(t1, t2, matches1, matches2);
     assert(matches1.size()==matches2.size());
 
-    vector<vector<int>> new_tuples;
+    vector<std::set<int>> new_tuples;
     if (matches1.empty()) {
         /*
          * If no attribute matches, then we apply a cartesian product
          * TODO this code is duplicate from join.cc, make it an auxiliary function
          */
         t1.tuple_index.insert(t1.tuple_index.end(), t2.tuple_index.begin(), t2.tuple_index.end());
-        for (const vector<int> &tuple_t1 : t1.tuples) {
-            for (const vector<int> &tuple_t2 : t2.tuples) {
-                vector<int> aux(tuple_t1);
-                aux.insert(aux.end(), tuple_t2.begin(), tuple_t2.end());
+        for (const std::set<int> &tuple_t1 : t1.tuples) {
+            for (const std::set<int> &tuple_t2 : t2.tuples) {
+                std::set<int> aux(tuple_t1);
+                aux.insert(tuple_t2.begin(), tuple_t2.end());
                 new_tuples.push_back(std::move(aux));
             }
         }
     }
     else {
-        unordered_map<vector<int>, vector<vector<int>>, TupleHash> hash_join_map;
+        unordered_map<std::set<int>, vector<std::set<int>>, TupleSetHash> hash_join_map;
         // Build phase
-        for (const vector<int> &tuple : t1.tuples) {
+        for (const std::set<int> &tuple : t1.tuples) {
             hash_join_map[project_tuple(tuple, matches1)].push_back(tuple);
         }
 
@@ -71,15 +74,21 @@ void hash_join(Table &t1, const Table &t2) {
         }
 
         // Probe phase
-        for (vector<int> tuple : t2.tuples) {
+        for (std::set<int> tuple : t2.tuples) {
 
             auto it = hash_join_map.find(project_tuple(tuple, matches2));
 
             if (it != hash_join_map.end()) {
                 const auto& matching_tuples = it->second;
-                for (vector<int> t:matching_tuples) {
+                for (std::set<int> t:matching_tuples) {
                     for (unsigned j = 0; j < to_remove.size(); ++j) {
-                        if (!to_remove[j]) t.push_back(tuple[j]);
+                        if(!to_remove[j]){
+                            std::set<int>::iterator pos = tuple.begin();
+                            for(int i=0;i<j;i++){
+                                pos++;
+                            }
+                            t.insert(*pos);
+                        } 
                     }
                     new_tuples.push_back(std::move(t));
                 }

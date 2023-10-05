@@ -2,6 +2,9 @@
 #define SEARCH_TABLE_H
 
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
+#include <set>
 
 /**
  * @brief Data-structure containing a set of tuples and the indices corresponding to
@@ -9,8 +12,8 @@
  */
 class Table {
 public:
-    using tuple_t = std::vector<int>;
-    using GroundAtom = std::vector<int>;
+    using tuple_t = std::set<int>;
+    using GroundAtom = std::set<int>;
 
     /// @var tuples: the relation corresponding to the table, encoded as a vector of tuples
     std::vector<tuple_t> tuples;
