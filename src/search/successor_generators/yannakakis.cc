@@ -230,9 +230,12 @@ void YannakakisSuccessorGenerator::filter_delete( std::vector<std::vector<Table>
 }
 
 Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis,
-                            std::vector<std::vector<std::pair<Table,bool>>> &thesis_tables, std::vector<std::vector<Table>> &thesis_semijoin, DBState &old_state)
+                            std::vector<std::vector<ThesisSave>> &thesis_tables, std::vector<std::vector<ThesisSave>> &thesis_semijoin, DBState &old_state)
 {
     //cout << "used" << endl;
+    if(action.get_index()==0){
+        int borstenschwein = 0;
+    }
     std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_add_diff = thesis.get_add_effect_map();
     std::unordered_map<int,bool>  diff_delete = thesis.get_del_eff();
 
@@ -279,22 +282,19 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         }
     }
     
-    std::vector<int> test(5,1);
-    TupleHash hashtest();
-    auto test_hash = boost::hash_range(test.begin(),test.end());
     
    
     std::vector<bool> nullary = state.get_nullary_atoms();
     //Create a modified state with the new relations
-    DBState mod_state = DBState(std::move(new_relations), std::move(nullary));
+    //DBState mod_state = DBState(std::move(new_relations), std::move(nullary));
 
     const auto &actiondata = action_data[action.get_index()];
     vector<Table> tables;
-    auto res = parse_precond_into_join_program(actiondata, mod_state, tables);
+    auto res = parse_precond_into_join_program(actiondata, state, tables);
     if (!res){
         //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
         //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
-        std::vector<Table> thesis_empty_joins;
+        std::vector<ThesisSave> thesis_empty_joins;
         thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_joins);
         //cout << "err1" << endl;
         return Table::EMPTY_TABLE();
@@ -331,136 +331,156 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     }
 
     int counter = 0;
-    for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {     
+    for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {  
+            //If there is a change in the computation of this semi-join   
             if(compute_semi_join.at(sj.first) || compute_semi_join.at(sj.second)){
-                size_t s = semi_join(tables[sj.second], tables[sj.first]);
+                std::pair<int,int> table_predicates;
+                table_predicates.first = action.get_precondition().at(sj.first).get_predicate_symbol_idx();
+                table_predicates.second = action.get_precondition().at(sj.second).get_predicate_symbol_idx();
+                //If that change is(are) only a newly added atom(s) 
+                if(thesis_affected_by_del.count(sj.second) == 0 && thesis_affected_by_del.count(sj.first) == 0){
+                    //Get the new structure
+                    ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
+                    
+                    if(predicate_to_add_diff.count(table_predicates.first)!=0){
+                        for(auto it:predicate_to_add_diff.at(table_predicates.first)){
+                            //Generate the key for the newly added atom
+                            std::vector<int> key(save_obj.matching_columns.size());
+                            for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
+                                key[i] = it[save_obj.matching_columns[i].second];
+                            }
+                            //Insert the new atom into the pos2 hashtable
+                            save_obj.pos2_hashtable[key].insert(it);
 
-                //if the semijoin with the new atoms was not empty
-                if(s!=0){
-                    //if neither table that was part of the semi-join was impacted by a delete effect
-                    if(thesis_affected_by_del.count(sj.second) == 0){
-                        if(true){//counter<(full_reducer_order.at(action.get_index()).size()+1)/2
-                        //append the current result to the old one 
-                            std::unordered_map<size_t,bool> entry_check;
-                            for(auto it:thesis_semijoin.at(action.get_index()).at(counter).tuples){
-                                entry_check.insert_or_assign(boost::hash_range(it.begin(),it.end()),true);
+                            if(save_obj.pos1_hashtable.count(key)!=0){
+                                save_obj.result_table[key].insert(it);
                             }
-                            for(auto it:tables[sj.second].tuples){
-                                if(entry_check.count(boost::hash_range(it.begin(),it.end()))==0){
-                                    thesis_semijoin.at(action.get_index()).at(counter).tuples.push_back(it);
-                                }
-                                
-                            }
-                        }
-                        
-                        //As it only impacted by add-effects, the new result is the combination of the old result and the current result
-                        //tables[sj.second] =  thesis_semijoin.at(action.get_index()).at(counter);
-                    }else{
-                        int j=0;
-                        if(false){//thesis_affected_by_del.count(sj.first) != 0
-                            int predicate_impacted;
-                            if(thesis_affected_by_del.count(sj.first)!=0){
-                                predicate_impacted = thesis_affected_by_del.at(sj.first);
-                                thesis_affected_by_del.insert_or_assign(sj.second,thesis_affected_by_del.at(sj.first));
-                            }else{
-                                predicate_impacted = action.get_precondition().at(sj.first).get_predicate_symbol_idx();
-                                thesis_affected_by_del.insert_or_assign(sj.second,action.get_precondition().at(sj.first).get_predicate_symbol_idx());
-                            }
-                            for(auto it:thesis_semijoin.at(action.get_index()).at(counter).tuples){
-                                std::vector<int> checking =it;
-                                std::sort(checking.begin(),checking.end());
-                                std::vector<int> result;
-                                
-                                std::set_intersection(checking.begin(),checking.end(),
-                                    thesis.deleted_facts.at(predicate_impacted).begin(),
-                                    thesis.deleted_facts.at(predicate_impacted).end(),
-                                    std::inserter(result,result.begin()));
-                                
-                                if(result.size()!=0){
-                                    thesis_semijoin.at(action.get_index()).at(counter).tuples.erase(thesis_semijoin.at(action.get_index()).at(counter).tuples.begin()+j);
-                                    std::unordered_map<size_t,bool> entry_check;
-                                    for(auto it:thesis_semijoin.at(action.get_index()).at(counter).tuples){
-                                        entry_check.insert_or_assign(boost::hash_range(it.begin(),it.end()),true);
-                                    }
-                                    for(auto it:tables[sj.second].tuples){
-                                        if(entry_check.count(boost::hash_range(it.begin(),it.end()))==0){
-                                            thesis_semijoin.at(action.get_index()).at(counter).tuples.push_back(it);
-                                        }
-                                        
-                                    }
-                                    break;
-                                }
-                                j++;
-                            }
-                            diff_delete.insert_or_assign(sj.second,true);
-                            
-                        }else if(thesis_affected_by_del.count(sj.second) != 0){
-                            int predicate_impacted;
-                            if(thesis_affected_by_del.count(sj.second)!=0){
-                                predicate_impacted = thesis_affected_by_del.at(sj.second);
-                                //thesis_affected_by_del.insert_or_assign(sj.first, thesis_affected_by_del.at(sj.second));
-                            }else{
-                                predicate_impacted = action.get_precondition().at(sj.second).get_predicate_symbol_idx();
-                                //thesis_affected_by_del.insert_or_assign(action.get_precondition().at(sj.first).get_predicate_symbol_idx(),action.get_precondition().at(sj.second).get_predicate_symbol_idx());
-                            }
-                            for(auto it:thesis_semijoin.at(action.get_index()).at(counter).tuples){
-                                std::vector<int> checking =it;
-                                std::sort(checking.begin(),checking.end());
-                                std::vector<int> result;
-                                
-                                std::set_intersection(checking.begin(),checking.end(),
-                                    thesis.deleted_facts.at(predicate_impacted).begin(),
-                                    thesis.deleted_facts.at(predicate_impacted).end(),
-                                    std::inserter(result,result.begin()));
-                                
-                                if(result.size()!=0){
-                                    thesis_semijoin.at(action.get_index()).at(counter).tuples.erase(thesis_semijoin.at(action.get_index()).at(counter).tuples.begin()+j);
-                                    std::unordered_map<size_t,bool> entry_check;
-                                    for(auto it:thesis_semijoin.at(action.get_index()).at(counter).tuples){
-                                        entry_check.insert_or_assign(boost::hash_range(it.begin(),it.end()),true);
-                                    }
-                                    for(auto it:tables[sj.second].tuples){
-                                        if(entry_check.count(boost::hash_range(it.begin(),it.end()))==0){
-                                            thesis_semijoin.at(action.get_index()).at(counter).tuples.push_back(it);
-                                        }
-                                        
-                                    }
-                                    break;
-                                }
-                                j++;
-                            }
-                            diff_delete.insert_or_assign(sj.first,true);
-                        }
-
-
-                        //thesis_semijoin.at(action.get_index()).at(counter) = tables[sj.second];
-                       
+                        }   
                     }
-                    compute_semi_join.insert_or_assign(sj.second,true);
-                }else{
-                    //if the semijoin between the new elements and the old ones is empty AND the semijoin in the last state was empty
-                    // -> use the results from last time
-                    if(thesis_semijoin.at(action.get_index()).at(counter).tuples.size()!=0){
-                        //If the table that is empty because of the semi-join was not impacted by a delete effect
-                        if(diff_delete.count(sj.second)!=0 && !diff_delete.at(sj.second)){//diff_delete.count(sj.second)!=0 && !diff_delete.at(sj.second)
-                            tables[sj.second] = thesis_semijoin.at(action.get_index()).at(counter);
-                            break;
+                    if(predicate_to_add_diff.count(table_predicates.second)!=0){
+                        for(auto it:predicate_to_add_diff.at(table_predicates.second)){
+                            //Generate the key for the newly added atom
+                            std::vector<int> key(save_obj.matching_columns.size());
+                            for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
+                                key[i] = it[save_obj.matching_columns[i].first];
+                            }
+                            //Insert the new atom into the pos1 hashtable
+                            save_obj.pos1_hashtable[key].insert(it);
+                            if(save_obj.pos2_hashtable.count(key)!=0){
+                                save_obj.result_table[key].insert(it);
+                            }
+                        }   
+                    }
+                    //Generate the WHOLE complete new_table
+                    //Unnessescary probably
+                    tables[sj.second] = save_obj.generate_table();
+                }else{//If that change was a delete effect (and maybe also add effect)
+                    //Get the new structure
+                    ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
+
+                    if(auto deleted=thesis.deleted_facts.find(table_predicates.first);
+                            deleted!=thesis.deleted_facts.end()){
+                        //Generate the key for the removed added atom
+                        std::vector<int> key(save_obj.matching_columns.size());
+                        for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
+                            key[i] = deleted->second[save_obj.matching_columns[i].second];
                         }
+                        //Delete the TableEntry from the pos2 hashtable
+                        if(save_obj.pos2_hashtable.count(key)!=0){
+                            auto pos = save_obj.pos2_hashtable.at(key).find(deleted->second);
+                            if(pos!=save_obj.pos2_hashtable.at(key).end()){
+                                save_obj.pos2_hashtable.at(key).erase(pos);
+                                //If the set has no entries left after removal, we can delete that key
+                                //This also means that there is no match between pos1 and pos2 on that key
+                                //If that key appears in the result it can thus be deleted
+                                if(save_obj.pos2_hashtable.at(key).size()==0){
+                                    save_obj.pos2_hashtable.erase(key);
+                                    if(save_obj.result_table.count(key)!=0){
+                                        save_obj.result_table.erase(key);
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+                    if(auto deleted=thesis.deleted_facts.find(table_predicates.second);
+                            deleted!=thesis.deleted_facts.end()){
+                        //Generate the key for the removed added atom
+                        std::vector<int> key(save_obj.matching_columns.size());
+                        for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
+                            key[i] = deleted->second[save_obj.matching_columns[i].first];
+                        }
+                        //Delete the TableEntry from the pos1 hashtable
+                        if(save_obj.pos1_hashtable.count(key)!=0){
+                            auto pos = save_obj.pos1_hashtable.at(key).find(deleted->second);
+                            if(pos!=save_obj.pos1_hashtable.at(key).end()){
+                                save_obj.pos1_hashtable.at(key).erase(pos);
+                                //If the set has no entries left after removal, we can delete that key
+                                //This also means that there is no match between pos1 and pos2 on that key
+                                //If that key appears in the result it can thus be deleted
+                                auto size = save_obj.pos1_hashtable.at(key).size();
+                                if(save_obj.pos1_hashtable.at(key).size()==0){
+                                    save_obj.pos1_hashtable.erase(key);
+                                    if(save_obj.result_table.count(key)!=0){
+                                        save_obj.result_table.erase(key);
+                                    }
+                                //If the set is not empty but the key does not appear in the pos2 hashtable, we can delete that key in the result too
+                                }else if(save_obj.pos2_hashtable.count(key)==0){
+                                    save_obj.result_table.erase(key);
+                                }
+                            }
+                        }
+   
+                    }
+                    //Now deal with any possible add-effects
+                    if(predicate_to_add_diff.count(table_predicates.first)!=0){
+                        for(auto it:predicate_to_add_diff.at(table_predicates.first)){
+                            //Generate the key for the newly added atom
+                            std::vector<int> key(save_obj.matching_columns.size());
+                            for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
+                                key[i] = it[save_obj.matching_columns[i].second];
+                            }
+                            //Insert the new atom into the pos2 hashtable
+                            save_obj.pos2_hashtable[key].insert(it);
+
+                            if(save_obj.pos1_hashtable.count(key)!=0){
+                                save_obj.result_table[key].insert(it);
+                            }
+                        }   
+                    }
+                    if(predicate_to_add_diff.count(table_predicates.second)!=0){
+                        for(auto it:predicate_to_add_diff.at(table_predicates.second)){
+                            //Generate the key for the newly added atom
+                            std::vector<int> key(save_obj.matching_columns.size());
+                            for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
+                                key[i] = it[save_obj.matching_columns[i].first];
+                            }
+                            //Insert the new atom into the pos1 hashtable
+                            save_obj.pos1_hashtable[key].insert(it);
+                            if(save_obj.pos2_hashtable.count(key)!=0){
+                                save_obj.result_table[key].insert(it);
+                            }
+                        }   
                     }
 
+                    //Generate the WHOLE complete new_table
+                    //Unnessescary probably
+                    tables[sj.second] = save_obj.generate_table();
 
-
-
-                    //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
-                    //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
-                    std::vector<Table> thesis_empty_semijoins;
-                    //cout << "err2" << endl;
-                    thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
-                    return Table::EMPTY_TABLE();
+                    //If the resulting semi-join was empty
+                    if(tables[sj.second].tuples.size()==0){
+                        //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
+                        //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
+                        std::vector<ThesisSave> thesis_empty_semijoins;
+                        //cout << "err2" << endl;
+                        thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
+                        return Table::EMPTY_TABLE();
+                    }
                 }
 
             }else{
-                tables[sj.second] = thesis_semijoin.at(action.get_index()).at(counter);
+                tables[sj.second] = thesis_semijoin.at(action.get_index()).at(counter).result;
+                tables[sj.second].tuple_index = thesis_semijoin.at(action.get_index()).at(counter).result_index;
             }
             counter++;
             /*for(auto tup:tables[sj.second].tuples){
@@ -472,7 +492,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     }
 
     //Temporary Solution for checking if this does work at all
-    std::vector<bool> semijoin_was_updated(tables.size(),false);
+    /*std::vector<bool> semijoin_was_updated(tables.size(),false);
     for(int i=0; i<semijoin_was_updated.size();i++){
         if(compute_semi_join.at(i)){
             bool flag = false;
@@ -490,7 +510,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 select_tuples(state,action.get_precondition().at(i),tables[i].tuples,std::vector<int>());
             }
         }
-    }
+    }*/
     
     
 
@@ -500,70 +520,33 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
 
     std::unordered_map<int,std::vector<int>> thesis_indices;
     counter = 0;
-    for (const auto &j : jt.get_order()) {//compute_hash_join.at(j.first) || compute_hash_join.at(j.second)
-        /*Compute a new hashjoin if:
-            1) The table at position j.first was impacted by the previous action or was generated as a result of such a table
-                or
-            2) The table at position j.second was impacted by the previous action or was generated as a result of such a table
-        */
-        if(true){ //compute_hash_join.at(j.first) || compute_hash_join.at(j.second)
-
-            unordered_set<int> project_over;
-            for (auto x : tables[j.second].tuple_index) {
+    for (const auto &j : jt.get_order()) {
+        unordered_set<int> project_over;
+        for (auto x : tables[j.second].tuple_index) {
+            project_over.insert(x);
+        }
+        for (auto x : tables[j.first].tuple_index) {
+            if (distinguished_variables[action.get_index()].count(x) > 0) {
                 project_over.insert(x);
             }
-            for (auto x : tables[j.first].tuple_index) {
-                if (distinguished_variables[action.get_index()].count(x) > 0) {
-                    project_over.insert(x);
-                }
-            }
-            Table &working_table = tables[j.second];
-            hash_join(working_table, tables[j.first]);
-
-            thesis_tables.at(action.get_index()).at(counter).first = working_table;
-
-
-            // Project must be after removal of inequality constraints, otherwise we might keep only the
-            // tuple violating some inequality. Variables in inequalities are also considered
-            // distinguished.
-
-            /*
-            //save the result of the hashjoin by appending the new results to the old ones
-            if(diff_delete.count(j.first) == 0 && diff_delete.count(j.second) == 0 ){
-                for(auto it:working_table.tuples){
-                    //thesis.get_join_tables()->at(counter).tuples.push_back(it);
-                    thesis_tables.at(action.get_index()).at(counter).first.tuples.push_back(it);
-                }
-            }else{
-                //Replace the old result if a delete effect had an impact on this??
-                thesis_tables.at(action.get_index()).at(counter).first = working_table;
-                diff_delete.insert_or_assign(action.get_precondition().at(j.second).get_predicate_symbol_idx(),true);
-            }*/
-            
-            
-            filter_static(action, working_table);
-            project(working_table, project_over);
-            if (working_table.tuples.empty()) {
-                std::vector<Table> thesis_empty_joins;
-                //cout << "err3" << endl;
-                thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_joins);
-                return working_table;
-            }
-            
-            compute_hash_join.insert_or_assign(j.second,true);
-        }else{
-            //cout << "used old" << endl;
-            tables[j.second] = thesis_tables.at(action.get_index()).at(counter).first;
         }
-        counter++;
+        Table &working_table = tables[j.second];
+        hash_join(working_table, tables[j.first]);
+        // Project must be after removal of inequality constraints, otherwise we might keep only the tuple violating
+        // some inequality. Variables in inequalities are also considered distinguished.
+        filter_static(action, working_table);
+        project(working_table, project_over);
+        if (working_table.tuples.empty()) {
+            return working_table;
+        }
     }
 
     
     
-    Table &working_table = tables[remaining_join[action.get_index()][0]];
+    /*Table &working_table = tables[remaining_join[action.get_index()][0]];
     //remaining_join[action.get_index()].size()==1
     if(remaining_join[action.get_index()].size()==1){
-        working_table = thesis_tables.at(action.get_index()).back().first;
+        working_table = thesis_tables.at(action.get_index()).back().result;
     }else{
         // For the case where the action schema is cyclic
         for (size_t i = 1; i < remaining_join[action.get_index()].size(); ++i) {
@@ -573,10 +556,17 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 return working_table;
             }
         }
+    }*/
+    Table &working_table = tables[remaining_join[action.get_index()][0]];
+    for (size_t i = 1; i < remaining_join[action.get_index()].size(); ++i) {
+        hash_join(working_table, tables[remaining_join[action.get_index()][i]]);
+        filter_static(action, working_table);
+        if (working_table.tuples.empty()) {
+            return working_table;
+        }
     }
     
 
-    filter_static(action, working_table);
     
     project(working_table, distinguished_variables[action.get_index()]);
     return working_table;
@@ -624,7 +614,7 @@ void YannakakisSuccessorGenerator::thesis_compute_del_impacts(const Task &task){
  * @return
  */
 Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state,
-        const Task &task, ThesisClass &thesis, std::vector<std::vector<std::pair<Table,bool>>> &thesis_tables, std::vector<std::vector<Table>> &thesis_semijoin, DBState &old_state)
+        const Task &task, ThesisClass &thesis, std::vector<std::vector<ThesisSave>> &thesis_tables, std::vector<std::vector<ThesisSave>> &thesis_semijoin, DBState &old_state)
 {
     if (action.is_ground()) {
         throw std::runtime_error("Shouldn't be calling instantiate() on a ground action");
@@ -658,15 +648,16 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         //}
 
         for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
-            size_t s = semi_join(tables[sj.second], tables[sj.first]);
+            ThesisSave semijoin_save;
+            size_t s = semi_join(tables[sj.second], tables[sj.first], semijoin_save);
             if (s == 0) {
                 //cout << " yann err1" << endl;
-                std::vector<Table> thesis_empty_joins;
+                std::vector<ThesisSave> thesis_empty_joins;
                 thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_joins);
                 return Table::EMPTY_TABLE();
             }
             if(thesis.is_enabled()){
-                thesis_semijoin.at(action.get_index()).push_back(tables[sj.second]);
+                thesis_semijoin.at(action.get_index()).push_back(semijoin_save);
             }
         }
     
@@ -697,7 +688,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             
             //save the result of the current hashjoin
             
-            if(thesis.is_enabled()){
+            /*if(thesis.is_enabled()){
                 if(thesis_impacted.at(j.first) || thesis_impacted.at(j.second)){
                     thesis_tables.at(action.get_index()).at(counter).first = working_table;
                     thesis_tables.at(action.get_index()).at(counter).second = true;
@@ -705,7 +696,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
                 }else{
                     thesis_tables.at(action.get_index()).at(counter).first = working_table;
                 }
-            }
+            }*/
            
             
 

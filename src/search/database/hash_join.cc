@@ -32,7 +32,6 @@ void hash_join(Table &t1, const Table &t2) {
      *    in the hash table.
      */
     std::vector<int> matches1, matches2;
-    
     compute_matching_columns(t1, t2, matches1, matches2);
     assert(matches1.size()==matches2.size());
 

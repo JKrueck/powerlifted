@@ -19,9 +19,10 @@ using namespace std;
 * an empty relation is produced.
 *
 */
-size_t semi_join(Table &t1, const Table &t2) {
+size_t semi_join(Table &t1, const Table &t2, ThesisSave &save) {
 
     auto matches = compute_matching_columns(t1, t2);
+    save.matching_columns = matches;
 
     if (matches.empty()) { // If no attribute matches, then we return
         return t1.tuple_index.size();
@@ -29,7 +30,29 @@ size_t semi_join(Table &t1, const Table &t2) {
 
     // Otherwise, we perform the join and the projection
     vector<vector<int>> new_tuples;
-    for (const vector<int> &tuple_t1 : t1.tuples) {
+    for(auto &tuple:t2.tuples){
+        std::vector<int> key(matches.size());
+        for(size_t i = 0; i < matches.size(); i++) {
+                key[i] = tuple[matches[i].second];
+        }
+        save.pos2_hashtable[key].insert(tuple);
+    }
+
+    for(auto &tuple:t1.tuples){
+        std::vector<int> key(matches.size());
+        for(size_t i = 0; i < matches.size(); i++) {
+            key[i] = tuple[matches[i].first];
+        }
+        save.pos1_hashtable[key].insert(tuple);
+
+        if(save.pos2_hashtable.count(key)!=0){
+            new_tuples.push_back(tuple);
+            save.result_table[key].insert(tuple);
+        }
+
+    }
+    
+    /*for (const vector<int> &tuple_t1 : t1.tuples) {
         for (const vector<int> &tuple_t2 : t2.tuples) {
             bool match = true;
             for (const pair<int, int>& m : matches) {
@@ -44,7 +67,10 @@ size_t semi_join(Table &t1, const Table &t2) {
                 break;
             }
         }
-    }
+    }*/
+
+    save.result.tuples = new_tuples;
+    save.result_index = t1.tuple_index;
     t1.tuples = std::move(new_tuples);
     return t1.tuples.size();
 }

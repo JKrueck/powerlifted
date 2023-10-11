@@ -18,7 +18,7 @@ SuccessorGenerator *SuccessorGeneratorFactory::create(const std::string &method,
                                                       Task &task)
 {
     std::cout << "Creating successor generator factory..." << std::endl;
-    if (boost::iequals(method, "join")) {
+    /*if (boost::iequals(method, "join")) {
         return new NaiveSuccessorGenerator(task);
     }
     else if (boost::iequals(method, "full_reducer")) {
@@ -32,8 +32,8 @@ SuccessorGenerator *SuccessorGeneratorFactory::create(const std::string &method,
     }
     else if (boost::iequals(method, "random_join")) {
         return new RandomSuccessorGenerator(task, seed);
-    }
-    else if (boost::iequals(method, "yannakakis")) {
+    }*/
+    if (boost::iequals(method, "yannakakis")) {
         return new YannakakisSuccessorGenerator(task);
     }
     else {

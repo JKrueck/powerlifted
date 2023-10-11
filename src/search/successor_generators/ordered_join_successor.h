@@ -23,8 +23,8 @@ public:
                                          const DBState &state,
                                          std::vector<Table>& tables) override;
 
-    Table instantiate(const ActionSchema &action, const DBState &state,const Task &task,
-                    ThesisClass &thesis,std::vector<std::vector<std::pair<Table,bool>>> &thesis_tables, std::vector<std::vector<Table>> &thesis_semijoin, DBState &old_state) override;
+    Table instantiate(const ActionSchema &action, const DBState &state,
+            const Task &task, ThesisClass &thesis, std::vector<std::vector<ThesisSave>> &thesis_tables, std::vector<std::vector<ThesisSave>> &thesis_semijoin, DBState &old_state) override;
 
 };
 

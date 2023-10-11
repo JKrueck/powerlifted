@@ -50,25 +50,25 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time)) return utils::ExitCode::SUCCESS;
 
     //Save the intermediate hash-join tables at a global level and per action
-    std::vector<std::vector<std::pair<Table,bool>>> thesis_join_table_at_state;
+    std::vector<std::vector<ThesisSave>> thesis_join_table_at_state;
     thesis_join_table_at_state.resize(task.get_action_schemas().size());
     //As we always want to use the join tables from the prior state, we need to save all of them on a per state basis
     //To-Do: Think about when we don´t need them anymore and can delete them from memory
-    std::unordered_map<int, std::vector<std::vector<std::pair<Table,bool>>>> thesis_join_table_memory; 
+    std::unordered_map<int, std::vector<std::vector<ThesisSave>>> thesis_join_table_memory; 
     thesis_join_table_memory.insert({0,thesis_join_table_at_state});
 
     //Save the intermediate semi-join tables at a global level and per action
-    std::vector<std::vector<Table>> thesis_semijoin_table_at_state;
+    std::vector<std::vector<ThesisSave>> thesis_semijoin_table_at_state;
     thesis_semijoin_table_at_state.resize(task.get_action_schemas().size());
     //As we always want to use the join tables from the prior state, we need to save all of them on a per state basis
     //To-Do: Think about when we don´t need them anymore and can delete them from memory
-    std::unordered_map<int, std::vector<std::vector<Table>>> thesis_semijoin_table_memory;
+    std::unordered_map<int, std::vector<std::vector<ThesisSave>>> thesis_semijoin_table_memory;
     thesis_semijoin_table_memory.insert({0,thesis_semijoin_table_at_state});
 
     //Storage for classes per state
     //intended to work similar to queue
     std::unordered_map<int,ThesisClass> thesis_state_memory;
-    ThesisClass initial = ThesisClass(false,task.get_action_schema_by_index(0));//this->thesis_enabled
+    ThesisClass initial = ThesisClass(true,task.get_action_schema_by_index(0));//this->thesis_enabled
     initial.set_parent_state_id(0);
     thesis_state_memory.insert({0,initial});
 
@@ -83,7 +83,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         StateID sid = queue.remove_min();
         SearchNode &node = space.get_node(sid);
 
-        //cout << "current state: " << sid.id() << endl;
+        cout << "----current state: " << sid.id() << "----" << endl;
 
         if(sid.id()!=0){
             skip = false;
@@ -115,6 +115,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                  << ", evaluations: " << statistics.get_evaluations()
                  << ", generations: " << statistics.get_generated()
                  << ", state " << sid.id()
+                 << ", succ time: " << thesis_time
                  << ", time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << "]" << '\n';
             print = true;    
         }
@@ -128,15 +129,15 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
         //cout << "Memory needed for table storage: " << sizeof(thesis_semijoin_table_memory) + sizeof(thesis_join_table_memory) << " Bytes"<< endl;
 
-        /*if(sid.id() != 0 && print) {
-            cout << "parent state: " << old_thesis.get_parent_state_id() << endl;
+        if(sid.id() != 0) {
+            //cout << "parent state: " << old_thesis.get_parent_state_id() << endl;
             cout << "action used to get here: " << old_thesis.get_action_id() << "->" << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name()<< endl;
             cout << "with instantiation: ";
             for (auto it:test_map.at(sid.id())){
                 cout << it << " ";
             }
             cout << endl;
-        }*/
+        }
     
         //generator.thesis_compute_del_impacts(task);
         //get all hash tables that were computed in the previous state
@@ -183,7 +184,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
 
-            if ((sid.id()==890)) {
+            if ((sid.id()==19)) {
                 int stop13 = 1;
             }
 
@@ -204,20 +205,22 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             thesis_semijoin_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_semijoin_table_at_state.at(action.get_index()));
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
            
-            /*if ((print) || (sid.id()==890)) {
+
+            if(true){
                 std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
-            }*/
+
             
-            /*cout << "instantiations: "<< endl;
-            if(sid.id()!=0){
-                for(auto it:applicable){
-                    cout << "\t";
-                    for(auto it2:it.get_instantiation()){
-                        cout << it2 << " ";
-                    }  
-                    cout << endl;
+                cout << "instantiations: "<< endl;
+                if(sid.id()!=0){
+                    for(auto it:applicable){
+                        cout << "\t";
+                        for(auto it2:it.get_instantiation()){
+                            cout << it2 << " ";
+                        }  
+                        cout << endl;
+                    }
                 }
-            }*/
+            }
            
             /*if(action.get_name() == "dummy" && old_thesis.is_enabled()){
                 //cout << "\t State-Id: " << sid.id() << " Last Action: " << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name() << endl;
@@ -264,9 +267,14 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                   //  continue;
                 //}
 
-                /*if((child_node.state_id.id()!=1)){
-                    if((child_node.state_id.id()!=37)){
-                        if(child_node.state_id.id()!=45){
+                if((child_node.state_id.id()!=1)){
+                    if((child_node.state_id.id()!=14)){
+                        if(child_node.state_id.id()!=19){
+                            continue;
+                        }
+                    }
+                }
+                 /*       if(child_node.state_id.id()!=45){
                             if((child_node.state_id.id()!=227)){
                                 if((child_node.state_id.id()!=232 )){
                                     if(child_node.state_id.id()!=890){

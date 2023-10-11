@@ -23,11 +23,32 @@ class Table;
 
 
 /* TODO:
-    
-
-
-
 */
+
+struct ThesisSave{
+    std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash> pos1_hashtable;
+    std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash> pos2_hashtable;
+    
+    std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash> result_table;
+    Table result;
+    std::vector<int> result_index;
+
+    std::vector<std::pair<int,int>> matching_columns;
+
+    ThesisSave() = default;
+
+    Table generate_table(){
+        Table result;
+        for(auto set:this->result_table){
+            for(auto it:set.second){
+                result.tuples.push_back(it);
+            }
+        }
+        result.tuple_index = this->result_index;
+        return result;
+    }
+
+};
 
 class ThesisClass
 {
@@ -139,7 +160,7 @@ public:
      * instantiation of the action schema.
      */
     virtual std::vector<LiftedOperatorId> get_applicable_actions(
-            const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<std::pair<Table,bool>>> &thesis_tables, std::vector<std::vector<Table>> &thesis_semijoin, DBState &old_state) = 0;
+            const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<ThesisSave>> &thesis_tables, std::vector<std::vector<ThesisSave>> &thesis_semijoin, DBState &old_state) = 0;
 
     /**
      * Generate the state that results from applying the given action to the given state.
