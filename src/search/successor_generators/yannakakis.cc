@@ -255,19 +255,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         mega_idiot_counter++;
     }
    
-    
-    //Create a new relations vector that only contains the add effect changes
-    std::vector<Relation> new_relations;
-    new_relations.resize(state.get_relations().size());
-    for(long unsigned int i=0;i<state.get_relations().size();i++){
-        if(predicate_to_add_diff.count(i)!=0 && thesis_hack.count(i)!= 0){
-            auto tuples = predicate_to_add_diff.at(i);
-            new_relations[i] = Relation(i,std::move(tuples));
-        }else{
-            auto tuples = state.get_tuples_of_relation(i);
-            new_relations[i] = Relation(i,std::move(tuples));
-        }
-    }
     //Save for which tables we need to re compute the hash join -- there can be more tables than predicates because of static preds
     std::unordered_map<int,bool> compute_hash_join;
     std::unordered_map<int,bool> compute_semi_join;
@@ -302,14 +289,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     assert(!tables.empty());
     assert(tables.size() == actiondata.relevant_precondition_atoms.size());
     
-    std::unordered_map<GroundAtom,int,TupleHash> position_map;
-    for(auto table:tables){
-        int tuple_counter = 0;
-        for(auto it:table.tuples){
-            position_map.insert_or_assign(it,tuple_counter);
-            tuple_counter++;
-        }
-    }
     
     std::unordered_map<int,int> thesis_affected_by_del;
     int idiot_counter = 0;
@@ -321,24 +300,20 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         idiot_counter++;
     }
 
-        //Tables kommen nach dem semi-join NICHT richtig raus 
-        //nachdem tuple entfernt wurde und das ergebnis des semi-joins in den speicher gepackt wird, kann es sein, dass ein teil 
-        //des ergebnis des semi-joins schon im speicher ist
-        //ES GIBT TUPLE HASHES!!!!
+    //Tables that were affected by a del effect: Maps [Table] -> full reducer iteration
+    std::unordered_map<int,int> affected_tables;
 
-    if(action.get_index() == 7){
-        int stop = 0;
-    }
+
 
     int counter = 0;
     for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {  
             //If there is a change in the computation of this semi-join   
-            if(compute_semi_join.at(sj.first) || compute_semi_join.at(sj.second)){
+            if((compute_semi_join.at(sj.first) || compute_semi_join.at(sj.second)) && (affected_tables.count(sj.first)==0 && affected_tables.count(sj.second)==0)){
                 std::pair<int,int> table_predicates;
                 table_predicates.first = action.get_precondition().at(sj.first).get_predicate_symbol_idx();
                 table_predicates.second = action.get_precondition().at(sj.second).get_predicate_symbol_idx();
                 //If that change is(are) only a newly added atom(s) 
-                if(thesis_affected_by_del.count(sj.second) == 0 && thesis_affected_by_del.count(sj.first) == 0){
+                if((thesis_affected_by_del.count(sj.second) == 0 && thesis_affected_by_del.count(sj.first) == 0) || thesis_affected_by_del.size() ==0){
                     //Get the new structure
                     ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
                     
@@ -378,16 +353,41 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     //Get the new structure
                     ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
 
-                    if(auto deleted=thesis.deleted_facts.find(table_predicates.first);
-                            deleted!=thesis.deleted_facts.end()){
+                    //Prepare all conditions
+                    GroundAtom deleted_first;
+                    GroundAtom deleted_second;
+                    bool delete_condition1 = false;
+                    bool delete_condition2 = false;
+
+                    int predicate_impacted;
+
+                    if(thesis_affected_by_del.count(sj.first)!=0){
+                        deleted_first = thesis.deleted_facts.at(thesis_affected_by_del.at(sj.first));
+                        delete_condition1 = true;
+                        affected_tables.insert_or_assign(sj.first,counter);
+                        affected_tables.insert_or_assign(sj.second,counter);
+                    }
+                    if(thesis_affected_by_del.count(sj.second)!=0){
+                        deleted_second = thesis.deleted_facts.at(thesis_affected_by_del.at(sj.second));
+                        delete_condition2 = true;
+                        affected_tables.insert_or_assign(sj.second,counter);
+                    }else{
+                        predicate_impacted = thesis_affected_by_del.at(sj.first);
+                        thesis_affected_by_del.insert_or_assign(sj.second,predicate_impacted);
+                        //Remember that the table at the second position was affected by a del effecy
+                    }
+                    
+
+
+                    if(delete_condition1){
                         //Generate the key for the removed added atom
                         std::vector<int> key(save_obj.matching_columns.size());
                         for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
-                            key[i] = deleted->second[save_obj.matching_columns[i].second];
+                            key[i] = deleted_first[save_obj.matching_columns[i].second];
                         }
                         //Delete the TableEntry from the pos2 hashtable
                         if(save_obj.pos2_hashtable.count(key)!=0){
-                            auto pos = save_obj.pos2_hashtable.at(key).find(deleted->second);
+                            auto pos = save_obj.pos2_hashtable.at(key).find(deleted_first);
                             if(pos!=save_obj.pos2_hashtable.at(key).end()){
                                 save_obj.pos2_hashtable.at(key).erase(pos);
                                 //If the set has no entries left after removal, we can delete that key
@@ -403,23 +403,22 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         }
 
                     }
-                    if(auto deleted=thesis.deleted_facts.find(table_predicates.second);
-                            deleted!=thesis.deleted_facts.end()){
+                    if(delete_condition2){
                         //Generate the key for the removed added atom
                         std::vector<int> key(save_obj.matching_columns.size());
                         for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
-                            key[i] = deleted->second[save_obj.matching_columns[i].first];
+                            key[i] = deleted_second[save_obj.matching_columns[i].first];
                         }
                         //Delete the TableEntry from the pos1 hashtable
                         if(save_obj.pos1_hashtable.count(key)!=0){
-                            auto pos = save_obj.pos1_hashtable.at(key).find(deleted->second);
-                            if(pos!=save_obj.pos1_hashtable.at(key).end()){
+                            auto pos = save_obj.pos1_hashtable.at(key).find(deleted_second);
+                            if(pos!=save_obj.pos1_hashtable.at(key).end()){//
                                 save_obj.pos1_hashtable.at(key).erase(pos);
+                                
                                 //If the set has no entries left after removal, we can delete that key
                                 //This also means that there is no match between pos1 and pos2 on that key
                                 //If that key appears in the result it can thus be deleted
-                                auto size = save_obj.pos1_hashtable.at(key).size();
-                                if(save_obj.pos1_hashtable.at(key).size()==0){
+                                if(save_obj.pos1_hashtable.at(key).size()==0){//
                                     save_obj.pos1_hashtable.erase(key);
                                     if(save_obj.result_table.count(key)!=0){
                                         save_obj.result_table.erase(key);
@@ -444,7 +443,9 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             save_obj.pos2_hashtable[key].insert(it);
 
                             if(save_obj.pos1_hashtable.count(key)!=0){
-                                save_obj.result_table[key].insert(it);
+                                for(auto elem:save_obj.pos1_hashtable[key]){
+                                    save_obj.result_table[key].insert(elem);
+                                }
                             }
                         }   
                     }
@@ -457,6 +458,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             }
                             //Insert the new atom into the pos1 hashtable
                             save_obj.pos1_hashtable[key].insert(it);
+                            int test = save_obj.pos2_hashtable.count(key);
                             if(save_obj.pos2_hashtable.count(key)!=0){
                                 save_obj.result_table[key].insert(it);
                             }
@@ -466,7 +468,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     //Generate the WHOLE complete new_table
                     //Unnessescary probably
                     tables[sj.second] = save_obj.generate_table();
-
+                    
                     //If the resulting semi-join was empty
                     if(tables[sj.second].tuples.size()==0){
                         //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
@@ -477,7 +479,94 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         return Table::EMPTY_TABLE();
                     }
                 }
+            }else if(affected_tables.count(sj.first)!=0 && affected_tables.count(sj.second) == 0 ){//Probably also need to do this for sj.first??
+                //This is very similar to just computing a new semi-join --- talk about this
+                //For this direction its probably easier to just compute the semi-join ?
+                //Get the new structure
+                ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
+                std::vector<std::vector<int>> new_tuples;
+                //Clear the old pos1 hashtable and result
+                save_obj.pos2_hashtable.clear();
+                save_obj.result_table.clear();
 
+                for(auto &tuple:tables[sj.first].tuples){
+                    std::vector<int> key(save_obj.matching_columns.size());
+                    for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
+                        key[i] = tuple[save_obj.matching_columns[i].second];
+                    }
+                    save_obj.pos2_hashtable[key].insert(tuple);
+                    if(save_obj.pos1_hashtable.count(key)!=0){
+                        save_obj.result_table[key] = save_obj.pos1_hashtable[key];
+                    }
+                }
+                tables[sj.second] = save_obj.generate_table();
+                //If the resulting semi-join was empty
+                if(tables[sj.second].tuples.size()==0){
+                    //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
+                    //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
+                    std::vector<ThesisSave> thesis_empty_semijoins;
+                    //cout << "err2" << endl;
+                    thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
+                    return Table::EMPTY_TABLE();
+                }
+                
+                affected_tables.insert_or_assign(sj.second,counter);
+
+            }else if(affected_tables.count(sj.second)!=0 && affected_tables.count(sj.first) == 0){//Probably also need to do this for sj.first??
+                /*
+                The elements in table[sj.second] have changed in comparison to the same semi-join in the parent state
+                This means that in contrast to Datalog Exploration, the position hashtables can persist between different join rules
+                To account for this, we start by just doing the corresponding half of the semi-join, which updates the hash-table
+                We can save ourselves the other half of the semi-join, as our memory on that SHOULD still be correct
+                
+
+                What if both tables have changed????
+                For now do a full semi-join between them
+                */
+                //Get the new structure
+                ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
+                std::vector<std::vector<int>> new_tuples;
+                //Clear the old pos1 hashtable and result
+                save_obj.pos1_hashtable.clear();
+                save_obj.result_table.clear();
+
+                for(auto &tuple:tables[sj.second].tuples){
+                    std::vector<int> key(save_obj.matching_columns.size());
+                    for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
+                        key[i] = tuple[save_obj.matching_columns[i].first];
+                    }
+                    save_obj.pos1_hashtable[key].insert(tuple);
+
+                    if(save_obj.pos2_hashtable.count(key)!=0){
+                        new_tuples.push_back(tuple);
+                        save_obj.result_table[key].insert(tuple);
+                    }
+
+                }
+                save_obj.generate_table();
+                tables[sj.second].tuples = std::move(new_tuples);
+                //If the resulting semi-join was empty
+                if(tables[sj.second].tuples.size()==0){
+                    //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
+                    //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
+                    std::vector<ThesisSave> thesis_empty_semijoins;
+                    //cout << "err2" << endl;
+                    thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
+                    return Table::EMPTY_TABLE();
+                }
+            }else if(affected_tables.count(sj.first)!=0 && affected_tables.count(sj.second)!=0){
+                ThesisSave dummy;
+                semi_join(tables[sj.second],tables[sj.first],dummy);
+                thesis_semijoin.at(action.get_index()).at(counter) = dummy;
+                if(tables[sj.second].tuples.size()==0){
+                    //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
+                    //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
+                    std::vector<ThesisSave> thesis_empty_semijoins;
+                    //cout << "err2" << endl;
+                    thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
+                    return Table::EMPTY_TABLE();
+                }
+            
             }else{
                 tables[sj.second] = thesis_semijoin.at(action.get_index()).at(counter).result;
                 tables[sj.second].tuple_index = thesis_semijoin.at(action.get_index()).at(counter).result_index;

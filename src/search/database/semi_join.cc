@@ -33,7 +33,7 @@ size_t semi_join(Table &t1, const Table &t2, ThesisSave &save) {
     for(auto &tuple:t2.tuples){
         std::vector<int> key(matches.size());
         for(size_t i = 0; i < matches.size(); i++) {
-                key[i] = tuple[matches[i].second];
+            key[i] = tuple[matches[i].second];
         }
         save.pos2_hashtable[key].insert(tuple);
     }

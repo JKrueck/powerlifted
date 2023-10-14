@@ -38,14 +38,14 @@ struct ThesisSave{
     ThesisSave() = default;
 
     Table generate_table(){
-        Table result;
+        this->result.tuples.clear();
         for(auto set:this->result_table){
             for(auto it:set.second){
-                result.tuples.push_back(it);
+                this->result.tuples.push_back(it);
             }
         }
         result.tuple_index = this->result_index;
-        return result;
+        return this->result;
     }
 
 };

@@ -40,7 +40,7 @@ add_executable(search
         structures.h
         search_engines/search_factory.cc search_engines/search_factory.h
         search_engines/search.cc search_engines/search.h
-        #search_engines/breadth_first_search.cc search_engines/breadth_first_search.h
+        search_engines/breadth_first_search.cc search_engines/breadth_first_search.h
         search_engines/greedy_best_first_search.cc search_engines/greedy_best_first_search.h
         search_engines/nodes.cc search_engines/nodes.h
         search_engines/utils.cc search_engines/utils.h

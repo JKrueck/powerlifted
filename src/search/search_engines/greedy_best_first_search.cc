@@ -129,7 +129,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
         //cout << "Memory needed for table storage: " << sizeof(thesis_semijoin_table_memory) + sizeof(thesis_join_table_memory) << " Bytes"<< endl;
 
-        if(sid.id() != 0) {
+        if(sid.id() != 0) {//
             //cout << "parent state: " << old_thesis.get_parent_state_id() << endl;
             cout << "action used to get here: " << old_thesis.get_action_id() << "->" << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name()<< endl;
             cout << "with instantiation: ";
@@ -210,8 +210,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
 
             
-                cout << "instantiations: "<< endl;
+               
                 if(sid.id()!=0){
+                    cout << "instantiations: "<< endl;
                     for(auto it:applicable){
                         cout << "\t";
                         for(auto it2:it.get_instantiation()){
@@ -263,17 +264,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
 
-                //if((child_node.state_id.id()!=62)&& skip){
-                  //  continue;
-                //}
 
-                if((child_node.state_id.id()!=1)){
-                    if((child_node.state_id.id()!=14)){
-                        if(child_node.state_id.id()!=19){
-                            continue;
-                        }
-                    }
-                }
+                
                  /*       if(child_node.state_id.id()!=45){
                             if((child_node.state_id.id()!=227)){
                                 if((child_node.state_id.id()!=232 )){
@@ -290,7 +282,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);
-                //cout << "Heuristic value of state " << child_node.state_id.id() <<": "<< new_h << endl;
+                if(child_node.state_id.id()==98)
+                   // cout << "--Heuristic value of state " << child_node.state_id.id() <<": "<< new_h << "--" << endl;
                 statistics.inc_evaluations();
                 test_map.insert({child_node.state_id.id(),op_id.get_instantiation()});
                 
