@@ -427,6 +427,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                 //If the set is not empty but the key does not appear in the pos2 hashtable, we can delete that key in the result too
                                 }else if(save_obj.pos2_hashtable.count(key)==0){
                                     save_obj.result_table.erase(key);
+                                }else{
+                                    save_obj.result_table.insert_or_assign(key,save_obj.pos1_hashtable[key]);
                                 }
                             }
                         }
@@ -485,22 +487,28 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 //For this direction its probably easier to just compute the semi-join ?
                 //Get the new structure
                 ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
-                std::vector<std::vector<int>> new_tuples;
-                //Clear the old pos1 hashtable and result
-                save_obj.pos2_hashtable.clear();
-                save_obj.result_table.clear();
+                //There are some cases in which the semi-join in the initial state was interrupted due to there being no matching columns
+                //If that was the case we need to do a full semi-join
+                if(save_obj.pos1_hashtable.size()==0){
+                    semi_join(tables[sj.second],tables[sj.first],save_obj);
+                }else{
+                    std::vector<std::vector<int>> new_tuples;
+                    //Clear the old pos1 hashtable and result
+                    save_obj.pos2_hashtable.clear();
+                    save_obj.result_table.clear();
 
-                for(auto &tuple:tables[sj.first].tuples){
-                    std::vector<int> key(save_obj.matching_columns.size());
-                    for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
-                        key[i] = tuple[save_obj.matching_columns[i].second];
+                    for(auto &tuple:tables[sj.first].tuples){
+                        std::vector<int> key(save_obj.matching_columns.size());
+                        for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
+                            key[i] = tuple[save_obj.matching_columns[i].second];
+                        }
+                        save_obj.pos2_hashtable[key].insert(tuple);
+                        if(save_obj.pos1_hashtable.count(key)!=0){
+                            save_obj.result_table[key] = save_obj.pos1_hashtable[key];
+                        }
                     }
-                    save_obj.pos2_hashtable[key].insert(tuple);
-                    if(save_obj.pos1_hashtable.count(key)!=0){
-                        save_obj.result_table[key] = save_obj.pos1_hashtable[key];
-                    }
+                    tables[sj.second] = save_obj.generate_table();
                 }
-                tables[sj.second] = save_obj.generate_table();
                 //If the resulting semi-join was empty
                 if(tables[sj.second].tuples.size()==0){
                     //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
@@ -526,26 +534,32 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 */
                 //Get the new structure
                 ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
-                std::vector<std::vector<int>> new_tuples;
-                //Clear the old pos1 hashtable and result
-                save_obj.pos1_hashtable.clear();
-                save_obj.result_table.clear();
+                //There are some cases in which the semi-join in the initial state was interrupted due to there being no matching columns
+                //If that was the case we need to do a full semi-join
+                if(save_obj.pos1_hashtable.size()==0){
+                    semi_join(tables[sj.second],tables[sj.first],save_obj);
+                }else{
+                    std::vector<std::vector<int>> new_tuples;
+                    //Clear the old pos1 hashtable and result
+                    save_obj.pos1_hashtable.clear();
+                    save_obj.result_table.clear();
 
-                for(auto &tuple:tables[sj.second].tuples){
-                    std::vector<int> key(save_obj.matching_columns.size());
-                    for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
-                        key[i] = tuple[save_obj.matching_columns[i].first];
+                    for(auto &tuple:tables[sj.second].tuples){
+                        std::vector<int> key(save_obj.matching_columns.size());
+                        for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
+                            key[i] = tuple[save_obj.matching_columns[i].first];
+                        }
+                        save_obj.pos1_hashtable[key].insert(tuple);
+
+                        if(save_obj.pos2_hashtable.count(key)!=0){
+                            new_tuples.push_back(tuple);
+                            save_obj.result_table[key].insert(tuple);
+                        }
+
                     }
-                    save_obj.pos1_hashtable[key].insert(tuple);
-
-                    if(save_obj.pos2_hashtable.count(key)!=0){
-                        new_tuples.push_back(tuple);
-                        save_obj.result_table[key].insert(tuple);
-                    }
-
+                    save_obj.generate_table();
+                    tables[sj.second].tuples = std::move(new_tuples);
                 }
-                save_obj.generate_table();
-                tables[sj.second].tuples = std::move(new_tuples);
                 //If the resulting semi-join was empty
                 if(tables[sj.second].tuples.size()==0){
                     //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
@@ -733,9 +747,9 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         assert(!tables.empty());
         assert(tables.size() == actiondata.relevant_precondition_atoms.size());
 
-        //if(action.get_index() == 7){
-          //  int stop = 0;
-        //}
+        if(action.get_index() == 1){
+            int stop = 0;
+        }
 
         for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
             ThesisSave semijoin_save;

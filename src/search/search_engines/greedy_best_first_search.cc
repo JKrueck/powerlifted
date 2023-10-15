@@ -78,8 +78,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     thesis_previous_state.insert_or_assign(StateID::no_state, StateID::no_state);
 
     std::unordered_map<int,std::vector<int>> test_map;
+    int state_counter = 0; 
 
     while (not queue.empty()) {
+        state_counter++;
         StateID sid = queue.remove_min();
         SearchNode &node = space.get_node(sid);
 
@@ -138,9 +140,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             }
             cout << endl;
         }
-
-        if(sid.id()%1000 == 0){
+        
+        if(state_counter == 500){
             cout << "succtime in state " << sid.id() <<" : " << thesis_time / CLOCKS_PER_SEC  << '\n';
+            state_counter = 0;
         }
     
         //generator.thesis_compute_del_impacts(task);
@@ -188,7 +191,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
 
-            if ((sid.id()==121)) {
+            if ((sid.id()==289)) {
                 int stop13 = 1;
             }
 

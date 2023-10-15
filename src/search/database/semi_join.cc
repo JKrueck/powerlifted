@@ -25,6 +25,9 @@ size_t semi_join(Table &t1, const Table &t2, ThesisSave &save) {
     save.matching_columns = matches;
 
     if (matches.empty()) { // If no attribute matches, then we return
+        save.result.tuples = t1.tuples;
+        save.result.tuple_index = t1.tuple_index;
+        save.result_index = t1.tuple_index;
         return t1.tuple_index.size();
     }
 
