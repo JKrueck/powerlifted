@@ -83,7 +83,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         StateID sid = queue.remove_min();
         SearchNode &node = space.get_node(sid);
 
-        cout << "----current state: " << sid.id() << "----" << endl;
+        //cout << "----current state: " << sid.id() << "----" << endl;
 
         if(sid.id()!=0){
             skip = false;
@@ -115,7 +115,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                  << ", evaluations: " << statistics.get_evaluations()
                  << ", generations: " << statistics.get_generated()
                  << ", state " << sid.id()
-                 << ", succ time: " << thesis_time
+                 << ", succ time: " << thesis_time / CLOCKS_PER_SEC
                  << ", time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << "]" << '\n';
             print = true;    
         }
@@ -129,14 +129,18 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
         //cout << "Memory needed for table storage: " << sizeof(thesis_semijoin_table_memory) + sizeof(thesis_join_table_memory) << " Bytes"<< endl;
 
-        if(sid.id() != 0) {//
-            //cout << "parent state: " << old_thesis.get_parent_state_id() << endl;
+        if(false) {//sid.id() != 0 && sid.id()<130
+            cout << "parent state: " << old_thesis.get_parent_state_id() << endl;
             cout << "action used to get here: " << old_thesis.get_action_id() << "->" << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name()<< endl;
             cout << "with instantiation: ";
             for (auto it:test_map.at(sid.id())){
                 cout << it << " ";
             }
             cout << endl;
+        }
+
+        if(sid.id()%1000 == 0){
+            cout << "succtime in state " << sid.id() <<" : " << thesis_time / CLOCKS_PER_SEC  << '\n';
         }
     
         //generator.thesis_compute_del_impacts(task);
@@ -184,7 +188,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
 
-            if ((sid.id()==19)) {
+            if ((sid.id()==121)) {
                 int stop13 = 1;
             }
 
@@ -206,12 +210,12 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
            
 
-            if(true){
+            if(false){
                 std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
 
             
                
-                if(sid.id()!=0){
+                if(false){//sid.id()!=0
                     cout << "instantiations: "<< endl;
                     for(auto it:applicable){
                         cout << "\t";
@@ -259,31 +263,34 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 
-                
+
                 
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
 
 
-                
-                 /*       if(child_node.state_id.id()!=45){
-                            if((child_node.state_id.id()!=227)){
-                                if((child_node.state_id.id()!=232 )){
-                                    if(child_node.state_id.id()!=890){
-                                        continue;
+            if ((sid.id()==19)) {
+                int stop13 = 1;
+            }
+                        
+                /*if(child_node.state_id.id()!=1){
+                    if(child_node.state_id.id()!=14){
+                        if(child_node.state_id.id()!=19){
+                            if(child_node.state_id.id()!=32){
+                                    if(child_node.state_id.id()!=60){
+                                        if((child_node.state_id.id()!=111 )){
+                                            if(child_node.state_id.id()!=114){
+                                                continue;
+                                            }
+                                            
+                                        }
                                     }
-                                    
                                 }
-                            }
-                        }
+                            }       
                     }
                 }*/
-
-               
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);
-                if(child_node.state_id.id()==98)
-                   // cout << "--Heuristic value of state " << child_node.state_id.id() <<": "<< new_h << "--" << endl;
                 statistics.inc_evaluations();
                 test_map.insert({child_node.state_id.id(),op_id.get_instantiation()});
                 

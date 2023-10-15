@@ -349,6 +349,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     //Generate the WHOLE complete new_table
                     //Unnessescary probably
                     tables[sj.second] = save_obj.generate_table();
+                    affected_tables.insert_or_assign(sj.second,counter);
                 }else{//If that change was a delete effect (and maybe also add effect)
                     //Get the new structure
                     ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
