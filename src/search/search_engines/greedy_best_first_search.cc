@@ -58,12 +58,12 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     thesis_join_table_memory.insert({0,thesis_join_table_at_state});
 
     //Save the intermediate semi-join tables at a global level and per action
-    std::vector<std::vector<ThesisSave>> thesis_semijoin_table_at_state;
-    thesis_semijoin_table_at_state.resize(task.get_action_schemas().size());
+    std::vector<std::vector<ThesisSave>> thesis_semijoin_table_at_state_first;
+    thesis_semijoin_table_at_state_first.resize(task.get_action_schemas().size());
     //As we always want to use the join tables from the prior state, we need to save all of them on a per state basis
     //To-Do: Think about when we don´t need them anymore and can delete them from memory
     std::unordered_map<int, std::vector<std::vector<ThesisSave>>> thesis_semijoin_table_memory;
-    thesis_semijoin_table_memory.insert({0,thesis_semijoin_table_at_state});
+    thesis_semijoin_table_memory.insert({0,thesis_semijoin_table_at_state_first});
 
     //Storage for classes per state
     //intended to work similar to queue
@@ -149,10 +149,16 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         //generator.thesis_compute_del_impacts(task);
         //get all hash tables that were computed in the previous state
         thesis_join_table_at_state = thesis_join_table_memory.at(old_thesis.get_parent_state_id());
-        thesis_semijoin_table_at_state = thesis_semijoin_table_memory.at(old_thesis.get_parent_state_id());
+        std::vector<std::vector<ThesisSave>> thesis_semijoin_table_at_state = thesis_semijoin_table_memory.at(old_thesis.get_parent_state_id());
+        thesis_semijoin_table_at_state.resize(task.get_action_schemas().size());
+
+
        
         if (check_goal(task, generator, timer_start, state, node, space, thesis_time)) return utils::ExitCode::SUCCESS;
 
+        if ((sid.id()==714)) {
+                int stop13 = 1;
+        }
 
         //time_t thesis_timer = clock();
         if(this->thesis_enabled && sid.id()!=0){
@@ -192,16 +198,11 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
 
-            if ((sid.id()==6)) {
+            if (sid.id()==6744) {
                 int stop13 = 1;
             }
 
             DBState old_state;
-            if(sid.id()!= 0){
-                old_state = packer.unpack(space.get_state(thesis_previous_state.at(sid)));
-            }else{
-                old_state = state;
-            }
             time_t thesis_timer = clock();
             auto applicable = generator.get_applicable_actions(action, state,task, old_thesis,
                                 thesis_join_table_at_state,thesis_semijoin_table_at_state,old_state);
@@ -219,7 +220,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
             
                
-                if(false){//sid.id()!=0
+                if(sid.id()!=0){//sid.id()!=0
                     cout << "instantiations: "<< endl;
                     for(auto it:applicable){
                         cout << "\t";
@@ -276,6 +277,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             if ((sid.id()==19)) {
                 int stop13 = 1;
             }
+
+            
                         
             
                 /*if(child_node.state_id.id()!=1){
@@ -311,7 +314,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                         //create a new empty join_table memory for the new state
                         std::vector<std::vector<Table>> thesis_join_at_state;
                         thesis_join_at_state.resize(task.get_action_schemas().size());
-                        thesis_join_table_memory.insert({child_node.state_id.id(),thesis_join_table_at_state});
+                        //thesis_join_table_memory.insert({child_node.state_id.id(),thesis_join_table_at_state});
                         //create a new empty semijoin_table memory for the new state
                         std::vector<std::vector<Table>> thesis_semijoin_at_state;
                         thesis_semijoin_at_state.resize(task.get_action_schemas().size());
@@ -331,11 +334,11 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
                     //create a new empty join_table memory for the new state
                     std::vector<std::vector<Table>> thesis_join_at_state;
-                    thesis_join_at_state.resize(task.get_action_schemas().size());
+                    //thesis_join_at_state.resize(task.get_action_schemas().size());
                     thesis_join_table_memory.insert({child_node.state_id.id(),thesis_join_table_at_state});
                     //create a new empty semijoin_table memory for the new state
                     std::vector<std::vector<Table>> thesis_semijoin_at_state;
-                    thesis_semijoin_at_state.resize(task.get_action_schemas().size());
+                    //thesis_semijoin_at_state.resize(task.get_action_schemas().size());
                     thesis_semijoin_table_memory.insert({child_node.state_id.id(),thesis_semijoin_table_at_state});
                     //remember that sid is the parent state of the current child node
                     thesis_previous_state.insert_or_assign(child_node.state_id,sid);
@@ -352,11 +355,11 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
                         //create a new empty join_table memory for the new state
                         std::vector<std::vector<Table>> thesis_join_at_state;
-                        thesis_join_at_state.resize(task.get_action_schemas().size());
+                        //thesis_join_at_state.resize(task.get_action_schemas().size());
                         thesis_join_table_memory.insert({child_node.state_id.id(),thesis_join_table_at_state});
                         //create a new empty semijoin_table memory for the new state
                         std::vector<std::vector<Table>> thesis_semijoin_at_state;
-                        thesis_semijoin_at_state.resize(task.get_action_schemas().size());
+                        //thesis_semijoin_at_state.resize(task.get_action_schemas().size());
                         thesis_semijoin_table_memory.insert({child_node.state_id.id(),thesis_semijoin_table_at_state});
                         //remember that sid is the parent state of the current child node
                         thesis_previous_state.insert_or_assign(child_node.state_id,sid);

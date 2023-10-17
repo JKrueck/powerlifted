@@ -193,16 +193,20 @@ void YannakakisSuccessorGenerator::get_distinguished_variables(const ActionSchem
 void YannakakisSuccessorGenerator::deal_with_add(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> add_diff, int position){
     int predicate;
     if(position == 1){
-        predicate = table_predicates.first;
-    }else{
         predicate = table_predicates.second;
+    }else{
+        predicate = table_predicates.first;
     }
 
     for(auto it:add_diff.at(predicate)){
         //Generate the key for the newly added atom
         std::vector<int> key(save.matching_columns.size());
         for(size_t i = 0; i < save.matching_columns.size(); i++) {
-            key[i] = it[save.matching_columns[i].second];
+           if(position == 1){
+                key[i] = it[save.matching_columns[i].first];
+            }else{
+                key[i] = it[save.matching_columns[i].second];
+            }
         }
 
         if(position == 1){
@@ -216,7 +220,9 @@ void YannakakisSuccessorGenerator::deal_with_add(std::pair<int,int> &table_predi
             save.pos2_hashtable[key].insert(it);
 
             if(save.pos1_hashtable.count(key)!=0){
-                save.result_table[key].insert(it);
+                for(auto pos1:save.pos1_hashtable[key]){
+                    save.result_table[key].insert(pos1);
+                }
             }
         }
     }   
@@ -226,7 +232,11 @@ void YannakakisSuccessorGenerator::deal_with_del(std::pair<int,int> &table_predi
         //Generate the key for the removed added atom
         std::vector<int> key(save.matching_columns.size());
         for(size_t i = 0; i < save.matching_columns.size(); i++) {
-            key[i] = del[save.matching_columns[i].second];
+            if(first){
+                key[i] = del[save.matching_columns[i].first];
+            }else{
+                key[i] = del[save.matching_columns[i].second];
+            }
         }
         if(first){
             //Delete the TableEntry from the pos1 hashtable
@@ -442,7 +452,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         return Table::EMPTY_TABLE();
                     }
                 }
-            }else if(affected_tables.count(sj.first)!=0 && affected_tables.count(sj.second) == 0 ){//Probably also need to do this for sj.first??
+            }else if(affected_tables.count(sj.first)!=0 && affected_tables.count(sj.second) == 0 ){
                 //This is very similar to just computing a new semi-join --- talk about this
                 //For this direction its probably easier to just compute the semi-join ?
                 //Get the new structure
@@ -502,7 +512,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 
                 affected_tables.insert_or_assign(sj.second,counter);
 
-            }else if(affected_tables.count(sj.second)!=0 && affected_tables.count(sj.first) == 0){//Probably also need to do this for sj.first??
+            }else if(affected_tables.count(sj.second)!=0 && affected_tables.count(sj.first) == 0){
                 /*
                 The elements in table[sj.second] have changed in comparison to the same semi-join in the parent state
                 This means that in contrast to Datalog Exploration, the position hashtables can persist between different join rules
