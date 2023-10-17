@@ -104,15 +104,15 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
                     for(auto arg:thesis_effects.get_arguments()){
                         thesis_deleted_fact.push_back(old_thesis.get_instantiation().at(arg.get_index()));
                     }
-                    old_thesis.deleted_facts.insert({thesis_effects.get_predicate_symbol_idx(),thesis_deleted_fact});
+                    //old_thesis.deleted_facts.insert({thesis_effects.get_predicate_symbol_idx(),thesis_deleted_fact});
+                    old_thesis.deleted_facts[thesis_effects.get_predicate_symbol_idx()].insert(thesis_deleted_fact);
                 }else{
                     GroundAtom thesis_add_effect;
-                    std::unordered_set<GroundAtom,TupleHash> thesis_set_storage;
                     for(auto thesis_argument_it:thesis_effects.get_arguments()){
                         thesis_add_effect.push_back(old_thesis.get_instantiation().at(thesis_argument_it.get_index()));
                     }
-                    thesis_set_storage.insert(thesis_add_effect);
-                    predicate_to_add_diff.insert({thesis_effects.get_predicate_symbol_idx(),thesis_set_storage});
+                    //predicate_to_add_diff.insert({thesis_effects.get_predicate_symbol_idx(),thesis_set_storage});
+                    predicate_to_add_diff[thesis_effects.get_predicate_symbol_idx()].insert(thesis_add_effect);
                 }
             }
             thesis_time += clock() - thesis_timer;

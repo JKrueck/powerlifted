@@ -353,10 +353,10 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 }else{//If that change was a delete effect (and maybe also add effect)
                     //Get the new structure
                     ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
-
+                   
                     //Prepare all conditions
-                    GroundAtom deleted_first;
-                    GroundAtom deleted_second;
+                    std::unordered_set<GroundAtom,TupleHash> deleted_first;
+                    std::unordered_set<GroundAtom,TupleHash> deleted_second;
                     bool delete_condition1 = false;
                     bool delete_condition2 = false;
 
@@ -377,62 +377,64 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         thesis_affected_by_del.insert_or_assign(sj.second,predicate_impacted);
                         //Remember that the table at the second position was affected by a del effecy
                     }
-                    
+                        
 
 
                     if(delete_condition1){
-                        //Generate the key for the removed added atom
-                        std::vector<int> key(save_obj.matching_columns.size());
-                        for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
-                            key[i] = deleted_first[save_obj.matching_columns[i].second];
-                        }
-                        //Delete the TableEntry from the pos2 hashtable
-                        if(save_obj.pos2_hashtable.count(key)!=0){
-                            auto pos = save_obj.pos2_hashtable.at(key).find(deleted_first);
-                            if(pos!=save_obj.pos2_hashtable.at(key).end()){
-                                save_obj.pos2_hashtable.at(key).erase(pos);
-                                //If the set has no entries left after removal, we can delete that key
-                                //This also means that there is no match between pos1 and pos2 on that key
-                                //If that key appears in the result it can thus be deleted
-                                if(save_obj.pos2_hashtable.at(key).size()==0){
-                                    save_obj.pos2_hashtable.erase(key);
-                                    if(save_obj.result_table.count(key)!=0){
-                                        save_obj.result_table.erase(key);
+                        for(auto del:deleted_first){
+                            //Generate the key for the removed added atom
+                            std::vector<int> key(save_obj.matching_columns.size());
+                            for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
+                                key[i] = del[save_obj.matching_columns[i].second];
+                            }
+                            //Delete the TableEntry from the pos2 hashtable
+                            if(save_obj.pos2_hashtable.count(key)!=0){
+                                auto pos = save_obj.pos2_hashtable.at(key).find(del);
+                                if(pos!=save_obj.pos2_hashtable.at(key).end()){
+                                    save_obj.pos2_hashtable.at(key).erase(pos);
+                                    //If the set has no entries left after removal, we can delete that key
+                                    //This also means that there is no match between pos1 and pos2 on that key
+                                    //If that key appears in the result it can thus be deleted
+                                    if(save_obj.pos2_hashtable.at(key).size()==0){
+                                        save_obj.pos2_hashtable.erase(key);
+                                        if(save_obj.result_table.count(key)!=0){
+                                            save_obj.result_table.erase(key);
+                                        }
                                     }
                                 }
                             }
                         }
-
                     }
                     if(delete_condition2){
-                        //Generate the key for the removed added atom
-                        std::vector<int> key(save_obj.matching_columns.size());
-                        for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
-                            key[i] = deleted_second[save_obj.matching_columns[i].first];
-                        }
-                        //Delete the TableEntry from the pos1 hashtable
-                        if(save_obj.pos1_hashtable.count(key)!=0){
-                            auto pos = save_obj.pos1_hashtable.at(key).find(deleted_second);
-                            if(pos!=save_obj.pos1_hashtable.at(key).end()){//
-                                save_obj.pos1_hashtable.at(key).erase(pos);
-                                
-                                //If the set has no entries left after removal, we can delete that key
-                                //This also means that there is no match between pos1 and pos2 on that key
-                                //If that key appears in the result it can thus be deleted
-                                if(save_obj.pos1_hashtable.at(key).size()==0){//
-                                    save_obj.pos1_hashtable.erase(key);
-                                    if(save_obj.result_table.count(key)!=0){
+                        for(auto del:deleted_second){
+                            //Generate the key for the removed added atom
+                            std::vector<int> key(save_obj.matching_columns.size());
+                            for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
+                                key[i] = del[save_obj.matching_columns[i].first];
+                            }
+                            //Delete the TableEntry from the pos1 hashtable
+                            if(save_obj.pos1_hashtable.count(key)!=0){
+                                auto pos = save_obj.pos1_hashtable.at(key).find(del);
+                                if(pos!=save_obj.pos1_hashtable.at(key).end()){//
+                                    save_obj.pos1_hashtable.at(key).erase(pos);
+                                    
+                                    //If the set has no entries left after removal, we can delete that key
+                                    //This also means that there is no match between pos1 and pos2 on that key
+                                    //If that key appears in the result it can thus be deleted
+                                    if(save_obj.pos1_hashtable.at(key).size()==0){//
+                                        save_obj.pos1_hashtable.erase(key);
+                                        if(save_obj.result_table.count(key)!=0){
+                                            save_obj.result_table.erase(key);
+                                        }
+                                    //If the set is not empty but the key does not appear in the pos2 hashtable, we can delete that key in the result too
+                                    }else if(save_obj.pos2_hashtable.count(key)==0){
                                         save_obj.result_table.erase(key);
+                                    }else{
+                                        save_obj.result_table.insert_or_assign(key,save_obj.pos1_hashtable[key]);
                                     }
-                                //If the set is not empty but the key does not appear in the pos2 hashtable, we can delete that key in the result too
-                                }else if(save_obj.pos2_hashtable.count(key)==0){
-                                    save_obj.result_table.erase(key);
-                                }else{
-                                    save_obj.result_table.insert_or_assign(key,save_obj.pos1_hashtable[key]);
                                 }
                             }
                         }
-   
                     }
                     //Now deal with any possible add-effects
                     if(predicate_to_add_diff.count(table_predicates.first)!=0){
@@ -507,6 +509,65 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             save_obj.result_table[key] = save_obj.pos1_hashtable[key];
                         }
                     }
+                    
+                    //It can happen that there are still changes that need to be made to the second table
+                    if(compute_semi_join[sj.second]){
+                        std::unordered_set<GroundAtom, TupleHash> deleted_second;
+                        bool delete_condition2 = false;
+                        if(thesis_affected_by_del.count(sj.second)!=0){
+                            deleted_second = thesis.deleted_facts.at(thesis_affected_by_del.at(sj.second));
+                            delete_condition2 = true;
+                            affected_tables.insert_or_assign(sj.second,counter);
+                        }
+                        if(delete_condition2){
+                            for(auto del:deleted_second){
+                                //Generate the key for the removed added atom
+                                std::vector<int> key(save_obj.matching_columns.size());
+                                for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
+                                    key[i] = del[save_obj.matching_columns[i].first];
+                                }
+                                //Delete the TableEntry from the pos1 hashtable
+                                if(save_obj.pos1_hashtable.count(key)!=0){
+                                    auto pos = save_obj.pos1_hashtable.at(key).find(del);
+                                    if(pos!=save_obj.pos1_hashtable.at(key).end()){//
+                                        save_obj.pos1_hashtable.at(key).erase(pos);
+                                        
+                                        //If the set has no entries left after removal, we can delete that key
+                                        //This also means that there is no match between pos1 and pos2 on that key
+                                        //If that key appears in the result it can thus be deleted
+                                        if(save_obj.pos1_hashtable.at(key).size()==0){//
+                                            save_obj.pos1_hashtable.erase(key);
+                                            if(save_obj.result_table.count(key)!=0){
+                                                save_obj.result_table.erase(key);
+                                            }
+                                        //If the set is not empty but the key does not appear in the pos2 hashtable, we can delete that key in the result too
+                                        }else if(save_obj.pos2_hashtable.count(key)==0){
+                                            save_obj.result_table.erase(key);
+                                        }else{
+                                            save_obj.result_table.insert_or_assign(key,save_obj.pos1_hashtable[key]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if(predicate_to_add_diff.count(action.get_precondition().at(sj.second).get_predicate_symbol_idx())!=0){
+                            for(auto it:predicate_to_add_diff.at(action.get_precondition().at(sj.second).get_predicate_symbol_idx())){
+                                //Generate the key for the newly added atom
+                                std::vector<int> key(save_obj.matching_columns.size());
+                                for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
+                                    key[i] = it[save_obj.matching_columns[i].first];
+                                }
+                                //Insert the new atom into the pos1 hashtable
+                                save_obj.pos1_hashtable[key].insert(it);
+                                int test = save_obj.pos2_hashtable.count(key);
+                                if(save_obj.pos2_hashtable.count(key)!=0){
+                                    save_obj.result_table[key].insert(it);
+                                }
+                            }   
+                        }
+                    }
+
+                    
                     tables[sj.second] = save_obj.generate_table();
                 }
                 //If the resulting semi-join was empty
@@ -747,7 +808,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         assert(!tables.empty());
         assert(tables.size() == actiondata.relevant_precondition_atoms.size());
 
-        if(action.get_index() == 1){
+        if(action.get_index() == 2){
             int stop = 0;
         }
 

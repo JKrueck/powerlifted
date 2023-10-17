@@ -65,7 +65,7 @@ private:
     std::vector<int> thesis_instantiation;
 
 public:
-    std::unordered_map<int,std::vector<int>> deleted_facts;
+    std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> deleted_facts;
     int action_id;
     ThesisClass(bool enable, ActionSchema act) :   thesis_enable(enable),action_id(act.get_index())
     {}

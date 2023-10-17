@@ -141,7 +141,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             cout << endl;
         }
         
-        if(state_counter == 500){
+        if(state_counter == 1000){
             cout << "succtime in state " << sid.id() <<" : " << thesis_time / CLOCKS_PER_SEC  << '\n';
             state_counter = 0;
         }
@@ -153,7 +153,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
        
         if (check_goal(task, generator, timer_start, state, node, space, thesis_time)) return utils::ExitCode::SUCCESS;
 
-        time_t thesis_timer = clock();
+
+        //time_t thesis_timer = clock();
         if(this->thesis_enabled && sid.id()!=0){
             old_thesis.set_status(true);
             std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_add_diff;
@@ -170,18 +171,18 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                     for(auto arg:thesis_effects.get_arguments()){
                         thesis_deleted_fact.push_back(old_thesis.get_instantiation().at(arg.get_index()));
                     }
-                    old_thesis.deleted_facts.insert({thesis_effects.get_predicate_symbol_idx(),thesis_deleted_fact});
+                    //old_thesis.deleted_facts.insert({thesis_effects.get_predicate_symbol_idx(),thesis_deleted_fact});
+                    old_thesis.deleted_facts[thesis_effects.get_predicate_symbol_idx()].insert(thesis_deleted_fact);
                 }else{
                     GroundAtom thesis_add_effect;
-                    std::unordered_set<GroundAtom,TupleHash> thesis_set_storage;
                     for(auto thesis_argument_it:thesis_effects.get_arguments()){
                         thesis_add_effect.push_back(old_thesis.get_instantiation().at(thesis_argument_it.get_index()));
                     }
-                    thesis_set_storage.insert(thesis_add_effect);
-                    predicate_to_add_diff.insert({thesis_effects.get_predicate_symbol_idx(),thesis_set_storage});
+                    //predicate_to_add_diff.insert({thesis_effects.get_predicate_symbol_idx(),thesis_set_storage});
+                    predicate_to_add_diff[thesis_effects.get_predicate_symbol_idx()].insert(thesis_add_effect);
                 }
             }
-            thesis_time += clock() - thesis_timer;
+            //thesis_time += clock() - thesis_timer;
             old_thesis.set_add_effect_map(predicate_to_add_diff);
             old_thesis.set_delete_effects(diff_delete);
         }
@@ -191,7 +192,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
 
-            if ((sid.id()==289)) {
+            if ((sid.id()==6)) {
                 int stop13 = 1;
             }
 
@@ -276,6 +277,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 int stop13 = 1;
             }
                         
+            
                 /*if(child_node.state_id.id()!=1){
                     if(child_node.state_id.id()!=14){
                         if(child_node.state_id.id()!=19){
