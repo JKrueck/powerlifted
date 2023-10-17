@@ -125,7 +125,6 @@ public:
     std::vector<int> get_instantiation(){
         return thesis_instantiation;
     }
-
             
 
 };
