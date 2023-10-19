@@ -472,7 +472,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 //Do we?? If there weren´t any matching columns in the initial state, there will never be
                 //This will just call the semi-join function, which then determines that there are no matching columns and returns tables[sj.second] unchanged
                 //Can do this faster
-                if(save_obj.pos1_hashtable.size()==0){
+                if(save_obj.matching_columns.size()==0){
                     semi_join(tables[sj.second],tables[sj.first],save_obj);
                 }else{
 
@@ -548,7 +548,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 //There are some cases in which the semi-join in the initial state was interrupted due to there being no matching columns
                 //If that was the case we need to do a full semi-join
                 //See comments above
-                if(save_obj.pos1_hashtable.size()==0){
+                if(save_obj.matching_columns.size()==0){
                     semi_join(tables[sj.second],tables[sj.first],save_obj);
                 }else{
 
@@ -565,21 +565,26 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
                     return Table::EMPTY_TABLE();
                 }
+                affected_tables.insert_or_assign(sj.second,counter);
             }else if(affected_tables.count(sj.first)!=0 && affected_tables.count(sj.second)!=0){
                 //Get the new structure
                 ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
-                //Get the old structures
-                ThesisSave &old_save_pos1 = thesis_semijoin.at(action.get_index()).at(affected_tables[sj.second]);
-                ThesisSave &old_save_pos2 = thesis_semijoin.at(action.get_index()).at(affected_tables[sj.first]);
 
-                deal_with_del(table_predicates, save_obj, old_save_pos1.pos1_deleted, true);
-                deal_with_del(table_predicates, save_obj, old_save_pos2.pos1_deleted, false);
+                if(save_obj.matching_columns.size()==0){
+                    semi_join(tables[sj.second],tables[sj.first],save_obj);
+                }else{
+                    //Get the old structures
+                    ThesisSave &old_save_pos1 = thesis_semijoin.at(action.get_index()).at(affected_tables[sj.second]);
+                    ThesisSave &old_save_pos2 = thesis_semijoin.at(action.get_index()).at(affected_tables[sj.first]);
 
-                deal_with_add(table_predicates, save_obj, old_save_pos1.pos1_added, 1);
-                deal_with_add(table_predicates, save_obj, old_save_pos2.pos1_added, 2);
-                
-                tables[sj.second] = save_obj.generate_table();
-                
+                    deal_with_del(table_predicates, save_obj, old_save_pos1.pos1_deleted, true);
+                    deal_with_del(table_predicates, save_obj, old_save_pos2.pos1_deleted, false);
+
+                    deal_with_add(table_predicates, save_obj, old_save_pos1.pos1_added, 1);
+                    deal_with_add(table_predicates, save_obj, old_save_pos2.pos1_added, 2);
+                    
+                    tables[sj.second] = save_obj.generate_table();
+                }
                 //ThesisSave dummy;
                 //semi_join(tables[sj.second],tables[sj.first],dummy);
                 //thesis_semijoin.at(action.get_index()).at(counter) = dummy;
@@ -591,7 +596,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
                     return Table::EMPTY_TABLE();
                 }
-            
+                affected_tables.insert_or_assign(sj.second,counter);
             }else{
                 tables[sj.second] = thesis_semijoin.at(action.get_index()).at(counter).result;
                 tables[sj.second].tuple_index = thesis_semijoin.at(action.get_index()).at(counter).result_index;
