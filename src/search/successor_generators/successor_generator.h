@@ -35,6 +35,11 @@ struct ThesisSave{
 
     std::vector<std::pair<int,int>> matching_columns;
 
+    std::unordered_set<std::vector<int>,TupleHash> pos1_deleted;
+    std::unordered_set<std::vector<int>,TupleHash> pos2_deleted;
+    std::unordered_set<std::vector<int>,TupleHash> pos1_added;
+    std::unordered_set<std::vector<int>,TupleHash> pos2_added;
+
     ThesisSave() = default;
 
     Table generate_table(){
