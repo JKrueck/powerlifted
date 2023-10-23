@@ -21,7 +21,7 @@ std::vector<int> project_tuple(
     return projected;
 }
 
-void hash_join(Table &t1, const Table &t2) {
+void hash_join(Table &t1, const Table &t2, ThesisSave &save) {
     /*
      * This function implements a hash join as follows
      *
@@ -34,6 +34,15 @@ void hash_join(Table &t1, const Table &t2) {
     std::vector<int> matches1, matches2;
     compute_matching_columns(t1, t2, matches1, matches2);
     assert(matches1.size()==matches2.size());
+    std::vector<std::pair<int,int>> hack;
+    for(int i=0;i<matches1.size();i++){
+        std::pair<int,int> match;
+        match.first = matches1.at(i);
+        match.second = matches2.at(i);
+        //The order of the matches will be reversed, but shouldn't matter
+        hack.push_back(match);
+    }
+    save.matching_columns = hack;
 
     vector<vector<int>> new_tuples;
     if (matches1.empty()) {
@@ -49,12 +58,54 @@ void hash_join(Table &t1, const Table &t2) {
                 new_tuples.push_back(std::move(aux));
             }
         }
+        save.result.tuples = t1.tuples;
+        save.result.tuple_index = t1.tuple_index;
+        save.result_index = t1.tuple_index;
     }
     else {
+        
+        /*// Remove duplicated index. Duplicate code from join.cc
+        vector<bool> to_remove(t2.tuple_index.size(), false);
+        for (const auto &m : matches2) {
+            to_remove[m] = true;
+        }
+
+        for (size_t j = 0; j < t2.tuple_index.size(); ++j) {
+            if (!to_remove[j]) {
+                t1.tuple_index.push_back(t2.tuple_index[j]);
+            }
+        }
+        vector<vector<int>> new_tuples;
+        for(auto &tuple:t1.tuples){
+            std::vector<int> key(hack.size());
+            for(size_t i = 0; i < hack.size(); i++) {
+                key[i] = tuple[hack[i].first];
+            }
+            save.pos1_hashtable[key].insert(tuple);
+        }
+
+        for(auto &tuple:t2.tuples){
+            std::vector<int> key(hack.size());
+            for(size_t i = 0; i < hack.size(); i++) {
+                key[i] = tuple[hack[i].second];
+            }
+            save.pos2_hashtable[key].insert(tuple);
+            if(save.pos1_hashtable.count(key)!=0){
+                std::unordered_set<GroundAtom, TupleHash> to_change = save.pos1_hashtable[key];
+                for(auto tup:to_change){
+                    for (unsigned j = 0; j < to_remove.size(); ++j) {
+                        if (!to_remove[j]) tup.push_back(tuple[j]);
+                    }
+                }
+            }
+        }*/
+        
+        
         unordered_map<vector<int>, vector<vector<int>>, TupleHash> hash_join_map;
         // Build phase
         for (const vector<int> &tuple : t1.tuples) {
             hash_join_map[project_tuple(tuple, matches1)].push_back(tuple);
+            save.pos1_hashtable[project_tuple(tuple, matches1)].insert(tuple);
         }
 
         // Remove duplicated index. Duplicate code from join.cc

@@ -474,28 +474,12 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 //Can do this faster
                 if(save_obj.matching_columns.size()==0){
                     semi_join(tables[sj.second],tables[sj.first],save_obj);
+                    save_obj.pos1_added = old_save.pos1_added;
+                    save_obj.pos1_deleted = old_save.pos1_deleted;
                 }else{
-
                     
                     deal_with_del(table_predicates, save_obj, old_save.pos1_deleted, false);
                     deal_with_add(table_predicates, save_obj, old_save.pos1_added, 2);
-                    
-
-                    /*std::vector<std::vector<int>> new_tuples;
-                    //Clear the old pos1 hashtable and result
-                    save_obj.pos2_hashtable.clear();
-                    save_obj.result_table.clear();
-
-                    for(auto &tuple:tables[sj.first].tuples){
-                        std::vector<int> key(save_obj.matching_columns.size());
-                        for(size_t i = 0; i < save_obj.matching_columns.size(); i++) {
-                            key[i] = tuple[save_obj.matching_columns[i].second];
-                        }
-                        save_obj.pos2_hashtable[key].insert(tuple);
-                        if(save_obj.pos1_hashtable.count(key)!=0){
-                            save_obj.result_table[key] = save_obj.pos1_hashtable[key];
-                        }
-                    }*/
                     
                     //It can happen that there are still changes that need to be made to the second table
                     if(compute_semi_join[sj.second]){
@@ -550,6 +534,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 //See comments above
                 if(save_obj.matching_columns.size()==0){
                     semi_join(tables[sj.second],tables[sj.first],save_obj);
+                    save_obj.pos1_added = old_save.pos1_added;
+                    save_obj.pos1_deleted = old_save.pos1_deleted;
                 }else{
 
                     deal_with_del(table_predicates, save_obj, old_save.pos1_deleted, true);
@@ -569,13 +555,14 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             }else if(affected_tables.count(sj.first)!=0 && affected_tables.count(sj.second)!=0){
                 //Get the new structure
                 ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
-
+                //Get the old structures
+                ThesisSave &old_save_pos1 = thesis_semijoin.at(action.get_index()).at(affected_tables[sj.second]);
+                ThesisSave &old_save_pos2 = thesis_semijoin.at(action.get_index()).at(affected_tables[sj.first]);
                 if(save_obj.matching_columns.size()==0){
                     semi_join(tables[sj.second],tables[sj.first],save_obj);
+                    save_obj.pos1_added = old_save_pos1.pos1_added;
+                    save_obj.pos1_deleted = old_save_pos1.pos1_deleted;
                 }else{
-                    //Get the old structures
-                    ThesisSave &old_save_pos1 = thesis_semijoin.at(action.get_index()).at(affected_tables[sj.second]);
-                    ThesisSave &old_save_pos2 = thesis_semijoin.at(action.get_index()).at(affected_tables[sj.first]);
 
                     deal_with_del(table_predicates, save_obj, old_save_pos1.pos1_deleted, true);
                     deal_with_del(table_predicates, save_obj, old_save_pos2.pos1_deleted, false);
@@ -614,6 +601,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     std::unordered_map<int,std::vector<int>> thesis_indices;
     counter = 0;
     for (const auto &j : jt.get_order()) {
+        ThesisSave join_save;
         unordered_set<int> project_over;
         for (auto x : tables[j.second].tuple_index) {
             project_over.insert(x);
@@ -624,7 +612,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             }
         }
         Table &working_table = tables[j.second];
-        hash_join(working_table, tables[j.first]);
+        hash_join(working_table, tables[j.first], join_save);
         // Project must be after removal of inequality constraints, otherwise we might keep only the tuple violating
         // some inequality. Variables in inequalities are also considered distinguished.
         filter_static(action, working_table);
@@ -652,7 +640,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     }*/
     Table &working_table = tables[remaining_join[action.get_index()][0]];
     for (size_t i = 1; i < remaining_join[action.get_index()].size(); ++i) {
-        hash_join(working_table, tables[remaining_join[action.get_index()][i]]);
+        ThesisSave join_save;
+        hash_join(working_table, tables[remaining_join[action.get_index()][i]], join_save);
         filter_static(action, working_table);
         if (working_table.tuples.empty()) {
             return working_table;
@@ -756,17 +745,9 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
     
         const JoinTree &jt = join_trees[action.get_index()];
 
-        std::vector<bool> thesis_impacted(tables.size(),false);
-        if(thesis.is_enabled()){
-            thesis_tables.at(action.get_index()).resize(jt.get_order().size());
-            for(auto it:action.get_effects()){
-                if(it.is_negated()){
-                    thesis_impacted[it.get_predicate_symbol_idx()] = true;
-                }
-            }
-        }
         int counter = 0;
         for (const auto &j : jt.get_order()) {
+            ThesisSave join_save;
             unordered_set<int> project_over;
             for (auto x : tables[j.second].tuple_index) {
                 project_over.insert(x);
@@ -777,21 +758,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
                 }
             }
             Table &working_table = tables[j.second];
-            hash_join(working_table, tables[j.first]);
-            
-            //save the result of the current hashjoin
-            
-            /*if(thesis.is_enabled()){
-                if(thesis_impacted.at(j.first) || thesis_impacted.at(j.second)){
-                    thesis_tables.at(action.get_index()).at(counter).first = working_table;
-                    thesis_tables.at(action.get_index()).at(counter).second = true;
-                    thesis_impacted[j.second] = true;
-                }else{
-                    thesis_tables.at(action.get_index()).at(counter).first = working_table;
-                }
-            }*/
-           
-            
+            hash_join(working_table, tables[j.first], join_save);
 
             // Project must be after removal of inequality constraints, otherwise we might keep only the
             // tuple violating some inequality. Variables in inequalities are also considered
@@ -799,9 +766,6 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
            
 
             filter_static(action, working_table);
-            //if(working_table.EMPTY_TABLE){
-                //copy = working_table;
-            //}
             project(working_table, project_over);
             if (working_table.tuples.empty()) {
                 //cout << " yann err2" << endl;
@@ -812,7 +776,8 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         // For the case where the action schema is cyclic
         Table &working_table = tables[remaining_join[action.get_index()][0]];
         for (size_t i = 1; i < remaining_join[action.get_index()].size(); ++i) {
-            hash_join(working_table, tables[remaining_join[action.get_index()][i]]);
+            ThesisSave join_save;
+            hash_join(working_table, tables[remaining_join[action.get_index()][i]], join_save);
             filter_static(action, working_table);
             if (working_table.tuples.empty()) {
                 //cout << " yann err3" << endl;

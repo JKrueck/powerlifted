@@ -1,7 +1,10 @@
 #ifndef SEARCH_HASH_JOIN_H
 #define SEARCH_HASH_JOIN_H
 
+#include "../successor_generators/successor_generator.h"
+
 class Table;
+struct ThesisSave;
 
 /**
  * @brief Join two tables but using hash-based approach.
@@ -14,6 +17,6 @@ class Table;
  * @see join.h
  * @see join.cc
  */
-void hash_join(Table &t1, const Table &t2);
+void hash_join(Table &t1, const Table &t2, ThesisSave &save);
 
 #endif //SEARCH_HASH_JOIN_H
