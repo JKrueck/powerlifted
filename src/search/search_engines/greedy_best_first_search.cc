@@ -157,7 +157,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         if (check_goal(task, generator, timer_start, state, node, space, thesis_time)) return utils::ExitCode::SUCCESS;
 
         if ((sid.id()==714)) {
-                int stop13 = 1;
+            int stop13 = 1;
         }
 
         //time_t thesis_timer = clock();
@@ -198,8 +198,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
 
-            if (sid.id()==6) {
-                int stop13 = 1;
+            if (sid.id()==32) {
+                if(action.get_index()==6){
+                    int stop13 = 1;
+                }
             }
 
             DBState old_state;
@@ -277,8 +279,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             if ((sid.id()==19)) {
                 int stop13 = 1;
             }
-
-                        
+                               
             
                 /*if(child_node.state_id.id()!=1){
                     if(child_node.state_id.id()!=14){

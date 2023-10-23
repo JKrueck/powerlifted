@@ -36,9 +36,7 @@ struct ThesisSave{
     std::vector<std::pair<int,int>> matching_columns;
 
     std::unordered_set<std::vector<int>,TupleHash> pos1_deleted;
-    std::unordered_set<std::vector<int>,TupleHash> pos2_deleted;
     std::unordered_set<std::vector<int>,TupleHash> pos1_added;
-    std::unordered_set<std::vector<int>,TupleHash> pos2_added;
 
     ThesisSave() = default;
 
@@ -51,6 +49,13 @@ struct ThesisSave{
         }
         result.tuple_index = this->result_index;
         return this->result;
+    }
+
+    ThesisSave* refresh_tables(){
+        this->pos1_added.clear();
+        this->pos1_deleted.clear();
+        
+        return this;
     }
 
 };

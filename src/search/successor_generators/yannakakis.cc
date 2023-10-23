@@ -604,7 +604,11 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             counter++;
     }
 
-    
+    //We have stored everything that was deleted/added to some table
+    //If this storage isn´t cleared we will continue to add/delete these atoms in future states as the data structures are carried over betweens states 
+    for(int i=0;i<thesis_semijoin.at(action.get_index()).size();i++){
+        thesis_semijoin.at(action.get_index()).at(i).refresh_tables();
+    }
     
 
     std::unordered_map<int,std::vector<int>> thesis_indices;
