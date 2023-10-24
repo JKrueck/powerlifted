@@ -63,12 +63,21 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
     thesis_previous_state.insert_or_assign(StateID::no_state, StateID::no_state);
     thesis_state_memory.insert({0,ThesisClass(false,task.get_action_schema_by_index(0))});
 
+    std::unordered_set<int> currently_relevant;
+    std::unordered_set<int> relevant_parents;
+    std::unordered_map<int,int> parents_counter;
+    currently_relevant.insert(0);
+
     int state_counter = 0;
     while (not queue.empty()) {
         state_counter++;
         StateID sid = queue.front();
         queue.pop();
         SearchNode &node = space.get_node(sid);
+
+        relevant_parents.insert(sid.id());
+        currently_relevant.erase(sid.id());
+        parents_counter.insert_or_assign(sid.id(),0);
         
         if(state_counter == 250){
             cout << "succtime in state " << sid.id() <<" : " << thesis_time / CLOCKS_PER_SEC  << '\n';
@@ -92,8 +101,13 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
         DBState state = packer.unpack(space.get_state(sid));
 
         thesis_join_table_at_state = thesis_join_table_memory.at(old_thesis.get_parent_state_id());
-        thesis_semijoin_table_at_state = thesis_semijoin_table_memory.at(old_thesis.get_parent_state_id());
-       
+        std::vector<std::vector<ThesisSave>> thesis_semijoin_table_at_state = thesis_semijoin_table_memory.at(old_thesis.get_parent_state_id());
+        thesis_semijoin_table_at_state.resize(task.get_action_schemas().size());
+        if(sid.id()!=0){
+            thesis_semijoin_table_memory.insert_or_assign(sid.id(),thesis_semijoin_table_at_state);
+            thesis_join_table_memory.insert_or_assign(sid.id(), thesis_join_table_at_state);
+        }
+
         if (check_goal(task, generator, timer_start, state, node, space, thesis_time, thesis_init)) return utils::ExitCode::SUCCESS;
 
         time_t thesis_timer = clock();
@@ -147,8 +161,8 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
                 old_state = state;
             }
             time_t thesis_timer = clock();
-            time_t thesis_initial_timer = clock()
-;            auto applicable = generator.get_applicable_actions(action, state,task, old_thesis,
+            time_t thesis_initial_timer = clock();
+            auto applicable = generator.get_applicable_actions(action, state,task, old_thesis,
                                 thesis_join_table_at_state,thesis_semijoin_table_at_state,old_state);
 
             //Sort the instantiations by their hash
@@ -181,23 +195,30 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
                     if (check_goal(task, generator, timer_start, s, child_node, space, thesis_time, thesis_init)) return utils::ExitCode::SUCCESS;
 
                     queue.emplace(child_node.state_id);
+                    currently_relevant.insert(child_node.state_id.id());
+                    parents_counter[sid.id()]+=1;
 
                     thesis_state_memory.insert({child_node.state_id.id(),thesis_successor});
 
                     //create a new empty join_table memory for the new state
                     std::vector<std::vector<Table>> thesis_join_at_state;
                     thesis_join_at_state.resize(task.get_action_schemas().size());
-                    thesis_join_table_memory.insert({child_node.state_id.id(),thesis_join_table_at_state});
+                    //thesis_join_table_memory.insert({child_node.state_id.id(),thesis_join_table_at_state});
                     //create a new empty semijoin_table memory for the new state
                     std::vector<std::vector<Table>> thesis_semijoin_at_state;
                     thesis_semijoin_at_state.resize(task.get_action_schemas().size());
-                    thesis_semijoin_table_memory.insert({child_node.state_id.id(),thesis_semijoin_table_at_state});
+                    //thesis_semijoin_table_memory.insert({child_node.state_id.id(),thesis_semijoin_table_at_state});
                     //remember that sid is the parent state of the current child node
                     thesis_previous_state.insert_or_assign(child_node.state_id,sid);
                 }
                 
             }
         }
+        if(sid.id()!=0) parents_counter[old_thesis.get_parent_state_id()]--;
+        if(parents_counter[old_thesis.get_parent_state_id()]<=0){
+            thesis_semijoin_table_memory.erase(old_thesis.get_parent_state_id());
+            //cout << "Removed obsolete parent from memory" << endl;
+        } 
     }
 
     print_no_solution_found(timer_start, thesis_time, thesis_init);
