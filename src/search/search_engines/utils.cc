@@ -16,20 +16,22 @@
 
 using namespace std;
 
-void print_no_solution_found(const clock_t& timer_start,double thesis_time_needed) {
+void print_no_solution_found(const clock_t& timer_start,double thesis_time_needed, double thesis_init) {
     cerr << "No solution found!" << endl;
     cout << "Total time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << endl;
     cout << "Time used for successor generation: " << thesis_time_needed / CLOCKS_PER_SEC << endl;
+    cout << "Time used for initial state succ gen: " << thesis_init / CLOCKS_PER_SEC << endl;
 }
 
 
 void print_goal_found(
     const SuccessorGenerator &generator,
-    const clock_t& timer_start,double thesis_time_needed)
+    const clock_t& timer_start,double thesis_time_needed, double thesis_init)
 {
     cout << "Goal found at: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;
     cout << "Total time: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;
     cout << "Time used for successor generation: " << thesis_time_needed / CLOCKS_PER_SEC << endl;
+    cout << "Time used for initial state succ gen: " << thesis_init / CLOCKS_PER_SEC << endl;
 }
 
 //template<class PackedStateT>

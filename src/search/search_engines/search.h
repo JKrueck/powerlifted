@@ -39,7 +39,8 @@ public:
                     const DBState &state,
                     const SearchNode &node,
                     const SearchSpace<PackedStateT> &space,
-                    double thesis_time) const;
+                    double thesis_time,
+                    double thesis_initial) const;
 
 protected:
 

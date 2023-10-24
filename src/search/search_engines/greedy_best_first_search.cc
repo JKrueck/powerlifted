@@ -24,6 +24,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                                                 Heuristic &heuristic)
 {   
     double thesis_time = 0.0;
+    double thesis_initial_succ = 0.0;
     cout << "Starting greedy best first search" << endl;
     clock_t timer_start = clock();
     StatePackerT packer(task);
@@ -47,7 +48,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     statistics.report_f_value_progress(heuristic_layer);
     queue.do_insertion(root_node.state_id, make_pair(heuristic_layer, 0));
 
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time)) return utils::ExitCode::SUCCESS;
+    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ)) return utils::ExitCode::SUCCESS;
 
     //Save the intermediate hash-join tables at a global level and per action
     std::vector<std::vector<ThesisSave>> thesis_join_table_at_state;
@@ -154,7 +155,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
 
        
-        if (check_goal(task, generator, timer_start, state, node, space, thesis_time)) return utils::ExitCode::SUCCESS;
+        if (check_goal(task, generator, timer_start, state, node, space, thesis_time, thesis_initial_succ)){
+            cout << "Size of semijoin memory: " << thesis_semijoin_table_memory.size() << endl;
+            return utils::ExitCode::SUCCESS;
+        } 
 
         if ((sid.id()==714)) {
             int stop13 = 1;
@@ -206,6 +210,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
             DBState old_state;
             time_t thesis_timer = clock();
+            time_t thesis_initial_timer = clock();
             auto applicable = generator.get_applicable_actions(action, state,task, old_thesis,
                                 thesis_join_table_at_state,thesis_semijoin_table_at_state,old_state);
 
@@ -213,6 +218,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             std::sort(applicable.begin(),applicable.end());
             
             thesis_time += clock() - thesis_timer;
+            if(sid.id()==0){
+                thesis_initial_succ += clock() - thesis_initial_timer;
+            }
             thesis_semijoin_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_semijoin_table_at_state.at(action.get_index()));
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
            
@@ -374,7 +382,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         //thesis_join_table_per_state.insert_or_assign(sid.id(),thesis_current_tables);
     }
 
-    print_no_solution_found(timer_start, thesis_time);
+    print_no_solution_found(timer_start, thesis_time, thesis_initial_succ);
 
     return utils::ExitCode::SEARCH_UNSOLVABLE;
 }

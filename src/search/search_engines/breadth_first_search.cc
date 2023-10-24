@@ -18,6 +18,8 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
                                              Heuristic &heuristic)
 {
     cout << "Starting breadth first search" << endl;
+    double thesis_time = 0.0;
+    double thesis_init = 0.0;
     clock_t timer_start = clock();
 
     StatePackerT packer(task);
@@ -29,8 +31,8 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
     statistics.report_f_value_progress(root_node.f);
     queue.emplace(root_node.state_id);
 
-    double thesis_time = 0.0;
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time)) return utils::ExitCode::SUCCESS;
+    
+    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_init)) return utils::ExitCode::SUCCESS;
 
     //Save the intermediate hash-join tables at a global level and per action
     std::vector<std::vector<ThesisSave>> thesis_join_table_at_state;
@@ -60,11 +62,18 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
     std::unordered_map<StateID,StateID,ThesisStateIDHasher> thesis_previous_state;
     thesis_previous_state.insert_or_assign(StateID::no_state, StateID::no_state);
     thesis_state_memory.insert({0,ThesisClass(false,task.get_action_schema_by_index(0))});
+
+    int state_counter = 0;
     while (not queue.empty()) {
+        state_counter++;
         StateID sid = queue.front();
         queue.pop();
         SearchNode &node = space.get_node(sid);
         
+        if(state_counter == 250){
+            cout << "succtime in state " << sid.id() <<" : " << thesis_time / CLOCKS_PER_SEC  << '\n';
+            state_counter = 0;
+        }
 
         //Get the thesis object that belongs to the state from the queue
         ThesisClass old_thesis = thesis_state_memory.at(sid.id());
@@ -85,7 +94,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
         thesis_join_table_at_state = thesis_join_table_memory.at(old_thesis.get_parent_state_id());
         thesis_semijoin_table_at_state = thesis_semijoin_table_memory.at(old_thesis.get_parent_state_id());
        
-        if (check_goal(task, generator, timer_start, state, node, space, thesis_time)) return utils::ExitCode::SUCCESS;
+        if (check_goal(task, generator, timer_start, state, node, space, thesis_time, thesis_init)) return utils::ExitCode::SUCCESS;
 
         time_t thesis_timer = clock();
         if(this->thesis_enabled && sid.id()!=0){
@@ -138,13 +147,17 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
                 old_state = state;
             }
             time_t thesis_timer = clock();
-            auto applicable = generator.get_applicable_actions(action, state,task, old_thesis,
+            time_t thesis_initial_timer = clock()
+;            auto applicable = generator.get_applicable_actions(action, state,task, old_thesis,
                                 thesis_join_table_at_state,thesis_semijoin_table_at_state,old_state);
 
             //Sort the instantiations by their hash
             std::sort(applicable.begin(),applicable.end());
             
             thesis_time += clock() - thesis_timer;
+            if(sid.id()==0){
+                thesis_init += clock() - thesis_initial_timer;
+            }
             thesis_semijoin_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_semijoin_table_at_state.at(action.get_index()));
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
 
@@ -165,7 +178,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
                 if (child_node.status == SearchNode::Status::NEW) {
                     child_node.open(node.f+1);
 
-                    if (check_goal(task, generator, timer_start, s, child_node, space, thesis_time)) return utils::ExitCode::SUCCESS;
+                    if (check_goal(task, generator, timer_start, s, child_node, space, thesis_time, thesis_init)) return utils::ExitCode::SUCCESS;
 
                     queue.emplace(child_node.state_id);
 
@@ -187,7 +200,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
         }
     }
 
-    print_no_solution_found(timer_start, thesis_time);
+    print_no_solution_found(timer_start, thesis_time, thesis_init);
 
     return utils::ExitCode::SEARCH_UNSOLVABLE;
 }
