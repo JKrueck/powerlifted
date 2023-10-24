@@ -425,27 +425,12 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         
 
 
-                    if(delete_condition1){
-
-                        deal_with_del(table_predicates, save_obj,deleted_first, false);
-                        
-                    }
-                    if(delete_condition2){
-
-                        deal_with_del(table_predicates, save_obj,deleted_second, true);
-
-                    }
-                    //Now deal with any possible add-effects
-                    if(predicate_to_add_diff.count(table_predicates.first)!=0){
-
-                        deal_with_add(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.first),2);
-                        
-                    }
-                    if(predicate_to_add_diff.count(table_predicates.second)!=0){
-
-                        deal_with_add(table_predicates,save_obj,predicate_to_add_diff.at(table_predicates.second),1);
-
-                    }
+                    //Firstly deal with any possible add-effects
+                    if(predicate_to_add_diff.count(table_predicates.first)!=0) deal_with_add(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.first),2);
+                    if(predicate_to_add_diff.count(table_predicates.second)!=0) deal_with_add(table_predicates,save_obj,predicate_to_add_diff.at(table_predicates.second),1);
+                    //Now deal with deletes
+                    if(delete_condition1) deal_with_del(table_predicates, save_obj,deleted_first, false);
+                    if(delete_condition2) deal_with_del(table_predicates, save_obj,deleted_second, true);
 
                     //Generate the WHOLE complete new_table
                     //Unnessescary probably
@@ -478,8 +463,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     save_obj.pos1_deleted = old_save.pos1_deleted;
                 }else{
                     
-                    deal_with_del(table_predicates, save_obj, old_save.pos1_deleted, false);
                     deal_with_add(table_predicates, save_obj, old_save.pos1_added, 2);
+                    deal_with_del(table_predicates, save_obj, old_save.pos1_deleted, false);
                     
                     //It can happen that there are still changes that need to be made to the second table
                     if(compute_semi_join[sj.second]){
@@ -490,14 +475,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             delete_condition2 = true;
                             affected_tables.insert_or_assign(sj.second,counter);
                         }
-                        if(delete_condition2){
-                            deal_with_del(table_predicates, save_obj, deleted_second, true);
-                        }
-                        if(predicate_to_add_diff.count(action.get_precondition().at(sj.second).get_predicate_symbol_idx())!=0){
-                            
-                            deal_with_add(table_predicates, save_obj, predicate_to_add_diff.at(table_predicates.second), 1);
-
-                        }
+                        if(predicate_to_add_diff.count(action.get_precondition().at(sj.second).get_predicate_symbol_idx())!=0) deal_with_add(table_predicates, save_obj, predicate_to_add_diff.at(table_predicates.second), 1);
+                        if(delete_condition2) deal_with_del(table_predicates, save_obj, deleted_second, true);
                     }
 
                     
@@ -538,8 +517,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     save_obj.pos1_deleted = old_save.pos1_deleted;
                 }else{
 
-                    deal_with_del(table_predicates, save_obj, old_save.pos1_deleted, true);
                     deal_with_add(table_predicates, save_obj, old_save.pos1_added, 1);
+                    deal_with_del(table_predicates, save_obj, old_save.pos1_deleted, true);
                     tables[sj.second] = save_obj.generate_table();
                 }
                 //If the resulting semi-join was empty
@@ -564,11 +543,11 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     save_obj.pos1_deleted = old_save_pos1.pos1_deleted;
                 }else{
 
-                    deal_with_del(table_predicates, save_obj, old_save_pos1.pos1_deleted, true);
-                    deal_with_del(table_predicates, save_obj, old_save_pos2.pos1_deleted, false);
-
                     deal_with_add(table_predicates, save_obj, old_save_pos1.pos1_added, 1);
                     deal_with_add(table_predicates, save_obj, old_save_pos2.pos1_added, 2);
+                    
+                    deal_with_del(table_predicates, save_obj, old_save_pos1.pos1_deleted, true);
+                    deal_with_del(table_predicates, save_obj, old_save_pos2.pos1_deleted, false);
                     
                     tables[sj.second] = save_obj.generate_table();
                 }

@@ -208,8 +208,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
 
-            if (sid.id()==30) {
-                if(action.get_index()==5){
+            if (sid.id()==25) {
+                if(action.get_index()==1){
                     int stop13 = 5;
                 }
             }
@@ -231,7 +231,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
            
 
-            if(false){
+            if(print){
                 std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
 
             
