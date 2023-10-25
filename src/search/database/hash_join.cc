@@ -45,6 +45,10 @@ void hash_join(Table &t1, const Table &t2, ThesisSave &save) {
     save.matching_columns = hack;
 
     vector<vector<int>> new_tuples;
+    vector<vector<int>> new_tuples_me;
+    if(t2.tuple_index.size()>1){
+        int stop=1;
+    }
     if (matches1.empty()) {
         /*
          * If no attribute matches, then we apply a cartesian product
@@ -64,18 +68,17 @@ void hash_join(Table &t1, const Table &t2, ThesisSave &save) {
     }
     else {
         
-        /*// Remove duplicated index. Duplicate code from join.cc
-        vector<bool> to_remove(t2.tuple_index.size(), false);
+        // Remove duplicated index. Duplicate code from join.cc
+        /*vector<bool> to_remove_me(t2.tuple_index.size(), false);
         for (const auto &m : matches2) {
-            to_remove[m] = true;
+            to_remove_me[m] = true;
         }
 
         for (size_t j = 0; j < t2.tuple_index.size(); ++j) {
-            if (!to_remove[j]) {
+            if (!to_remove_me[j]) {
                 t1.tuple_index.push_back(t2.tuple_index[j]);
             }
         }
-        vector<vector<int>> new_tuples;
         for(auto &tuple:t1.tuples){
             std::vector<int> key(hack.size());
             for(size_t i = 0; i < hack.size(); i++) {
@@ -93,9 +96,11 @@ void hash_join(Table &t1, const Table &t2, ThesisSave &save) {
             if(save.pos1_hashtable.count(key)!=0){
                 std::unordered_set<GroundAtom, TupleHash> to_change = save.pos1_hashtable[key];
                 for(auto tup:to_change){
-                    for (unsigned j = 0; j < to_remove.size(); ++j) {
-                        if (!to_remove[j]) tup.push_back(tuple[j]);
+                    for (unsigned j = 0; j < to_remove_me.size(); ++j) {
+                        if (!to_remove_me[j]) tup.push_back(tuple[j]);
                     }
+                    new_tuples_me.push_back(tup);
+                    save.result_table[key].insert(tup);
                 }
             }
         }*/
@@ -135,7 +140,8 @@ void hash_join(Table &t1, const Table &t2, ThesisSave &save) {
                 }
             }
         }
-
     }
+    //save.result.tuples = new_tuples_me;
+    //save.result_index = t1.tuple_index;
     t1.tuples = std::move(new_tuples);
 }
