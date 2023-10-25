@@ -20,7 +20,7 @@ void print_no_solution_found(const clock_t& timer_start,double thesis_time_neede
     cerr << "No solution found!" << endl;
     cout << "Total time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << endl;
     cout << "Time used for successor generation: " << thesis_time_needed / CLOCKS_PER_SEC << endl;
-    cout << "Time used for initial state succ gen: " << thesis_init / CLOCKS_PER_SEC << endl;
+    cout << "Time used for initial state succ gen: " << thesis_init << endl;
 }
 
 
@@ -31,7 +31,7 @@ void print_goal_found(
     cout << "Goal found at: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;
     cout << "Total time: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;
     cout << "Time used for successor generation: " << thesis_time_needed / CLOCKS_PER_SEC << endl;
-    cout << "Time used for initial state succ gen: " << thesis_init / CLOCKS_PER_SEC << endl;
+    cout << "Time used for initial state succ gen: " << thesis_init << endl;
 }
 
 //template<class PackedStateT>
