@@ -190,9 +190,9 @@ void YannakakisSuccessorGenerator::get_distinguished_variables(const ActionSchem
     }
 }
 
-void YannakakisSuccessorGenerator::deal_with_add(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_set<GroundAtom,TupleHash> add_diff, int position){
+void YannakakisSuccessorGenerator::deal_with_add_semi(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_set<GroundAtom,TupleHash> add_diff, bool first){
     int predicate;
-    if(position == 1){
+    if(first){
         predicate = table_predicates.second;
     }else{
         predicate = table_predicates.first;
@@ -202,14 +202,14 @@ void YannakakisSuccessorGenerator::deal_with_add(std::pair<int,int> &table_predi
         //Generate the key for the newly added atom
         std::vector<int> key(save.matching_columns.size());
         for(size_t i = 0; i < save.matching_columns.size(); i++) {
-           if(position == 1){
+           if(first){
                 key[i] = it[save.matching_columns[i].first];
             }else{
                 key[i] = it[save.matching_columns[i].second];
             }
         }
 
-        if(position == 1){
+        if(first){
             //Insert the new atom into the pos1 hashtable
             save.pos1_hashtable[key].insert(it);
             if(save.pos2_hashtable.count(key)!=0){
@@ -231,7 +231,207 @@ void YannakakisSuccessorGenerator::deal_with_add(std::pair<int,int> &table_predi
         }
     }   
 }
-void YannakakisSuccessorGenerator::deal_with_del(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_set<GroundAtom,TupleHash> del_diff, bool first){
+void YannakakisSuccessorGenerator::deal_with_del_semi(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_set<GroundAtom,TupleHash> del_diff, bool first){
+    for(auto del:del_diff){
+        //Generate the key for the removed added atom
+        std::vector<int> key(save.matching_columns.size());
+        for(size_t i = 0; i < save.matching_columns.size(); i++) {
+            if(first){
+                key[i] = del[save.matching_columns[i].first];
+            }else{
+                key[i] = del[save.matching_columns[i].second];
+            }
+        }
+        if(first){
+            //Delete the TableEntry from the pos1 hashtable
+            if(save.pos1_hashtable.count(key)!=0){
+                //As the element at save_obj.pos1_hashtable.at(key) is a unordered_set, this takes constant time on average
+                auto pos = save.pos1_hashtable.at(key).find(del);
+                if(pos!=save.pos1_hashtable.at(key).end()){//
+                    save.pos1_hashtable.at(key).erase(pos);
+                    //Remember that del has been deleted from this table
+                    save.pos1_deleted.insert(del);
+                    
+                    //If the set has no entries left after removal, we can delete that key
+                    //This also means that there is no match between pos1 and pos2 on that key
+                    //If that key appears in the result it can thus be deleted
+                    if(save.pos1_hashtable.at(key).size()==0){//
+                        save.pos1_hashtable.erase(key);
+                        if(save.result_table.count(key)!=0){
+                            save.result_table.erase(key);
+                        }
+                    //If the set is not empty but the key does not appear in the pos2 hashtable, we can delete that key in the result too
+                    }else if(save.pos2_hashtable.count(key)==0){
+                        save.result_table.erase(key);
+                    }else{
+                        save.result_table.insert_or_assign(key,save.pos1_hashtable[key]);
+                    }
+                }
+            }
+        }else{
+            //Delete the TableEntry from the pos2 hashtable
+            if(save.pos2_hashtable.count(key)!=0){
+                auto pos = save.pos2_hashtable.at(key).find(del);
+                if(pos!=save.pos2_hashtable.at(key).end()){
+                    save.pos2_hashtable.at(key).erase(pos);
+                    //If the set has no entries left after removal, we can delete that key
+                    //This also means that there is no match between pos1 and pos2 on that key
+                    //If that key appears in the result it can thus be deleted
+                    if(save.pos2_hashtable.at(key).size()==0){
+                        save.pos2_hashtable.erase(key);
+                        if(save.result_table.count(key)!=0){
+                            //Save the atoms that were removed from pos1 due to changes in pos2
+                            for(auto it:save.result_table[key]){
+                                save.pos1_deleted.insert(it);
+                            }
+                            save.result_table.erase(key);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+}
+void YannakakisSuccessorGenerator::deal_with_add_full(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_set<GroundAtom,TupleHash> add_diff, bool first, int index_size){
+    int predicate;
+    if(first){
+        predicate = table_predicates.second;
+    }else{
+        predicate = table_predicates.first;
+    }
+
+    for(auto it:add_diff){
+        //Generate the key for the newly added atom
+        std::vector<int> key(save.matching_columns.size());
+        for(size_t i = 0; i < save.matching_columns.size(); i++) {
+           if(first){
+                key[i] = it[save.matching_columns[i].first];
+            }else{
+                key[i] = it[save.matching_columns[i].second];
+            }
+        }
+        std::vector<bool> to_remove_me(index_size, false);
+        for (const auto &m : save.matching_columns) {
+            to_remove_me[m.second] = true;
+        }
+
+        if(first){
+            //Insert the new atom into the pos1 hashtable
+            save.pos1_hashtable[key].insert(it);
+            if(save.pos2_hashtable.count(key)!=0){
+                //unnessescary??Still not sure if changing the for each element changes the real one
+                auto copy = it;
+                /*Go trough all entries in the second pos table that match the new one
+                Add the corresponding elements from the second table to our new atom
+                */
+                std::unordered_set<GroundAtom, TupleHash> to_add = save.pos2_hashtable[key];
+                for(auto tup:to_add){
+                    for (unsigned j = 0; j < to_remove_me.size(); ++j) {
+                        if (!to_remove_me[j]) copy.push_back(tup[j]);
+                    }
+                    save.result_table[key].insert(copy);
+                    //Remember that we added something
+                    save.pos1_added.insert(copy);
+                }
+            }
+        }else{
+            //Insert the new atom into the pos2 hashtable
+            save.pos2_hashtable[key].insert(it);
+            //If that key also exists in pos1 and not in the result yet, then the semi-join now is able to retain that key from pos1
+            if(save.pos1_hashtable.count(key)!=0){
+                //Normal probe phase
+                std::unordered_set<GroundAtom, TupleHash> to_change = save.pos1_hashtable[key];
+                for(auto tup:to_change){
+                    for (unsigned j = 0; j < to_remove_me.size(); ++j) {
+                        if (!to_remove_me[j]) tup.push_back(it[j]);
+                    }
+                    save.result_table[key].insert(tup);
+                    save.pos1_added.insert(tup);
+                }
+            }
+        }
+    }   
+}
+void YannakakisSuccessorGenerator::deal_with_del_full(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_set<GroundAtom,TupleHash> del_diff, bool first, int index_size){
+    for(auto del:del_diff){
+        //Generate the key for the removed added atom
+        std::vector<int> key(save.matching_columns.size());
+        for(size_t i = 0; i < save.matching_columns.size(); i++) {
+            if(first){
+                key[i] = del[save.matching_columns[i].first];
+            }else{
+                key[i] = del[save.matching_columns[i].second];
+            }
+        }
+        std::vector<bool> to_remove_me(index_size, false);
+        for (const auto &m : save.matching_columns) {
+            to_remove_me[m.second] = true;
+        }
+        if(first){
+            //Delete the TableEntry from the pos1 hashtable
+            if(save.pos1_hashtable.count(key)!=0){
+                //As the element at save_obj.pos1_hashtable.at(key) is a unordered_set, this takes constant time on average
+                auto pos = save.pos1_hashtable.at(key).find(del);
+                if(pos!=save.pos1_hashtable.at(key).end()){//
+                    save.pos1_hashtable.at(key).erase(pos);
+                    //Remember that del has been deleted from this table
+                    save.pos1_deleted.insert(del);
+                    
+                    //If the set has no entries left after removal, we can delete that key
+                    //This also means that there is no match between pos1 and pos2 on that key
+                    //If that key appears in the result it can thus be deleted
+                    if(save.pos1_hashtable.at(key).size()==0){//
+                        save.pos1_hashtable.erase(key);
+                        if(save.result_table.count(key)!=0){
+                            save.result_table.erase(key);
+                        }
+                    //If the set is not empty but the key does not appear in the pos2 hashtable, we can delete that key in the result too
+                    //Does this even occur????
+                    }else if(save.pos2_hashtable.count(key)==0){
+                        save.result_table.erase(key);
+                    }else{//If there are still entries for that key in both tables, we need to remove the results that match the removed element
+                        //Generate the atoms that wont exist anymore and then erase them
+                        auto copy = del;
+                        std::unordered_set<GroundAtom, TupleHash> to_add = save.pos2_hashtable[key];
+                        for(auto tup:to_add){
+                            for (unsigned j = 0; j < to_remove_me.size(); ++j) {
+                                if (!to_remove_me[j]) copy.push_back(tup[j]);
+                            }
+                            save.result_table[key].erase(copy);
+                        }
+                        //Hope this case is infrequent
+                    }
+                }
+            }
+        }else{
+            //Delete the TableEntry from the pos2 hashtable
+            if(save.pos2_hashtable.count(key)!=0){
+                auto pos = save.pos2_hashtable.at(key).find(del);
+                if(pos!=save.pos2_hashtable.at(key).end()){
+                    save.pos2_hashtable.at(key).erase(pos);
+                    //If the set has no entries left after removal, we can delete that key
+                    //This also means that there is no match between pos1 and pos2 on that key
+                    //If that key appears in the result it can thus be deleted
+                    if(save.pos2_hashtable.at(key).size()==0){
+                        save.pos2_hashtable.erase(key);
+                        if(save.result_table.count(key)!=0){
+                            //Save the atoms that were removed from pos1 due to changes in pos2
+                            for(auto it:save.result_table[key]){
+                                save.pos1_deleted.insert(it);
+                            }
+                            save.result_table.erase(key);
+                        }
+                    }
+                    //Why only one case here?? Just lucky no test isntance covers this??
+                    //Write my own test maye
+                }
+            }
+        }
+    }
+
+}
+void YannakakisSuccessorGenerator::deal_with_del_semi(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_set<GroundAtom,TupleHash> del_diff, bool first){
     for(auto del:del_diff){
         //Generate the key for the removed added atom
         std::vector<int> key(save.matching_columns.size());
@@ -384,12 +584,12 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     
                     if(predicate_to_add_diff.count(table_predicates.first)!=0){
 
-                        deal_with_add(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.first),2);
+                        deal_with_add_semi(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.first),false);
 
                     }
                     if(predicate_to_add_diff.count(table_predicates.second)!=0){
                         
-                        deal_with_add(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.second),1);
+                        deal_with_add_semi(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.second),true);
                     
                     }
                     //Generate the WHOLE complete new_table
@@ -406,8 +606,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     bool delete_condition1 = false;
                     bool delete_condition2 = false;
 
-                    int predicate_impacted;
-
                     if(thesis_affected_by_del.count(sj.first)!=0){
                         deleted_first = thesis.deleted_facts.at(thesis_affected_by_del.at(sj.first));
                         delete_condition1 = true;
@@ -418,19 +616,20 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         delete_condition2 = true;
                         affected_tables.insert_or_assign(sj.second,counter);
                     }else{
-                        predicate_impacted = thesis_affected_by_del.at(sj.first);
-                        thesis_affected_by_del.insert_or_assign(sj.second,predicate_impacted);
+                        //predicate_impacted = thesis_affected_by_del.at(sj.first);
+                        //thesis_affected_by_del.insert_or_assign(sj.second,predicate_impacted);
                         //Remember that the table at the second position was affected by a del effecy
+                        affected_tables.insert_or_assign(sj.second,counter);
                     }
                         
 
 
                     //Firstly deal with any possible add-effects
-                    if(predicate_to_add_diff.count(table_predicates.first)!=0) deal_with_add(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.first),2);
-                    if(predicate_to_add_diff.count(table_predicates.second)!=0) deal_with_add(table_predicates,save_obj,predicate_to_add_diff.at(table_predicates.second),1);
+                    if(predicate_to_add_diff.count(table_predicates.first)!=0) deal_with_add_semi(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.first),false);
+                    if(predicate_to_add_diff.count(table_predicates.second)!=0) deal_with_add_semi(table_predicates,save_obj,predicate_to_add_diff.at(table_predicates.second),true);
                     //Now deal with deletes
-                    if(delete_condition1) deal_with_del(table_predicates, save_obj,deleted_first, false);
-                    if(delete_condition2) deal_with_del(table_predicates, save_obj,deleted_second, true);
+                    if(delete_condition1) deal_with_del_semi(table_predicates, save_obj,deleted_first, false);
+                    if(delete_condition2) deal_with_del_semi(table_predicates, save_obj,deleted_second, true);
 
                     //Generate the WHOLE complete new_table
                     //Unnessescary probably
@@ -463,8 +662,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     save_obj.pos1_deleted = old_save.pos1_deleted;
                 }else{
                     
-                    deal_with_add(table_predicates, save_obj, old_save.pos1_added, 2);
-                    deal_with_del(table_predicates, save_obj, old_save.pos1_deleted, false);
+                    deal_with_add_semi(table_predicates, save_obj, old_save.pos1_added, false);
+                    deal_with_del_semi(table_predicates, save_obj, old_save.pos1_deleted, false);
                     
                     //It can happen that there are still changes that need to be made to the second table
                     if(compute_semi_join[sj.second]){
@@ -475,8 +674,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             delete_condition2 = true;
                             affected_tables.insert_or_assign(sj.second,counter);
                         }
-                        if(predicate_to_add_diff.count(action.get_precondition().at(sj.second).get_predicate_symbol_idx())!=0) deal_with_add(table_predicates, save_obj, predicate_to_add_diff.at(table_predicates.second), 1);
-                        if(delete_condition2) deal_with_del(table_predicates, save_obj, deleted_second, true);
+                        if(predicate_to_add_diff.count(action.get_precondition().at(sj.second).get_predicate_symbol_idx())!=0) deal_with_add_semi(table_predicates, save_obj, predicate_to_add_diff.at(table_predicates.second), 1);
+                        if(delete_condition2) deal_with_del_semi(table_predicates, save_obj, deleted_second, true);
                     }
 
                     
@@ -517,8 +716,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     save_obj.pos1_deleted = old_save.pos1_deleted;
                 }else{
 
-                    deal_with_add(table_predicates, save_obj, old_save.pos1_added, 1);
-                    deal_with_del(table_predicates, save_obj, old_save.pos1_deleted, true);
+                    deal_with_add_semi(table_predicates, save_obj, old_save.pos1_added, true);
+                    deal_with_del_semi(table_predicates, save_obj, old_save.pos1_deleted, true);
                     tables[sj.second] = save_obj.generate_table();
                 }
                 //If the resulting semi-join was empty
@@ -543,11 +742,11 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     save_obj.pos1_deleted = old_save_pos1.pos1_deleted;
                 }else{
 
-                    deal_with_add(table_predicates, save_obj, old_save_pos1.pos1_added, 1);
-                    deal_with_add(table_predicates, save_obj, old_save_pos2.pos1_added, 2);
+                    deal_with_add_semi(table_predicates, save_obj, old_save_pos1.pos1_added, true);
+                    deal_with_add_semi(table_predicates, save_obj, old_save_pos2.pos1_added, false);
                     
-                    deal_with_del(table_predicates, save_obj, old_save_pos1.pos1_deleted, true);
-                    deal_with_del(table_predicates, save_obj, old_save_pos2.pos1_deleted, false);
+                    deal_with_del_semi(table_predicates, save_obj, old_save_pos1.pos1_deleted, true);
+                    deal_with_del_semi(table_predicates, save_obj, old_save_pos2.pos1_deleted, false);
                     
                     tables[sj.second] = save_obj.generate_table();
                 }
@@ -575,9 +774,83 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     for(int i=0;i<thesis_semijoin.at(action.get_index()).size();i++){
         thesis_semijoin.at(action.get_index()).at(i).refresh_tables();
     }
-    
+    affected_tables.clear();
 
-    std::unordered_map<int,std::vector<int>> thesis_indices;
+    counter = 0;
+    for (const auto &j : jt.get_order()) {
+        table_predicates.first = action.get_precondition().at(j.first).get_predicate_symbol_idx();
+        table_predicates.second = action.get_precondition().at(j.second).get_predicate_symbol_idx();
+        //If there is a change in the computation of this join   
+        if((compute_hash_join.at(j.first) || compute_hash_join.at(j.second)) && (affected_tables.count(j.first)==0 && affected_tables.count(j.second)==0)){
+            //If that change(s) is(are) only a newly added atom(s) 
+            if((thesis_affected_by_del.count(j.second) == 0 && thesis_affected_by_del.count(j.first) == 0) || thesis_affected_by_del.size() ==0){
+                //Get the new structure
+                ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
+                
+                if(predicate_to_add_diff.count(table_predicates.first)!=0) deal_with_add_semi(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.first),2);
+
+
+                if(predicate_to_add_diff.count(table_predicates.second)!=0) deal_with_add_semi(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.second),1);
+                
+
+                //Generate the WHOLE complete new_table
+                //Unnessescary probably
+                tables[j.second] = save_obj.generate_table();
+                affected_tables.insert_or_assign(j.second,counter);
+            }else{//If that change was a delete effect (and maybe also add effect)
+                //Get the new structure
+                ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
+                
+                //Prepare all conditions
+                std::unordered_set<GroundAtom,TupleHash> deleted_first;
+                std::unordered_set<GroundAtom,TupleHash> deleted_second;
+                bool delete_condition1 = false;
+                bool delete_condition2 = false;
+
+
+                if(thesis_affected_by_del.count(j.first)!=0){
+                    deleted_first = thesis.deleted_facts.at(thesis_affected_by_del.at(j.first));
+                    delete_condition1 = true;
+                    affected_tables.insert_or_assign(j.second,counter);
+                }
+                if(thesis_affected_by_del.count(j.second)!=0){
+                    deleted_second = thesis.deleted_facts.at(thesis_affected_by_del.at(j.second));
+                    delete_condition2 = true;
+                    affected_tables.insert_or_assign(j.second,counter);
+                }else{
+                    //thesis_affected_by_del.insert_or_assign(sj.second,predicate_impacted);
+                    //Remember that the table at the second position was affected by a del effecy
+                    affected_tables.insert_or_assign(j.second,counter);
+                }
+                    
+
+
+                //Firstly deal with any possible add-effects
+                if(predicate_to_add_diff.count(table_predicates.first)!=0) deal_with_add_semi(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.first),2);
+                if(predicate_to_add_diff.count(table_predicates.second)!=0) deal_with_add_semi(table_predicates,save_obj,predicate_to_add_diff.at(table_predicates.second),1);
+                //Now deal with deletes
+                if(delete_condition1) deal_with_del_semi(table_predicates, save_obj,deleted_first, false);
+                if(delete_condition2) deal_with_del_semi(table_predicates, save_obj,deleted_second, true);
+
+                //Generate the WHOLE complete new_table
+                //Unnessescary probably
+                tables[j.second] = save_obj.generate_table();
+                
+                //If the resulting semi-join was empty
+                if(tables[j.second].tuples.size()==0){
+                    std::vector<ThesisSave> thesis_empty_semijoins;
+                    thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
+                    return Table::EMPTY_TABLE();
+                }
+            }
+        }else{
+            tables[j.second] = thesis_tables.at(action.get_index()).at(counter).result;
+            tables[j.second].tuple_index = thesis_tables.at(action.get_index()).at(counter).result_index;
+        }
+        counter++;
+    }
+
+    
     counter = 0;
     for (const auto &j : jt.get_order()) {
         ThesisSave join_save;
@@ -601,22 +874,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         }
     }
 
-    
-    
-    /*Table &working_table = tables[remaining_join[action.get_index()][0]];
-    //remaining_join[action.get_index()].size()==1
-    if(remaining_join[action.get_index()].size()==1){
-        working_table = thesis_tables.at(action.get_index()).back().result;
-    }else{
-        // For the case where the action schema is cyclic
-        for (size_t i = 1; i < remaining_join[action.get_index()].size(); ++i) {
-            hash_join(working_table, tables[remaining_join[action.get_index()][i]]);
-            filter_static(action, working_table);
-            if (working_table.tuples.empty()) {
-                return working_table;
-            }
-        }
-    }*/
     Table &working_table = tables[remaining_join[action.get_index()][0]];
     for (size_t i = 1; i < remaining_join[action.get_index()].size(); ++i) {
         ThesisSave join_save;
@@ -712,7 +969,6 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             ThesisSave semijoin_save;
             size_t s = semi_join(tables[sj.second], tables[sj.first], semijoin_save);
             if (s == 0) {
-                //cout << " yann err1" << endl;
                 std::vector<ThesisSave> thesis_empty_joins;
                 thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_joins);
                 return Table::EMPTY_TABLE();
@@ -747,10 +1003,13 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             filter_static(action, working_table);
             project(working_table, project_over);
             if (working_table.tuples.empty()) {
-                //cout << " yann err2" << endl;
+                std::vector<ThesisSave> thesis_empty_joins;
+                thesis_tables.at(action.get_index()) = std::move(thesis_empty_joins);
                 return working_table;
             }
-            counter++;
+            if(thesis.is_enabled()){
+                thesis_tables.at(action.get_index()).push_back(join_save);
+            }
         }
         // For the case where the action schema is cyclic
         Table &working_table = tables[remaining_join[action.get_index()][0]];

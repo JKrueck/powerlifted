@@ -59,7 +59,7 @@ void hash_join(Table &t1, const Table &t2, ThesisSave &save) {
             for (const vector<int> &tuple_t2 : t2.tuples) {
                 vector<int> aux(tuple_t1);
                 aux.insert(aux.end(), tuple_t2.begin(), tuple_t2.end());
-                new_tuples.push_back(std::move(aux));
+                new_tuples_me.push_back(std::move(aux));
             }
         }
         save.result.tuples = t1.tuples;
@@ -69,7 +69,7 @@ void hash_join(Table &t1, const Table &t2, ThesisSave &save) {
     else {
         
         // Remove duplicated index. Duplicate code from join.cc
-        /*vector<bool> to_remove_me(t2.tuple_index.size(), false);
+        vector<bool> to_remove_me(t2.tuple_index.size(), false);
         for (const auto &m : matches2) {
             to_remove_me[m] = true;
         }
@@ -103,10 +103,10 @@ void hash_join(Table &t1, const Table &t2, ThesisSave &save) {
                     save.result_table[key].insert(tup);
                 }
             }
-        }*/
+        }
         
         
-        unordered_map<vector<int>, vector<vector<int>>, TupleHash> hash_join_map;
+        /*unordered_map<vector<int>, vector<vector<int>>, TupleHash> hash_join_map;
         // Build phase
         for (const vector<int> &tuple : t1.tuples) {
             hash_join_map[project_tuple(tuple, matches1)].push_back(tuple);
@@ -139,9 +139,9 @@ void hash_join(Table &t1, const Table &t2, ThesisSave &save) {
                     new_tuples.push_back(std::move(t));
                 }
             }
-        }
+        }*/
     }
-    //save.result.tuples = new_tuples_me;
-    //save.result_index = t1.tuple_index;
-    t1.tuples = std::move(new_tuples);
+    save.result.tuples = new_tuples_me;
+    save.result_index = t1.tuple_index;
+    t1.tuples = std::move(new_tuples_me);
 }
