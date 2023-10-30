@@ -38,6 +38,11 @@ struct ThesisSave{
     std::unordered_set<std::vector<int>,TupleHash> pos1_deleted;
     std::unordered_set<std::vector<int>,TupleHash> pos1_added;
 
+    std::unordered_set<std::vector<int>,TupleHash> result_deleted;
+    bool del_res = false;
+
+    std::unordered_set<std::vector<int>,TupleHash> result_added;
+
     ThesisSave() = default;
 
     Table generate_table(){
