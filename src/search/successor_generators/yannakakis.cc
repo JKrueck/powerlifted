@@ -456,6 +456,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             std::vector<std::vector<ThesisSave>> &thesis_tables, std::vector<std::vector<ThesisSave>> &thesis_semijoin, DBState &old_state)
 {
     //cout << "used" << endl;
+    thesis.counter_me++;
+    time_t full_time = clock();
     if(action.get_index()==0){
         int borstenschwein = 0;
     }
@@ -499,6 +501,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     //Create a modified state with the new relations
     //DBState mod_state = DBState(std::move(new_relations), std::move(nullary));
 
+    time_t tables_time = clock();
     const auto &actiondata = action_data[action.get_index()];
     vector<Table> tables;
     auto res = parse_precond_into_join_program(actiondata, state, tables);
@@ -512,7 +515,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     }
     assert(!tables.empty());
     assert(tables.size() == actiondata.relevant_precondition_atoms.size());
-    
+    thesis.time_tables_me += clock()-tables_time;
     
     std::unordered_map<int,int> thesis_affected_by_del;
     int idiot_counter = 0;
@@ -528,7 +531,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     std::unordered_map<int,int> affected_tables;
     std::pair<int,int> table_predicates;
 
-
+    time_t full_reducer = clock();
     int counter = 0;
     for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {  
             table_predicates.first = action.get_precondition().at(sj.first).get_predicate_symbol_idx();
@@ -733,12 +736,13 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         thesis_semijoin.at(action.get_index()).at(i).refresh_tables();
     }
     affected_tables.clear();
+    thesis.fullreducer_time_me+= clock()-full_reducer;
 
     //Irgendwie merken was für dinge aus dem zweiten table an den ersten angebaut wurde vielleicht??
 
 
     counter = 0;
-    for (const auto &j : jt.get_order()) {
+    /*for (const auto &j : jt.get_order()) {
         table_predicates.first = action.get_precondition().at(j.first).get_predicate_symbol_idx();
         table_predicates.second = action.get_precondition().at(j.second).get_predicate_symbol_idx();
         //If there is a change in the computation of this join   
@@ -953,10 +957,11 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             tables[j.second].tuple_index = thesis_tables.at(action.get_index()).at(counter).result_index;
         }
         counter++;
-    }
+    }*/
 
     
-    /*counter = 0;
+    counter = 0;
+    time_t join = clock();
     for (const auto &j : jt.get_order()) {
         ThesisSave join_save;
         unordered_set<int> project_over;
@@ -977,7 +982,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         if (working_table.tuples.empty()) {
             return working_table;
         }
-    }*/
+    }
 
     Table &working_table = tables[remaining_join[action.get_index()][0]];
     for (size_t i = 1; i < remaining_join[action.get_index()].size(); ++i) {
@@ -988,12 +993,13 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             return working_table;
         }
     }
-    for(int i=0;i<thesis_tables.at(action.get_index()).size();i++){
+    /*for(int i=0;i<thesis_tables.at(action.get_index()).size();i++){
         thesis_tables.at(action.get_index()).at(i).refresh_tables();
-    }
+    }*/
 
-    
+    thesis.joinstep_time_me += clock()-join;
     project(working_table, distinguished_variables[action.get_index()]);
+    thesis.time_me+= clock()- full_time;
     return working_table;
 
 }
@@ -1036,23 +1042,27 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         Table thesis_return_table = thesis_instantiate2(action,state,task, thesis, thesis_tables, thesis_semijoin,old_state);
         return thesis_return_table;
     }else{ 
+        thesis.counter_normal++;
+        time_t full_time = clock();
         const auto &actiondata = action_data[action.get_index()];
         
-
+        time_t tables_time = clock();
         vector<Table> tables;
         auto res = parse_precond_into_join_program(actiondata, state, tables);
         if (!res){
             //cout << "Here too" << endl;
             return Table::EMPTY_TABLE();
         }
+        thesis.time_tables_normal = clock()-tables_time;
 
         assert(!tables.empty());
         assert(tables.size() == actiondata.relevant_precondition_atoms.size());
+        thesis.time_tables_me += clock()-tables_time;
 
         if(action.get_index() == 2){
             int stop = 0;
         }
-
+        time_t full_red = clock();
         for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
             ThesisSave semijoin_save;
             size_t s = semi_join(tables[sj.second], tables[sj.first], semijoin_save);
@@ -1065,6 +1075,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
                 thesis_semijoin.at(action.get_index()).push_back(semijoin_save);
             }
         }
+        thesis.fullreducer_time_normal+= clock() - full_red;
     
         const JoinTree &jt = join_trees[action.get_index()];
         std::vector<bool> thesis_size_changed(tables.size(),false);
@@ -1073,6 +1084,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             int stop13 = 1;
         }
         int counter = 0;
+        time_t join = clock();
         for (const auto &j : jt.get_order()) {
             ThesisSave join_save;
             unordered_set<int> project_over;
@@ -1125,8 +1137,9 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
                 return working_table;
             }
         }
-
+        thesis.joinstep_time_normal += clock()-join;
         project(working_table, distinguished_variables[action.get_index()]);
+        thesis.time_normal+= clock()- full_time;
         return working_table;
     }
 

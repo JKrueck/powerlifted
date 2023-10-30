@@ -26,12 +26,41 @@ void print_no_solution_found(const clock_t& timer_start,double thesis_time_neede
 
 void print_goal_found(
     const SuccessorGenerator &generator,
-    const clock_t& timer_start,double thesis_time_needed, double thesis_init)
+    const clock_t& timer_start,double thesis_time_needed, double thesis_init, ThesisClass thes)
 {
     cout << "Goal found at: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;
     cout << "Total time: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;
     cout << "Time used for successor generation: " << thesis_time_needed / CLOCKS_PER_SEC << endl;
     cout << "Time used for initial state succ gen: " << thesis_init << endl;
+
+    cout << "---" << endl;
+
+    cout << "Count of calls to me: " << thes.counter_me << endl;
+    cout << "Count of calls to normal: " << thes.counter_normal << endl;
+    cout << "Average time used for Full Reducer in my stuff: " << (thes.fullreducer_time_me / thes.counter_me) / CLOCKS_PER_SEC << endl;
+    cout << "Average time used for Full Reducer normally: " << (thes.fullreducer_time_normal / thes.counter_normal) / CLOCKS_PER_SEC << endl;
+    cout << "Percentage of time used on my full reducer in yannakakis: " << ((thes.fullreducer_time_me / thes.counter_me)/(thes.time_me/thes.counter_me)) << endl;
+    cout << "Percentage of time normally used on full reducer in yannakakis: " << ((thes.fullreducer_time_normal / thes.counter_normal)/(thes.time_me/thes.counter_normal)) << endl;
+    
+    cout << "---" << endl;
+    
+    cout << "Average time used for join step in my stuff: " << (thes.joinstep_time_me / thes.counter_me) / CLOCKS_PER_SEC << endl;
+    cout << "Average time used for join step normally: " << (thes.joinstep_time_normal / thes.counter_normal) / CLOCKS_PER_SEC << endl;
+    cout << "Percentage of time used on my join step in yannakakis: " << ((thes.joinstep_time_me / thes.counter_me)/(thes.time_me/thes.counter_me))<< endl;
+    cout << "Percentage of time normally used on join step in yannakakis: " << ((thes.joinstep_time_normal / thes.counter_normal)/(thes.time_me/thes.counter_normal)) << endl;
+    
+    cout << "---" << endl;
+
+    cout << "Average time used for table generation in my stuff: " << (thes.time_tables_me / thes.counter_me) / CLOCKS_PER_SEC << endl;
+    cout << "Average time used for table generation normally: " << (thes.time_tables_normal / thes.counter_normal) / CLOCKS_PER_SEC << endl;
+    cout << "Percentage of time used on my table generationin yannakakis: " << ((thes.time_tables_me / thes.counter_me)/(thes.time_me/thes.counter_me))<< endl;
+    cout << "Percentage of time normally used on table generation in yannakakis: " << ((thes.time_tables_normal / thes.counter_normal)/(thes.time_me/thes.counter_normal)) << endl;
+    
+    cout << "---" << endl;
+
+    cout << "Average normal time: " << (thes.time_normal/thes.counter_normal) / CLOCKS_PER_SEC << endl;
+    cout << "Average me time: " << (thes.time_me/thes.counter_me) / CLOCKS_PER_SEC << endl;
+    
 }
 
 //template<class PackedStateT>

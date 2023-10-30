@@ -48,7 +48,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     statistics.report_f_value_progress(heuristic_layer);
     queue.do_insertion(root_node.state_id, make_pair(heuristic_layer, 0));
 
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ)) return utils::ExitCode::SUCCESS;
 
     //Save the intermediate hash-join tables at a global level and per action
     std::vector<std::vector<ThesisSave>> thesis_join_table_at_state;
@@ -82,6 +81,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     int state_counter = 0; 
 
     std::unordered_map<int,int> memory_access_map;
+
+     if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, thesis_state_memory.at(0))) return utils::ExitCode::SUCCESS;
 
     while (not queue.empty()) {
         state_counter++;
@@ -134,7 +135,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
         //cout << "Memory needed for table storage: " << sizeof(thesis_semijoin_table_memory) + sizeof(thesis_join_table_memory) << " Bytes"<< endl;
 
-        if(sid.id()) {//sid.id() != 0 && sid.id()<130
+        if(false) {//sid.id() != 0 && sid.id()<130
             cout << "parent state: " << old_thesis.get_parent_state_id() << endl;
             cout << "action used to get here: " << old_thesis.get_action_id() << "->" << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name()<< endl;
             cout << "with instantiation: ";
@@ -161,7 +162,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
 
        
-        if (check_goal(task, generator, timer_start, state, node, space, thesis_time, thesis_initial_succ)){
+        if (check_goal(task, generator, timer_start, state, node, space, thesis_time, thesis_initial_succ, old_thesis)){
             cout << "Size of semijoin memory: " << thesis_semijoin_table_memory.size() << endl;
             return utils::ExitCode::SUCCESS;
         } 
@@ -231,7 +232,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
            
 
-            if(print){
+            if(false){
                 std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
 
             
@@ -258,6 +259,18 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 thesis_successor.set_parent_state_id(sid.id());
                 thesis_successor.action_id = action.get_index();
                 thesis_successor.set_instantiation(op_id.get_instantiation());
+                //Time tracking
+                thesis_successor.counter_me = old_thesis.counter_me;
+                thesis_successor.counter_normal = old_thesis.counter_normal;
+                thesis_successor.fullreducer_time_me = old_thesis.fullreducer_time_me;
+                thesis_successor.fullreducer_time_normal = old_thesis.fullreducer_time_normal;
+                thesis_successor.joinstep_time_me = old_thesis.joinstep_time_me;
+                thesis_successor.joinstep_time_normal = old_thesis.joinstep_time_normal;
+                thesis_successor.time_tables_me = old_thesis.time_tables_me;
+                thesis_successor.time_tables_normal = old_thesis.time_tables_normal;
+                thesis_successor.join_time = old_thesis.join_time;
+                thesis_successor.time_me = old_thesis.time_me;
+                thesis_successor.time_normal = old_thesis.time_normal;
 
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);

@@ -85,6 +85,20 @@ public:
     ThesisClass(bool enable, ActionSchema act) :   thesis_enable(enable),action_id(act.get_index())
     {}
 
+    double fullreducer_time_me = 0.0;
+    double fullreducer_time_normal = 0.0;
+    double joinstep_time_me = 0.0;
+    double joinstep_time_normal = 0.0;
+    double join_time = 0.0;
+    double time_me = 0.0;
+    double time_normal = 0.0;
+
+    double time_tables_me = 0.0;
+    double time_tables_normal = 0.0;
+
+    int counter_me = 0;
+    int counter_normal = 0;
+
     //ThesisClass() = default;
         
    

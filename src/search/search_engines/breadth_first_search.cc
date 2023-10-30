@@ -31,9 +31,6 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
     statistics.report_f_value_progress(root_node.f);
     queue.emplace(root_node.state_id);
 
-    
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_init)) return utils::ExitCode::SUCCESS;
-
     //Save the intermediate hash-join tables at a global level and per action
     std::vector<std::vector<ThesisSave>> thesis_join_table_at_state;
     thesis_join_table_at_state.resize(task.get_action_schemas().size());
@@ -67,6 +64,8 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
     std::unordered_set<int> relevant_parents;
     std::unordered_map<int,int> parents_counter;
     currently_relevant.insert(0);
+
+     if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_init, thesis_state_memory.at(0))) return utils::ExitCode::SUCCESS;
 
     int state_counter = 0;
     while (not queue.empty()) {
@@ -108,7 +107,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
             thesis_join_table_memory.insert_or_assign(sid.id(), thesis_join_table_at_state);
         }
 
-        if (check_goal(task, generator, timer_start, state, node, space, thesis_time, thesis_init)) return utils::ExitCode::SUCCESS;
+        if (check_goal(task, generator, timer_start, state, node, space, thesis_time, thesis_init, old_thesis)) return utils::ExitCode::SUCCESS;
 
         time_t thesis_timer = clock();
         if(this->thesis_enabled && sid.id()!=0){
@@ -192,7 +191,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
                 if (child_node.status == SearchNode::Status::NEW) {
                     child_node.open(node.f+1);
 
-                    if (check_goal(task, generator, timer_start, s, child_node, space, thesis_time, thesis_init)) return utils::ExitCode::SUCCESS;
+                    if (check_goal(task, generator, timer_start, s, child_node, space, thesis_time, thesis_init, old_thesis)) return utils::ExitCode::SUCCESS;
 
                     queue.emplace(child_node.state_id);
                     currently_relevant.insert(child_node.state_id.id());

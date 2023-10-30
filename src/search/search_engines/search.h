@@ -40,7 +40,8 @@ public:
                     const SearchNode &node,
                     const SearchSpace<PackedStateT> &space,
                     double thesis_time,
-                    double thesis_initial) const;
+                    double thesis_initial,
+                    ThesisClass the) const;
 
 protected:
 
