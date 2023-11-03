@@ -96,6 +96,7 @@ void parse_action_schemas(Task &task, int number_action_schemas)
         cin >> name >> cost >> args >> precond_size >> eff_size;
         vector<Parameter> parameters;
         vector<Atom> preconditions, static_preconditions, effects;
+        std::vector<bool> is_static(precond_size,false);
         vector<bool> positive_nul_precond(task.predicates.size(), false),
             negative_nul_precond(task.predicates.size(), false),
             positive_nul_eff(task.predicates.size(), false),
@@ -112,6 +113,9 @@ void parse_action_schemas(Task &task, int number_action_schemas)
             bool negated;
             int arguments_size;
             cin >> precond_name >> index >> negated >> arguments_size;
+            if(task.predicates.at(index).isStaticPredicate()){
+                is_static.at(j) = true;
+            }
             if (arguments_size == 0) {
                 assert(task.nullary_predicates.find(index) != task.nullary_predicates.end());
                 if (!negated)
@@ -199,7 +203,8 @@ void parse_action_schemas(Task &task, int number_action_schemas)
                        positive_nul_precond,
                        negative_nul_precond,
                        positive_nul_eff,
-                       negative_nul_eff);
+                       negative_nul_eff,
+                       std::move(is_static));
         actions.push_back(a);
     }
     task.initialize_action_schemas(actions);

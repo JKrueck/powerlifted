@@ -27,6 +27,7 @@ class ActionSchema {
     std::vector<bool> negative_nullary_precond;
     std::vector<bool> positive_nullary_effects;
     std::vector<bool> negative_nullary_effects;
+    std::vector<bool> is_static;
 
 public:
     explicit ActionSchema(std::string name,
@@ -39,7 +40,8 @@ public:
                           std::vector<bool> positive_nullary_precond,
                           std::vector<bool> negative_nullary_precond,
                           std::vector<bool> positive_nullary_effects,
-                          std::vector<bool> negative_nullary_effects);
+                          std::vector<bool> negative_nullary_effects,
+                          std::vector<bool> is_static);
 
     const std::string &get_name() const {
         return name;
@@ -87,6 +89,10 @@ public:
 
     bool is_ground() const {
         return parameters.empty();
+    }
+
+    bool get_static_pos(int idx) const {
+        return this->is_static.at(idx);
     }
 
 };

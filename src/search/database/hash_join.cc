@@ -43,7 +43,7 @@ void hash_join(Table &t1, const Table &t2, ThesisSave &save) {
         hack.push_back(match);
     }
     save.matching_columns = hack;
-
+    int remember = t1.tuple_index.size();
     vector<vector<int>> new_tuples;
     vector<vector<int>> new_tuples_me;
     if(t2.tuple_index.size()>1){
@@ -141,6 +141,8 @@ void hash_join(Table &t1, const Table &t2, ThesisSave &save) {
             }
         }*/
     }
+    //Remember if the Join result is larger then the two initial tables
+    //if(remember<t1.tuple_index.size()) save.join_changed_sized = true;
     save.result.tuples = new_tuples_me;
     save.result_index = t1.tuple_index;
     t1.tuples = std::move(new_tuples_me);

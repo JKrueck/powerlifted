@@ -43,6 +43,9 @@ struct ThesisSave{
 
     std::unordered_set<std::vector<int>,TupleHash> result_added;
 
+    bool join_changed_size_first = false;
+    bool join_changed_size_second = false;
+
     ThesisSave() = default;
 
     Table generate_table(){
@@ -59,6 +62,8 @@ struct ThesisSave{
     ThesisSave* refresh_tables(){
         this->pos1_added.clear();
         this->pos1_deleted.clear();
+        this->result_deleted.clear();
+        this->result_added.clear();
         
         return this;
     }

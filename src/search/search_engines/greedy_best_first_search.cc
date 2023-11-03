@@ -135,7 +135,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
         //cout << "Memory needed for table storage: " << sizeof(thesis_semijoin_table_memory) + sizeof(thesis_join_table_memory) << " Bytes"<< endl;
 
-        if(false) {//sid.id() != 0 && sid.id()<130
+        if(sid.id()) {//sid.id() != 0 && sid.id()<130
             cout << "parent state: " << old_thesis.get_parent_state_id() << endl;
             cout << "action used to get here: " << old_thesis.get_action_id() << "->" << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name()<< endl;
             cout << "with instantiation: ";
@@ -209,8 +209,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
 
-            if (sid.id()==19) {
-                if(action.get_index()==8){
+            if (sid.id()==67) {
+                if(action.get_index()==0){
                    int stop13 = 5;
                 }
             }
@@ -232,7 +232,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
            
 
-            if(false){
+            if(print || sid.id()==67){
                 std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
 
             
@@ -275,9 +275,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
 
-                      
+                           
             
-                /*if(child_node.state_id.id()!=1)
+                /*if(child_node.state_id.id()!=1){
                     if(child_node.state_id.id()!=14){
                         if(child_node.state_id.id()!=19){
                             if(child_node.state_id.id()!=32){

@@ -26,8 +26,8 @@ class YannakakisSuccessorGenerator : public GenericJoinSuccessor {
     void deal_with_del_semi(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_set<GroundAtom,TupleHash> del_diff, bool first);
     void deal_with_add_full(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_set<GroundAtom,TupleHash> add_diff, bool first, int index_size);
     void deal_with_del_full(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_set<GroundAtom,TupleHash> del_diff, bool first, int index_size);
+    void recompute_keys(ThesisSave &save, Table current_tab, bool first);
 
-    void thesis_compute_del_impacts(const Task &task);
     bool thesis_called = false;
  private:
     std::vector<std::vector<std::pair<int, int>>> full_reducer_order;
