@@ -37,6 +37,8 @@ struct ThesisSave{
 
     std::unordered_set<std::vector<int>,TupleHash> pos1_deleted;
     std::unordered_set<std::vector<int>,TupleHash> pos1_added;
+    std::unordered_set<std::vector<int>,TupleHash> pos2_deleted;
+    std::unordered_set<std::vector<int>,TupleHash> pos2_added;
 
     std::unordered_set<std::vector<int>,TupleHash> result_deleted;
     bool del_res = false;
@@ -45,6 +47,7 @@ struct ThesisSave{
 
     bool join_changed_size_first = false;
     bool join_changed_size_second = false;
+
 
     ThesisSave() = default;
 
@@ -62,6 +65,8 @@ struct ThesisSave{
     ThesisSave* refresh_tables(){
         this->pos1_added.clear();
         this->pos1_deleted.clear();
+        this->pos2_added.clear();
+        this->pos2_deleted.clear();
         this->result_deleted.clear();
         this->result_added.clear();
         

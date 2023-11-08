@@ -190,7 +190,7 @@ void YannakakisSuccessorGenerator::get_distinguished_variables(const ActionSchem
     }
 }
 
-void YannakakisSuccessorGenerator::deal_with_add_semi(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_set<GroundAtom,TupleHash> add_diff, bool first){
+void YannakakisSuccessorGenerator::deal_with_add_semi(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_set<GroundAtom,TupleHash> add_diff, bool first, std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>>& added_by_full_reducer, int tab_id){
     int predicate;
     if(first){
         predicate = table_predicates.second;
@@ -216,6 +216,8 @@ void YannakakisSuccessorGenerator::deal_with_add_semi(std::pair<int,int> &table_
                 save.result_table[key].insert(it);
                 //Remember that we added this
                 save.pos1_added.insert(it);
+            }else {
+                added_by_full_reducer[tab_id].erase(it);
             }
         }else{
             //Insert the new atom into the pos2 hashtable
@@ -274,6 +276,7 @@ void YannakakisSuccessorGenerator::deal_with_del_semi(std::pair<int,int> &table_
                 auto pos = save.pos2_hashtable.at(key).find(del);
                 if(pos!=save.pos2_hashtable.at(key).end()){
                     save.pos2_hashtable.at(key).erase(pos);
+                    save.pos2_deleted.insert(del);
                     //If the set has no entries left after removal, we can delete that key
                     //This also means that there is no match between pos1 and pos2 on that key
                     //If that key appears in the result it can thus be deleted
@@ -317,16 +320,16 @@ void YannakakisSuccessorGenerator::deal_with_add_full(std::pair<int,int> &table_
         }
 
         if(first){
-            //Insert the new atom into the pos1 hashtable
-            save.pos1_hashtable[key].insert(it);
             if(save.pos2_hashtable.count(key)!=0){
+                //Insert the new atom into the pos1 hashtable
+                save.pos1_hashtable[key].insert(it);
                 //unnessescary??Still not sure if changing the for each element changes the real one
-                auto copy = it;
                 /*Go trough all entries in the second pos table that match the new one
                 Add the corresponding elements from the second table to our new atom
                 */
                 std::unordered_set<GroundAtom, TupleHash> to_add = save.pos2_hashtable[key];
                 for(auto tup:to_add){
+                    auto copy = it;
                     for (unsigned j = 0; j < to_remove_me.size(); ++j) {
                         if (!to_remove_me[j]) copy.push_back(tup[j]);
                     }
@@ -397,21 +400,27 @@ void YannakakisSuccessorGenerator::deal_with_del_full(std::pair<int,int> &table_
                         if(save.pos1_hashtable.at(key).size()==0){//
                             save.pos1_hashtable.erase(key);
                             if(save.result_table.count(key)!=0){
+                                for(auto it:save.result_table[key]){
+                                    save.result_deleted.insert(it);
+                                }
                                 save.result_table.erase(key);
                             }
                         //If the set is not empty but the key does not appear in the pos2 hashtable, we can delete that key in the result too
-                        //Does this even occur????
                         }else if(save.pos2_hashtable.count(key)==0){
+                            for(auto it:save.result_table[key]){
+                                save.result_deleted.insert(it);
+                            }
                             save.result_table.erase(key);
                         }else{//If there are still entries for that key in both tables, we need to remove the results that match the removed element
                             //Generate the atoms that wont exist anymore and then erase them
-                            auto copy = del;
                             std::unordered_set<GroundAtom, TupleHash> to_add = save.pos2_hashtable[key];
                             for(auto tup:to_add){
+                                auto copy = del;
                                 for (unsigned j = 0; j < to_remove_me.size(); ++j) {
                                     if (!to_remove_me[j]) copy.push_back(tup[j]);
                                 }
                                 save.result_table[key].erase(copy);
+                                save.result_deleted.insert(copy);
                             }
                             //Hope this case is infrequent
                         }
@@ -442,8 +451,25 @@ void YannakakisSuccessorGenerator::deal_with_del_full(std::pair<int,int> &table_
                             save.result_table.erase(key);
                         }
                     }
-                    //Why only one case here?? Just lucky no test isntance covers this??
-                    //Write my own test maye
+                    //If the set is not empty but the key does not appear in the pos2 hashtable, we can delete that key in the result too
+                    else if(save.pos2_hashtable.count(key)==0){
+                        for(auto it:save.result_table[key]){
+                            save.result_deleted.insert(it);
+                        }
+                        save.result_table.erase(key);
+                    }else{//If there are still entries for that key in both tables, we need to remove the results that match the removed element
+                        //Generate the atoms that wont exist anymore and then erase them
+                        for(auto test:save.pos1_hashtable[key]){
+                            auto copy = test;
+                            GroundAtom to_add = del;
+                            for (unsigned j = 0; j < to_remove_me.size(); ++j) {
+                                if (!to_remove_me[j]) copy.push_back(to_add[j]);
+                            }
+                            save.result_table[key].erase(copy);
+                            save.result_deleted.insert(copy);
+                        }
+                        //Hope this case is infrequent
+                    }
                 }
             }
         }
@@ -454,7 +480,7 @@ void YannakakisSuccessorGenerator::deal_with_del_full(std::pair<int,int> &table_
 If the table we need for our current computation was generated in a join with other matching columns between the joined tables, we need to recompute the keys
 and put the elements into the appropriate hash-table bins
 */
-void YannakakisSuccessorGenerator::recompute_keys(ThesisSave &save, Table current_tab, bool first){
+void YannakakisSuccessorGenerator::recompute_keys(ThesisSave &save, Table &current_tab, bool first){
     if(first){
         save.pos1_hashtable.clear();
     }else{
@@ -477,6 +503,7 @@ void YannakakisSuccessorGenerator::recompute_keys(ThesisSave &save, Table curren
                 std::unordered_set<std::vector<int>,TupleHash> will_die;
                 will_die.insert(entry);
                 save.pos1_hashtable.insert_or_assign(key,will_die);
+                save.pos1_added.insert(entry);
             }
         }else{
             if(save.pos2_hashtable.count(key)!=0){
@@ -488,6 +515,33 @@ void YannakakisSuccessorGenerator::recompute_keys(ThesisSave &save, Table curren
             }
         }
 
+    }
+}
+void YannakakisSuccessorGenerator::weird_join(ThesisSave& save, std::vector<int>& index1, std::vector<int>& index2){
+     // Remove duplicated index. Duplicate code from join.cc
+    vector<bool> to_remove_me(index2.size(), false);
+    for (const auto &m : save.matching_columns) {
+        to_remove_me[m.second] = true;
+    }
+
+    for (size_t j = 0; j < index2.size(); ++j) {
+        if (!to_remove_me[j]) {
+            index1.push_back(index2[j]);
+        }
+    }
+    for(auto &store:save.pos2_hashtable){
+        for(auto tuple:store.second){
+            if(save.pos1_hashtable.count(store.first)!=0){
+                std::unordered_set<GroundAtom, TupleHash> to_change = save.pos1_hashtable[store.first];
+                for(auto tup:to_change){
+                    for (unsigned j = 0; j < to_remove_me.size(); ++j) {
+                        if (!to_remove_me[j]) tup.push_back(tuple[j]);
+                    }
+                    save.result_table[store.first].insert(tup);
+                    save.result_deleted.erase(tup);
+                }
+            }
+        }
     }
 }
 
@@ -570,6 +624,9 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     std::unordered_map<int,int> affected_tables;
     std::pair<int,int> table_predicates;
 
+    std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> added_by_full_reducer;
+    std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> deleted_by_full_reducer;
+
     //The FullReducer iteration table first was changed for the last time
     std::unordered_map<int,int> last_change;
 
@@ -584,25 +641,34 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 if((thesis_affected_by_del.count(sj.second) == 0 && thesis_affected_by_del.count(sj.first) == 0) || thesis_affected_by_del.size() ==0){
                     //Get the new structure
                     ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
+
+                    int previous_size = tables.at(sj.second).tuples.size();
                     
                     if(predicate_to_add_diff.count(table_predicates.first)!=0){
 
-                        deal_with_add_semi(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.first),false);
+                        deal_with_add_semi(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.first),false, added_by_full_reducer, sj.first);
 
                     }
                     if(predicate_to_add_diff.count(table_predicates.second)!=0){
                         
-                        deal_with_add_semi(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.second),true);
+                        deal_with_add_semi(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.second),true, added_by_full_reducer, sj.second);
                     
                     }
                     //Generate the WHOLE complete new_table
                     //Unnessescary probably
                     tables[sj.second] = save_obj.generate_table();
                     affected_tables.insert_or_assign(sj.second,counter);
+                    if(added_by_full_reducer.count(sj.second)!=0){
+                        for(auto add:save_obj.pos1_added){
+                            added_by_full_reducer[sj.second].insert(add);
+                        }
+                    }else if(save_obj.pos1_added.size()!=0){
+                        added_by_full_reducer.insert_or_assign(sj.second,save_obj.pos1_added);
+                    }
                 }else{//If that change was a delete effect (and maybe also add effect)
                     //Get the new structure
                     ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
-                   
+                    int previous_size = tables.at(sj.second).tuples.size();
                     //Prepare all conditions
                     std::unordered_set<GroundAtom,TupleHash> deleted_first;
                     std::unordered_set<GroundAtom,TupleHash> deleted_second;
@@ -628,8 +694,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
 
 
                     //Firstly deal with any possible add-effects
-                    if(predicate_to_add_diff.count(table_predicates.first)!=0) deal_with_add_semi(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.first),false);
-                    if(predicate_to_add_diff.count(table_predicates.second)!=0) deal_with_add_semi(table_predicates,save_obj,predicate_to_add_diff.at(table_predicates.second),true);
+                    if(predicate_to_add_diff.count(table_predicates.first)!=0) deal_with_add_semi(table_predicates,save_obj, predicate_to_add_diff.at(table_predicates.first),false, added_by_full_reducer, sj.first);
+                    if(predicate_to_add_diff.count(table_predicates.second)!=0) deal_with_add_semi(table_predicates,save_obj,predicate_to_add_diff.at(table_predicates.second),true, added_by_full_reducer, sj.second);
                     //Now deal with deletes
                     if(delete_condition1) deal_with_del_semi(table_predicates, save_obj,deleted_first, false);
                     if(delete_condition2) deal_with_del_semi(table_predicates, save_obj,deleted_second, true);
@@ -647,6 +713,25 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
                         return Table::EMPTY_TABLE();
                     }
+                    //if(compute_semi_join.at(sj.first)&&!compute_semi_join.at(sj.second)) compute_hash_join.at(sj.second);
+                    if(added_by_full_reducer.count(sj.second)!=0){
+                        for(auto it:save_obj.result_table){
+                            for(auto entry:it.second){
+                                added_by_full_reducer[sj.second].insert(entry);
+                            }
+                        }
+                    }else if(save_obj.pos1_added.size()!=0){
+                        for(auto it:save_obj.result_table){
+                            added_by_full_reducer.insert_or_assign(sj.second,it.second); 
+                        }
+                    }
+                    if(deleted_by_full_reducer.count(sj.second)!=0){
+                        for(auto del:save_obj.pos1_deleted){
+                            deleted_by_full_reducer[sj.second].insert(del);
+                        }
+                    }else if(save_obj.pos1_deleted.size()!=0){
+                        deleted_by_full_reducer.insert_or_assign(sj.second,save_obj.pos1_deleted);
+                    }
                 }
             }else if(affected_tables.count(sj.first)!=0 && affected_tables.count(sj.second) == 0 ){
                 //This is very similar to just computing a new semi-join --- talk about this
@@ -654,6 +739,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 //Get the new structure
                 ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
                 ThesisSave &old_save = thesis_semijoin.at(action.get_index()).at(affected_tables[sj.first]);
+                int previous_size = tables.at(sj.second).tuples.size();
                 //There are some cases in which the semi-join in the initial state was interrupted due to there being no matching columns
                 //If that was the case we need to do a full semi-join
                 //Do we?? If there weren´t any matching columns in the initial state, there will never be
@@ -665,7 +751,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     save_obj.pos1_deleted = old_save.pos1_deleted;
                 }else{
                     
-                    deal_with_add_semi(table_predicates, save_obj, old_save.pos1_added, false);
+                    deal_with_add_semi(table_predicates, save_obj, old_save.pos1_added, false, added_by_full_reducer, sj.first);
                     deal_with_del_semi(table_predicates, save_obj, old_save.pos1_deleted, false);
                     
                     //It can happen that there are still changes that need to be made to the second table
@@ -677,12 +763,13 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             delete_condition2 = true;
                             affected_tables.insert_or_assign(sj.second,counter);
                         }
-                        if(predicate_to_add_diff.count(action.get_precondition().at(sj.second).get_predicate_symbol_idx())!=0) deal_with_add_semi(table_predicates, save_obj, predicate_to_add_diff.at(table_predicates.second), 1);
+                        if(predicate_to_add_diff.count(action.get_precondition().at(sj.second).get_predicate_symbol_idx())!=0) deal_with_add_semi(table_predicates, save_obj, predicate_to_add_diff.at(table_predicates.second), true, added_by_full_reducer, sj.second);
                         if(delete_condition2) deal_with_del_semi(table_predicates, save_obj, deleted_second, true);
                     }
 
                     
                     tables[sj.second] = save_obj.generate_table();
+                    //compute_hash_join.at(sj.second) = true;
                 }
                 //If the resulting semi-join was empty
                 if(tables[sj.second].tuples.size()==0){
@@ -695,7 +782,24 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 }
                 
                 affected_tables.insert_or_assign(sj.second,counter);
-
+                if(added_by_full_reducer.count(sj.second)!=0){
+                        for(auto it:save_obj.result_table){
+                            for(auto entry:it.second){
+                                added_by_full_reducer[sj.second].insert(entry);
+                            }
+                        }
+                }else if(save_obj.pos1_added.size()!=0){
+                    for(auto it:save_obj.result_table){
+                        added_by_full_reducer.insert_or_assign(sj.second,it.second); 
+                    }
+                }
+                if(deleted_by_full_reducer.count(sj.second)!=0){
+                    for(auto del:save_obj.pos1_deleted){
+                        deleted_by_full_reducer[sj.second].insert(del);
+                    }
+                }else if(save_obj.pos1_deleted.size()!=0){
+                    deleted_by_full_reducer.insert_or_assign(sj.second,save_obj.pos1_deleted);
+                }
             }else if(affected_tables.count(sj.second)!=0 && affected_tables.count(sj.first) == 0){
                 /*
                 The elements in table[sj.second] have changed in comparison to the same semi-join in the parent state
@@ -710,6 +814,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 //Get the new structure
                 ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
                 ThesisSave &old_save = thesis_semijoin.at(action.get_index()).at(affected_tables[sj.second]);
+                int previous_size = tables.at(sj.second).tuples.size();
                 //There are some cases in which the semi-join in the initial state was interrupted due to there being no matching columns
                 //If that was the case we need to do a full semi-join
                 //See comments above
@@ -719,7 +824,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     save_obj.pos1_deleted = old_save.pos1_deleted;
                 }else{
 
-                    deal_with_add_semi(table_predicates, save_obj, old_save.pos1_added, true);
+                    deal_with_add_semi(table_predicates, save_obj, old_save.pos1_added, true, added_by_full_reducer, sj.second);
                     deal_with_del_semi(table_predicates, save_obj, old_save.pos1_deleted, true);
                     tables[sj.second] = save_obj.generate_table();
                 }
@@ -733,20 +838,39 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     return Table::EMPTY_TABLE();
                 }
                 affected_tables.insert_or_assign(sj.second,counter);
+                if(added_by_full_reducer.count(sj.second)!=0){
+                    for(auto it:save_obj.result_table){
+                        for(auto entry:it.second){
+                            added_by_full_reducer[sj.second].insert(entry);
+                        }
+                    }
+                }else if(save_obj.pos1_added.size()!=0){
+                    for(auto it:save_obj.result_table){
+                        added_by_full_reducer.insert_or_assign(sj.second,it.second); 
+                    }
+                }
+                if(deleted_by_full_reducer.count(sj.second)!=0){
+                    for(auto del:save_obj.pos1_deleted){
+                        deleted_by_full_reducer[sj.second].insert(del);
+                    }
+                }else if(save_obj.pos1_deleted.size()!=0){
+                    deleted_by_full_reducer.insert_or_assign(sj.second,save_obj.pos1_deleted);
+                }
             }else if(affected_tables.count(sj.first)!=0 && affected_tables.count(sj.second)!=0){
                 //Get the new structure
                 ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
                 //Get the old structures
                 ThesisSave &old_save_pos1 = thesis_semijoin.at(action.get_index()).at(affected_tables[sj.second]);
                 ThesisSave &old_save_pos2 = thesis_semijoin.at(action.get_index()).at(affected_tables[sj.first]);
+                int previous_size = tables.at(sj.second).tuples.size();
                 if(save_obj.matching_columns.size()==0){
                     semi_join(tables[sj.second],tables[sj.first],save_obj);
                     save_obj.pos1_added = old_save_pos1.pos1_added;
                     save_obj.pos1_deleted = old_save_pos1.pos1_deleted;
                 }else{
 
-                    deal_with_add_semi(table_predicates, save_obj, old_save_pos1.pos1_added, true);
-                    deal_with_add_semi(table_predicates, save_obj, old_save_pos2.pos1_added, false);
+                    deal_with_add_semi(table_predicates, save_obj, old_save_pos1.pos1_added, true, added_by_full_reducer, sj.second);
+                    deal_with_add_semi(table_predicates, save_obj, old_save_pos2.pos1_added, false, added_by_full_reducer, sj.first);
                     
                     deal_with_del_semi(table_predicates, save_obj, old_save_pos1.pos1_deleted, true);
                     deal_with_del_semi(table_predicates, save_obj, old_save_pos2.pos1_deleted, false);
@@ -765,6 +889,24 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     return Table::EMPTY_TABLE();
                 }
                 affected_tables.insert_or_assign(sj.second,counter);
+               if(added_by_full_reducer.count(sj.second)!=0){
+                    for(auto it:save_obj.result_table){
+                        for(auto entry:it.second){
+                            added_by_full_reducer[sj.second].insert(entry);
+                        } 
+                    }
+                }else if(save_obj.pos1_added.size()!=0){
+                    for(auto it:save_obj.result_table){
+                        added_by_full_reducer.insert_or_assign(sj.second,it.second); 
+                    }
+                }
+                if(deleted_by_full_reducer.count(sj.second)!=0){
+                    for(auto del:save_obj.pos1_deleted){
+                        deleted_by_full_reducer[sj.second].insert(del);
+                    }
+                }else{
+                    deleted_by_full_reducer.insert_or_assign(sj.second,save_obj.pos1_deleted);
+                }
             }else{
                 tables[sj.second] = thesis_semijoin.at(action.get_index()).at(counter).result;
                 tables[sj.second].tuple_index = thesis_semijoin.at(action.get_index()).at(counter).result_index;
@@ -785,6 +927,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         int stop13 = 0;
     }
 
+   
     counter = 0;
     for (const auto &j : jt.get_order()) {
         table_predicates.first = action.get_precondition().at(j.first).get_predicate_symbol_idx();
@@ -809,14 +952,14 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             }else{//If that change was a delete effect (and maybe also add effect)
                 //Get the new structure
                 ThesisSave &save_obj = thesis_tables.at(action.get_index()).at(counter);
-                if(action.get_static_pos(j.first)){
+                if(!compute_hash_join.at(j.first)){
                     if(save_obj.join_changed_size_second){
                         recompute_keys(save_obj,tables.at(j.first),false);
                     }else{
                         save_obj.pos2_hashtable = thesis_semijoin.at(action.get_index()).at(thesis_semijoin.at(action.get_index()).size()-counter-1).result_table;
                     }
                 }
-                if(action.get_static_pos(j.second)){
+                if(!compute_hash_join.at(j.second)){
                     if(save_obj.join_changed_size_first){
                         recompute_keys(save_obj,tables.at(j.second),true);
                     }else{
@@ -875,7 +1018,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             //if(action.get_static_pos(j.first)){
                 //save_obj.pos2_hashtable = thesis_semijoin.at(action.get_index()).at(thesis_semijoin.at(action.get_index()).size()-counter-1).result_table;
             //}
-            if(action.get_static_pos(j.second)){
+            if(!compute_hash_join.at(j.second)){
                 if(save_obj.join_changed_size_first){
                     recompute_keys(save_obj,tables.at(j.second),true);
                 }else{
@@ -901,26 +1044,30 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 save_obj.pos1_added = old_save.pos1_added;
                 save_obj.pos1_deleted = old_save.pos1_deleted;
             }else{
-                
-                deal_with_add_full(table_predicates, save_obj, old_save.pos1_added, false, tables[j.first].tuple_index.size());
-                deal_with_del_full(table_predicates, save_obj, old_save.pos1_deleted, false,  tables[j.first].tuple_index.size());
-                save_obj.del_res = true;
-                deal_with_del_full(table_predicates, save_obj, old_save.result_deleted, false, tables[j.first].tuple_index.size());
-
-                
+                bool delete_condition2 = false;
+                std::unordered_set<GroundAtom, TupleHash> deleted_second;
                 //It can happen that there are still changes that need to be made to the second table
-                if(compute_semi_join[j.second]){
-                    std::unordered_set<GroundAtom, TupleHash> deleted_second;
-                    bool delete_condition2 = false;
+                if(compute_hash_join[j.second]){
                     if(thesis_affected_by_del.count(j.second)!=0){
                         deleted_second = thesis.deleted_facts.at(thesis_affected_by_del.at(j.second));
                         delete_condition2 = true;
                         affected_tables.insert_or_assign(j.second,counter);
                     }
-                    if(predicate_to_add_diff.count(action.get_precondition().at(j.second).get_predicate_symbol_idx())!=0) deal_with_add_full(table_predicates, save_obj, predicate_to_add_diff.at(table_predicates.second), true, tables[j.first].tuple_index.size());
-                    if(delete_condition2) deal_with_del_full(table_predicates, save_obj, deleted_second, true, tables[j.first].tuple_index.size());
                 }
-
+                
+                if(predicate_to_add_diff.count(action.get_precondition().at(j.second).get_predicate_symbol_idx())!=0) deal_with_add_full(table_predicates, save_obj, predicate_to_add_diff.at(table_predicates.second), true, tables[j.first].tuple_index.size());
+                //Order is important
+                deal_with_add_full(table_predicates, save_obj, old_save.pos1_added, false, tables[j.first].tuple_index.size());
+                if(added_by_full_reducer.count(j.second)!=0 ){
+                    deal_with_add_full(table_predicates, save_obj, added_by_full_reducer[j.second], true, tables[j.first].tuple_index.size());
+                } 
+                
+                if(delete_condition2) deal_with_del_full(table_predicates, save_obj, deleted_second, true, tables[j.first].tuple_index.size());
+                deal_with_del_full(table_predicates, save_obj, old_save.pos1_deleted, false,  tables[j.first].tuple_index.size());
+                save_obj.del_res = true;
+                deal_with_del_full(table_predicates, save_obj, old_save.result_deleted, false, tables[j.first].tuple_index.size());
+                save_obj.del_res = false;
+                
                 
                 tables[j.second] = save_obj.generate_table();
             }
@@ -939,7 +1086,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             //Get the new structure
             ThesisSave &save_obj = thesis_tables.at(action.get_index()).at(counter);
             ThesisSave &old_save = thesis_tables.at(action.get_index()).at(affected_tables[j.second]);
-            if(action.get_static_pos(j.first)){
+            if(!compute_hash_join.at(j.first)){
                 if(save_obj.join_changed_size_second){
                     recompute_keys(save_obj,tables.at(j.first),false);
                 }else{
@@ -969,10 +1116,14 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 save_obj.pos1_deleted = old_save.pos1_deleted;
             }else{
 
+                if(old_save.pos1_added.size()==0 && added_by_full_reducer.count(j.second)!=0 ){
+                    deal_with_add_full(table_predicates, save_obj, added_by_full_reducer[j.second], true, tables[j.first].tuple_index.size());
+                }
                 deal_with_add_full(table_predicates, save_obj, old_save.pos1_added, true, tables[j.first].tuple_index.size());
                 deal_with_del_full(table_predicates, save_obj, old_save.pos1_deleted, true, tables[j.first].tuple_index.size());
                 save_obj.del_res = true;
                 deal_with_del_full(table_predicates, save_obj, old_save.result_deleted, true, tables[j.first].tuple_index.size());
+                save_obj.del_res = false;
                 tables[j.second] = save_obj.generate_table();
             }
             //If the resulting semi-join was empty
@@ -1023,15 +1174,24 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 save_obj.pos1_deleted = old_save_pos1.pos1_deleted;
             }else{
 
+                if(old_save_pos1.pos1_added.size()==0 && added_by_full_reducer.count(j.second)!=0 ){
+                    deal_with_add_full(table_predicates, save_obj, added_by_full_reducer[j.second], true, tables[j.first].tuple_index.size());
+                }
                 deal_with_add_full(table_predicates, save_obj, old_save_pos1.pos1_added, true, tables[j.first].tuple_index.size());
+                
+                if(old_save_pos2.pos1_added.size()==0 && added_by_full_reducer.count(j.first)!=0 ){
+                    deal_with_add_full(table_predicates, save_obj, added_by_full_reducer[j.first], false, tables[j.first].tuple_index.size());
+                }
                 deal_with_add_full(table_predicates, save_obj, old_save_pos2.pos1_added, false, tables[j.first].tuple_index.size());
                 
                 deal_with_del_full(table_predicates, save_obj, old_save_pos1.pos1_deleted, true, tables[j.first].tuple_index.size());
-                save_obj.del_res = true;
+                if(!old_save_pos1.join_changed_size_second) save_obj.del_res = true;
                 deal_with_del_full(table_predicates, save_obj, old_save_pos1.result_deleted, true, tables[j.first].tuple_index.size());
+                save_obj.del_res = false;
                 deal_with_del_full(table_predicates, save_obj, old_save_pos2.pos1_deleted, false, tables[j.first].tuple_index.size());
-                save_obj.del_res = true;
+                if(!old_save_pos1.join_changed_size_second) save_obj.del_res = true;
                 deal_with_del_full(table_predicates, save_obj, old_save_pos2.result_deleted, false, tables[j.first].tuple_index.size());
+                save_obj.del_res = false;
                 
                 tables[j.second] = save_obj.generate_table();
             }
@@ -1045,8 +1205,61 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             }
             affected_tables.insert_or_assign(j.second,counter);
         }else{
-            tables[j.second] = thesis_tables.at(action.get_index()).at(counter).result;
-            tables[j.second].tuple_index = thesis_tables.at(action.get_index()).at(counter).result_index;
+            ThesisSave &save_obj = thesis_tables.at(action.get_index()).at(counter);
+
+            recompute_keys(save_obj,tables[j.first],false);
+            recompute_keys(save_obj,tables[j.second],true);
+
+            for(auto it:save_obj.result_table){
+                for(auto res:it.second){
+                    save_obj.result_deleted.insert(res);
+                }
+            }
+            save_obj.result_table.clear();
+
+            weird_join(save_obj,tables[j.second].tuple_index,tables[j.first].tuple_index);
+            tables[j.second] = save_obj.generate_table();
+            if(tables[j.second].tuples.size()==0){
+                //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
+                //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
+                std::vector<ThesisSave> thesis_empty_semijoins;
+                //cout << "err2" << endl;
+                thesis_tables.at(action.get_index()) = std::move(thesis_empty_semijoins);
+                return Table::EMPTY_TABLE();
+            }
+            affected_tables.insert_or_assign(j.second,counter);
+            /*bool flag = true;
+            if(added_by_full_reducer.count(j.first)!=0){
+                deal_with_add_full(table_predicates,save_obj,added_by_full_reducer[j.first],false,tables[j.first].tuple_index.size());
+                flag = false;
+            }
+            if(added_by_full_reducer.count(j.second)!=0){
+                deal_with_add_full(table_predicates,save_obj,added_by_full_reducer[j.second],true,tables[j.first].tuple_index.size());
+                flag = false;
+            }
+            if(deleted_by_full_reducer.count(j.first)!=0){
+                deal_with_del_full(table_predicates,save_obj,deleted_by_full_reducer[j.first],false,tables[j.first].tuple_index.size());
+                flag = false;
+            }
+            if(deleted_by_full_reducer.count(j.second)!=0){
+                deal_with_del_full(table_predicates,save_obj,deleted_by_full_reducer[j.second],true,tables[j.first].tuple_index.size());
+                flag = false;
+            }
+            if(flag){
+                tables[j.second] = thesis_tables.at(action.get_index()).at(counter).result;
+                tables[j.second].tuple_index = thesis_tables.at(action.get_index()).at(counter).result_index;
+            }else{
+                tables[j.second] = save_obj.generate_table();
+                if(tables[j.second].tuples.size()==0){
+                    //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
+                    //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
+                    std::vector<ThesisSave> thesis_empty_semijoins;
+                    //cout << "err2" << endl;
+                    thesis_tables.at(action.get_index()) = std::move(thesis_empty_semijoins);
+                    return Table::EMPTY_TABLE();
+                }
+                affected_tables.insert_or_assign(j.second,counter);
+            }*/
         }
         counter++;
     }
@@ -1134,7 +1347,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
     //}
 
 
-    if(thesis.is_enabled() && thesis_semijoin.at(action.get_index()).size()!=0){
+    if(thesis.is_enabled() && (thesis_semijoin.at(action.get_index()).size()!=0 && thesis_tables.at(action.get_index()).size()!=0)){
         Table thesis_return_table = thesis_instantiate2(action,state,task, thesis, thesis_tables, thesis_semijoin,old_state);
         return thesis_return_table;
     }else{ 
