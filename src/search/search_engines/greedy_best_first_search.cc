@@ -89,7 +89,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         StateID sid = queue.remove_min();
         SearchNode &node = space.get_node(sid);
 
-        cout << "----current state: " << sid.id() << "----" << endl;
+        //cout << "----current state: " << sid.id() << "----" << endl;
 
         if(sid.id()!=0){
             skip = false;
@@ -135,7 +135,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
         //cout << "Memory needed for table storage: " << sizeof(thesis_semijoin_table_memory) + sizeof(thesis_join_table_memory) << " Bytes"<< endl;
 
-        if(sid.id() != 0) {//sid.id() != 0 && sid.id()<130
+        if(false) {//sid.id() != 0 && sid.id()<130
             cout << "parent state: " << old_thesis.get_parent_state_id() << endl;
             cout << "action used to get here: " << old_thesis.get_action_id() << "->" << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name()<< endl;
             cout << "with instantiation: ";
@@ -209,8 +209,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
 
-            if (sid.id()==88) {
-                if(action.get_index()==2){
+            if (sid.id()==1) {
+                if(action.get_index()==0){
                    int stop13 = 5;
                 }
             }
@@ -232,7 +232,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
            
 
-            if(true){
+            if(false){
                 std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
 
             

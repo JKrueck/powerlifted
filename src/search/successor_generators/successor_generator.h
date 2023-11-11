@@ -48,6 +48,9 @@ struct ThesisSave{
     bool join_changed_size_first = false;
     bool join_changed_size_second = false;
 
+    std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash> table_delta_add;
+    std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash> table_delta_del;
+
 
     ThesisSave() = default;
 
