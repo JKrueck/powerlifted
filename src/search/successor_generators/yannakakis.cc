@@ -682,7 +682,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     //Create a modified state with the new relations
     //DBState mod_state = DBState(std::move(new_relations), std::move(nullary));
 
-    time_t tables_time = clock();
     const auto &actiondata = action_data[action.get_index()];
     vector<Table> tables;
     auto res = parse_precond_into_join_program(actiondata, state, tables);
@@ -696,7 +695,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     }
     assert(!tables.empty());
     assert(tables.size() == actiondata.relevant_precondition_atoms.size());
-    thesis.time_tables_me += clock()-tables_time;
     
     std::unordered_map<int,int> thesis_affected_by_del;
     int idiot_counter = 0;
@@ -748,10 +746,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 }
                 //Generate the WHOLE complete new_table
                 //Unnessescary probably
-                time_t det_change = clock();
-                //determine_changes(save_obj, remember);
-                thesis.time_det_changes+= clock()-det_change;
-                thesis.counter_det_changes++;
 
                 tables[sj.second] = save_obj.generate_table();
                 affected_tables.insert_or_assign(sj.second,counter);
@@ -799,10 +793,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 if(delete_condition1) deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, deleted_first,false, sj.first);
                 if(delete_condition2) deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, deleted_second, true, sj.second);
 
-                time_t det_change = clock();
-                //save = determine_changes(save_obj, remember);
-                thesis.time_det_changes+= clock()-det_change;
-                thesis.counter_det_changes++;
                 
                 //Generate the WHOLE complete new_table
                 //Unnessescary probably
@@ -862,11 +852,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     if(delete_condition2) deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, deleted_second, true, sj.second);
                 }
 
-                time_t det_change = clock();
-                //save = determine_changes(save_obj, remember);
-                thesis.time_det_changes+= clock()-det_change;
-                thesis.counter_det_changes++;
-
                 tables[sj.second] = save_obj.generate_table();
                 //compute_hash_join.at(sj.second) = true;
             }
@@ -916,10 +901,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
 
                 deal_with_add_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save.pos1_added, true, sj.second);
                 deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save.pos1_deleted, true, sj.second);
-                time_t det_change = clock();
-                //save = determine_changes(save_obj, remember);
-                thesis.time_det_changes+= clock()-det_change;
-                thesis.counter_det_changes++;
 
                 tables[sj.second] = save_obj.generate_table();
             }
@@ -961,9 +942,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save_pos1.pos1_deleted, true,  sj.second);
                 deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save_pos2.pos1_deleted,false, sj.first);
 
-                time_t det_change = clock();
                 //save = determine_changes(save_obj, remember);
-                thesis.time_det_changes+= clock()-det_change;
                 thesis.counter_det_changes++;
 
                 tables[sj.second] = save_obj.generate_table();
