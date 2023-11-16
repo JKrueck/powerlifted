@@ -37,6 +37,7 @@ struct ThesisSave{
 
     std::unordered_set<std::vector<int>,TupleHash> pos1_deleted;
     std::unordered_set<std::vector<int>,TupleHash> pos1_added;
+    //Only needed for Join Step Computation
     std::unordered_set<std::vector<int>,TupleHash> pos2_deleted;
     std::unordered_set<std::vector<int>,TupleHash> pos2_added;
 
@@ -95,6 +96,9 @@ private:
 public:
     std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> deleted_facts;
     int action_id;
+
+    std::vector<std::unordered_map<int, std::vector<int>>> old_indices;
+
     ThesisClass(bool enable, ActionSchema act) :   thesis_enable(enable),action_id(act.get_index())
     {}
 
@@ -108,6 +112,29 @@ public:
 
     double time_tables_me = 0.0;
     double time_tables_normal = 0.0;
+
+    double time_det_changes = 0.0;
+    double time_det_changesCross = 0.0;
+    double time_recomputeKeys = 0.0;
+    double time_weirdJoin = 0.0;
+
+    double joinstep_case1 = 0.0;
+    double joinstep_case2 = 0.0;
+    double joinstep_case3 = 0.0;
+    double joinstep_case4 = 0.0;
+    double joinstep_case5 = 0.0;
+
+    int counter_joinstep_case1 = 0;
+    int counter_joinstep_case2 = 0;
+    int counter_joinstep_case3 = 0;
+    int counter_joinstep_case4 = 0;
+    int counter_joinstep_case5 = 0;
+
+    int counter_det_changes = 0;
+    int counter_det_changeCross = 0;
+    int counter_recomputeKeys = 0;
+    int counter_weirdJoin = 0;
+
 
     int counter_me = 0;
     int counter_normal = 0;

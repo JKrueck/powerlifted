@@ -17,6 +17,7 @@ struct ThesisSave;
  * @see join.h
  * @see join.cc
  */
-void hash_join(Table &t1, const Table &t2, ThesisSave &save);
+void hash_join(Table &t1, const Table &t2, ThesisSave &save, std::vector<int>& semi_indice1, std::vector<int>& semi_indice2);
+void hash_join(Table &t1, const Table &t2);
 
 #endif //SEARCH_HASH_JOIN_H

@@ -53,7 +53,6 @@ void print_goal_found(
     if(thes.counter_me!=0) cout << "Percentage of time used on my join step in yannakakis: " << ((thes.joinstep_time_me / thes.counter_me)/(thes.time_me/thes.counter_me))<< endl;
     if(thes.counter_normal!=0) cout << "Percentage of time normally used on join step in yannakakis: " << ((thes.joinstep_time_normal / thes.counter_normal)/(thes.time_normal/thes.counter_normal)) << endl;
     
-    cout << "---" << endl;
 
     //cout << "Average time used for table generation in my stuff: " << (thes.time_tables_me / thes.counter_me) / CLOCKS_PER_SEC << endl;
     //cout << "Average time used for table generation normally: " << (thes.time_tables_normal / thes.counter_normal) / CLOCKS_PER_SEC << endl;
@@ -61,6 +60,48 @@ void print_goal_found(
     //cout << "Percentage of time normally used on table generation in yannakakis: " << ((thes.time_tables_normal / thes.counter_normal)/(thes.time_me/thes.counter_normal)) << endl;
     
     cout << "---" << endl;
+
+    cout << "Percentage of my join time used on first join case: " << (thes.joinstep_case1/thes.joinstep_time_me) << endl;
+    cout << "Percentage of my join time used on second join case: " << (thes.joinstep_case2/thes.joinstep_time_me) << endl; 
+    cout << "Percentage of my join time used on third join case: " << (thes.joinstep_case3/thes.joinstep_time_me) << endl; 
+    cout << "Percentage of my join time used on fourth join case: " << (thes.joinstep_case4/thes.joinstep_time_me) << endl; 
+    cout << "Percentage of my join time used on fifth join case: " << (thes.joinstep_case5/thes.joinstep_time_me) << endl; 
+
+    cout << "---" << endl;
+
+    cout << "Average Percentage of my join time used on first join case: " << (thes.joinstep_case1/thes.counter_joinstep_case1)/thes.joinstep_time_me   << endl;
+    cout << "Average Percentage of my join time used on second join case: " << (thes.joinstep_case2/thes.counter_joinstep_case2)/thes.joinstep_time_me  << endl; 
+    cout << "Average Percentage of my join time used on third join case: " << (thes.joinstep_case3/thes.counter_joinstep_case3 )/thes.joinstep_time_me  << endl; 
+    cout << "Average Percentage of my join time used on fourth join case: " << (thes.joinstep_case4/thes.counter_joinstep_case4)/thes.joinstep_time_me  << endl; 
+    cout << "Average Percentage of my join time used on fifth join case: " << (thes.joinstep_case5/thes.counter_joinstep_case5)/thes.joinstep_time_me   << endl; 
+
+    cout << "---" << endl;
+
+    cout << "Amount of calls of first join case: " << thes.counter_joinstep_case1    << endl;
+    cout << "Amount of calls of second join case: " << thes.counter_joinstep_case2    << endl; 
+    cout << "Amount of calls of third join case: " << thes.counter_joinstep_case3    << endl; 
+    cout << "Amount of calls of fourth join case: " << thes.counter_joinstep_case4   << endl; 
+    cout << "Amount of calls of fifth join case: " << thes.counter_joinstep_case5    << endl; 
+
+    cout << "---" << endl;
+
+    cout << "Percentage of my Full Reducer time used on determine_changes function: " << (thes.time_det_changes / thes.fullreducer_time_me) << endl;
+    cout << "Average time used for determine_changes function: " << (thes.time_det_changes / thes.counter_det_changes)/CLOCKS_PER_SEC << endl;
+    cout << "Amount of calls to determine_changes function: " << thes.counter_det_changes << endl;
+    if(thes.counter_det_changeCross!=0)cout << "Average time used for determine_changes_crossProduct function: " <<  (thes.time_det_changesCross / thes.counter_det_changeCross)/CLOCKS_PER_SEC << endl;
+    else cout << "Average time used for determine_changes_crossProduct function: 0.0" << endl;
+    cout << "Amount of calls to determine_changes_crossProduct function: " << thes.counter_det_changeCross << endl;
+
+    cout << "---" << endl;
+
+    cout << "Average time used for weird_join function: " << (thes.time_weirdJoin/thes.counter_weirdJoin)/CLOCKS_PER_SEC << endl;
+    cout << "Average time used for recompute_keys function: " << (thes.time_recomputeKeys/thes.counter_recomputeKeys)/CLOCKS_PER_SEC << endl;
+    cout << "Percentage of my Join Step time used on weird_join: " << thes.time_weirdJoin/thes.joinstep_time_me << endl;
+    cout << "Percentage of my Join Step time used on recompute_keys: " << thes.time_recomputeKeys/thes.joinstep_time_me << endl;
+
+    cout << "---" << endl;
+
+    
 
     if(thes.counter_normal!=0) cout << "Average normal time: " << (thes.time_normal/thes.counter_normal) / CLOCKS_PER_SEC << endl;
     if(thes.counter_me!=0) cout << "Average me time: " << (thes.time_me/thes.counter_me) / CLOCKS_PER_SEC << endl;

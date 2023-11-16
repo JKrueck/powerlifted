@@ -70,7 +70,11 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     std::unordered_map<int,ThesisClass> thesis_state_memory;
     ThesisClass initial = ThesisClass(true,task.get_action_schema_by_index(0));//this->thesis_enabled
     initial.set_parent_state_id(0);
+    initial.old_indices.resize(task.get_action_schemas().size());
     thesis_state_memory.insert({0,initial});
+
+    std::vector<std::unordered_map<int, GroundAtom>> old_indices_gblhack;
+    old_indices_gblhack.resize(task.get_action_schemas().size());
 
     //saving what was the previous state globally and then using the packer to pass it to yannakakis instead of 
     //always saving the previous state in ThesisClass
@@ -218,6 +222,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             DBState old_state;
             time_t thesis_timer = clock();
             time_t thesis_initial_timer = clock();
+            old_thesis.old_indices = old_indices_gblhack;
             auto applicable = generator.get_applicable_actions(action, state,task, old_thesis,
                                 thesis_join_table_at_state,thesis_semijoin_table_at_state,old_state);
 
@@ -230,9 +235,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             }
             thesis_semijoin_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_semijoin_table_at_state.at(action.get_index()));
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
-           
+            old_indices_gblhack = old_thesis.old_indices;
 
-            if(false){
+            if(print){
                 std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
 
             
@@ -271,6 +276,27 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 thesis_successor.join_time = old_thesis.join_time;
                 thesis_successor.time_me = old_thesis.time_me;
                 thesis_successor.time_normal = old_thesis.time_normal;
+                thesis_successor.time_det_changes = old_thesis.time_det_changes;
+                thesis_successor.time_det_changesCross = old_thesis.time_det_changesCross;
+                thesis_successor.counter_det_changes = old_thesis.counter_det_changes;
+                thesis_successor.counter_det_changeCross = old_thesis.counter_det_changeCross;
+                thesis_successor.joinstep_case1 = old_thesis.joinstep_case1;
+                thesis_successor.joinstep_case2 = old_thesis.joinstep_case2;
+                thesis_successor.joinstep_case3 = old_thesis.joinstep_case3;
+                thesis_successor.joinstep_case4 = old_thesis.joinstep_case4;
+                thesis_successor.joinstep_case5 = old_thesis.joinstep_case5;
+                thesis_successor.counter_joinstep_case1 = old_thesis.counter_joinstep_case1;
+                thesis_successor.counter_joinstep_case2 = old_thesis.counter_joinstep_case2;
+                thesis_successor.counter_joinstep_case3 = old_thesis.counter_joinstep_case3;
+                thesis_successor.counter_joinstep_case4 = old_thesis.counter_joinstep_case4;
+                thesis_successor.counter_joinstep_case5 = old_thesis.counter_joinstep_case5;
+                thesis_successor.time_recomputeKeys = old_thesis.time_recomputeKeys;
+                thesis_successor.counter_recomputeKeys = old_thesis.counter_recomputeKeys;
+                thesis_successor.time_weirdJoin = old_thesis.time_weirdJoin;
+                thesis_successor.counter_weirdJoin = old_thesis.counter_weirdJoin;
+
+
+                thesis_successor.old_indices = old_thesis.old_indices;
 
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);

@@ -46,7 +46,8 @@ Table GenericJoinSuccessor::instantiate(const ActionSchema &action,
     Table &working_table = tables[0];   
     for (size_t i = 1; i < tables.size(); ++i) {
         ThesisSave save;
-        hash_join(working_table, tables[i], save);
+        ThesisSave save2;
+        hash_join(working_table, tables[i]);
         // Filter out equalities
         filter_static(action, working_table);
         if (working_table.tuples.empty()) {
