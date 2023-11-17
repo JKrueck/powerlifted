@@ -213,7 +213,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
 
-            if (sid.id()==1) {
+            if (sid.id()==55) {
                 if(action.get_index()==0){
                    int stop13 = 5;
                 }
@@ -237,7 +237,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
             old_indices_gblhack = old_thesis.old_indices;
 
-            if(false){
+            if(false{
                 std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
 
             
@@ -278,7 +278,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 thesis_successor.time_normal = old_thesis.time_normal;
                 thesis_successor.time_det_changes = old_thesis.time_det_changes;
                 thesis_successor.time_det_changesCross = old_thesis.time_det_changesCross;
-                thesis_successor.counter_det_changes = old_thesis.counter_det_changes;
+                thesis_successor.counter_weirdCase = old_thesis.counter_weirdCase;
                 thesis_successor.counter_det_changeCross = old_thesis.counter_det_changeCross;
                 thesis_successor.joinstep_case1 = old_thesis.joinstep_case1;
                 thesis_successor.joinstep_case2 = old_thesis.joinstep_case2;
@@ -301,7 +301,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
 
-                           
+                
             
                 /*if(child_node.state_id.id()!=1){
                     if(child_node.state_id.id()!=14){

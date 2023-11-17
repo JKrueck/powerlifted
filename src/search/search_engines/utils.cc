@@ -86,8 +86,8 @@ void print_goal_found(
     cout << "---" << endl;
 
     cout << "Percentage of my Full Reducer time used on determine_changes function: " << (thes.time_det_changes / thes.fullreducer_time_me) << endl;
-    cout << "Average time used for determine_changes function: " << (thes.time_det_changes / thes.counter_det_changes)/CLOCKS_PER_SEC << endl;
-    cout << "Amount of calls to determine_changes function: " << thes.counter_det_changes << endl;
+    //cout << "Average time used for determine_changes function: " << (thes.time_det_changes / thes.counter_det_changes)/CLOCKS_PER_SEC << endl;
+    cout << "Amount of calls to weird del case: " << thes.counter_weirdCase << endl;
     if(thes.counter_det_changeCross!=0)cout << "Average time used for determine_changes_crossProduct function: " <<  (thes.time_det_changesCross / thes.counter_det_changeCross)/CLOCKS_PER_SEC << endl;
     else cout << "Average time used for determine_changes_crossProduct function: 0.0" << endl;
     cout << "Amount of calls to determine_changes_crossProduct function: " << thes.counter_det_changeCross << endl;

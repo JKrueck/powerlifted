@@ -130,7 +130,7 @@ public:
     int counter_joinstep_case4 = 0;
     int counter_joinstep_case5 = 0;
 
-    int counter_det_changes = 0;
+    int counter_weirdCase = 0;
     int counter_det_changeCross = 0;
     int counter_recomputeKeys = 0;
     int counter_weirdJoin = 0;
