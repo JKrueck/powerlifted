@@ -1052,7 +1052,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 }
             }
             if(save_obj.join_changed_size_first){
-                if(save_obj.result_table.size()==0) break;
+                //if(save_obj.result_table.size()==0) break;
                 for(auto del:deleted_from_table[j.second]){
                     std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
                     for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
