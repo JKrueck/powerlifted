@@ -42,6 +42,7 @@ struct ThesisSave{
     std::unordered_set<std::vector<int>,TupleHash> pos2_added;
 
     std::unordered_set<std::vector<int>,TupleHash> result_deleted;
+    std::unordered_set<std::vector<int>,TupleHash> result_deleted_single;
     bool del_res = false;
 
     std::unordered_set<std::vector<int>,TupleHash> result_added;
