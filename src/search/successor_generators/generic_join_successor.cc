@@ -49,7 +49,7 @@ Table GenericJoinSuccessor::instantiate(const ActionSchema &action,
         ThesisSave save2;
         hash_join(working_table, tables[i]);
         // Filter out equalities
-        filter_static(action, working_table);
+        filter_static(action, working_table, save);
         if (working_table.tuples.empty()) {
             return working_table;
         }
@@ -58,8 +58,7 @@ Table GenericJoinSuccessor::instantiate(const ActionSchema &action,
     return working_table;
 }
 
-void GenericJoinSuccessor::filter_static(const ActionSchema &action,
-                                         Table &working_table)
+void GenericJoinSuccessor::filter_static(const ActionSchema &action, Table &working_table, ThesisSave &save)
 {
     const auto& tup_idx = working_table.tuple_index;
 
@@ -98,9 +97,12 @@ void GenericJoinSuccessor::filter_static(const ActionSchema &action,
                         if ((atom.is_negated() && t[index] != const_idx)
                                 || (!atom.is_negated() && t[index] == const_idx)){
                             newtuples.push_back(t);
+                        }else if(save.result.tuples.size()!=0){
+                            save.result_deleted_single.insert(t);
                         }
                     }
                     working_table.tuples = std::move(newtuples);
+                    save.static_pre_deletes.push_back(atom);
                 }
 
             }else{ // !args[0].is_constant() && !args[1].is_constant()
@@ -118,9 +120,12 @@ void GenericJoinSuccessor::filter_static(const ActionSchema &action,
                         if ((atom.is_negated() && t[index1] != t[index2])
                                 || (!atom.is_negated() && t[index1] == t[index2])){
                             newtuples.push_back(t);
+                        }else if(save.result.tuples.size()!=0){
+                            save.result_deleted_single.insert(t);
                         }
                     }
                     working_table.tuples = std::move(newtuples);
+                    save.static_pre_deletes.push_back(atom);
                 }
             }
         }

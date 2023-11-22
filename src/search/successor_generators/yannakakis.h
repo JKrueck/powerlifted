@@ -30,6 +30,7 @@ class YannakakisSuccessorGenerator : public GenericJoinSuccessor {
     void weird_join(ThesisSave& save, std::vector<int>& index1, std::vector<int>& index2);
     std::unordered_set<GroundAtom,TupleHash> determine_changes(ThesisSave& save, std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash>& old_result);
     void determine_changes_crossProduct(ThesisSave& save, Table& old_tab, Table& new_tab);
+    void thesis_filter_static(const ActionSchema &action, GroundAtom &check, ThesisSave &save);
 
     bool thesis_called = false;
  private:
