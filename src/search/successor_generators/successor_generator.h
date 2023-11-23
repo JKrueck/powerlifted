@@ -43,6 +43,7 @@ struct ThesisSave{
 
     std::unordered_set<std::vector<int>,TupleHash> result_deleted;
     std::unordered_set<std::vector<int>,TupleHash> result_deleted_single;
+    std::unordered_set<std::vector<int>,TupleHash> result_deleted_static;
     bool del_res = false;
 
     std::unordered_set<std::vector<int>,TupleHash> result_added;
@@ -72,6 +73,7 @@ struct ThesisSave{
         this->pos2_added.clear();
         this->pos2_deleted.clear();
         this->result_deleted.clear();
+        this->result_deleted_single.clear();
         this->result_added.clear();
         
         return this;

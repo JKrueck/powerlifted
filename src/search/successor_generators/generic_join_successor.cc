@@ -98,7 +98,7 @@ void GenericJoinSuccessor::filter_static(const ActionSchema &action, Table &work
                                 || (!atom.is_negated() && t[index] == const_idx)){
                             newtuples.push_back(t);
                         }else if(save.result.tuples.size()!=0){
-                            save.result_deleted_single.insert(t);
+                            save.result_deleted_static.insert(t);
                         }
                     }
                     working_table.tuples = std::move(newtuples);
@@ -121,7 +121,7 @@ void GenericJoinSuccessor::filter_static(const ActionSchema &action, Table &work
                                 || (!atom.is_negated() && t[index1] == t[index2])){
                             newtuples.push_back(t);
                         }else if(save.result.tuples.size()!=0){
-                            save.result_deleted_single.insert(t);
+                            save.result_deleted_static.insert(t);
                         }
                     }
                     working_table.tuples = std::move(newtuples);
