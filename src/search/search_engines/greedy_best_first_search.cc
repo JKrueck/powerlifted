@@ -150,7 +150,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         }
         
         if(state_counter == 1000){
-            cout << "succtime in state " << sid.id() <<" : " << thesis_time / CLOCKS_PER_SEC  << '\n';
+            cout << "Intermediate Average Full Reducer time me: " << (old_thesis.fullreducer_time_me / old_thesis.counter_me)/CLOCKS_PER_SEC << endl;
+            cout << "Intermediate Average Full Reducer time normal: " << (old_thesis.fullreducer_time_normal / old_thesis.counter_normal)/CLOCKS_PER_SEC  << endl;
+            cout << "Intermediate Average Join Step time me: " << (old_thesis.joinstep_time_me / old_thesis.counter_me)/CLOCKS_PER_SEC  << endl;
+            cout << "Intermediate Average Join Step time normal: " << (old_thesis.joinstep_time_normal / old_thesis.counter_normal)/CLOCKS_PER_SEC  << endl;
             state_counter = 0;
         }
     
@@ -213,7 +216,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
 
-            if (sid.id()==7) {
+            if (sid.id()==240) {
                 if(action.get_index()==9){
                    int stop13 = 5;
                 }
@@ -237,12 +240,12 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
             old_indices_gblhack = old_thesis.old_indices;
 
-            if(print){
-                std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
+            if(false){
+                if(applicable.size()!=0) std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
 
             
                
-                if(false){//sid.id()!=0
+                if(sid.id()!=0){//sid.id()!=0
                     cout << "instantiations: "<< endl;
                     for(auto it:applicable){
                         cout << "\t";

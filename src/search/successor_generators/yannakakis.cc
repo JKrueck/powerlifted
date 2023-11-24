@@ -878,7 +878,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             //For this direction its probably easier to just compute the semi-join ?
             //Get the new structure
             ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
-            auto remember = save_obj.pos1_hashtable;
             ThesisSave &old_save = thesis_semijoin.at(action.get_index()).at(affected_tables[sj.first]);
             std::unordered_set<GroundAtom, TupleHash> save;
             int join_elem;
@@ -888,15 +887,11 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 join_elem = full_reducer_order[action.get_index()].size()/2- (counter - full_reducer_order[action.get_index()].size()/2+1);
                 revert_join = true;
             } 
-            //There are some cases in which the semi-join in the initial state was interrupted due to there being no matching columns
-            //If that was the case we need to do a full semi-join
-            //Do we?? If there weren´t any matching columns in the initial state, there will never be
-            //This will just call the semi-join function, which then determines that there are no matching columns and returns tables[sj.second] unchanged
-            //Can do this faster
             if(save_obj.matching_columns.size()==0){
                 semi_join(tables[sj.second],tables[sj.first],save_obj);
-                save_obj.pos1_added = old_save.pos1_added;
-                save_obj.pos1_deleted = old_save.pos1_deleted;
+                //This belongs to the sj.first table and therefore shouldnt be remebered
+                //save_obj.pos1_added = old_save.pos1_added;
+                //save_obj.pos1_deleted = old_save.pos1_deleted;
             }else{
                 
                 deal_with_add_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save.pos1_added, false, sj.first, false);
@@ -1054,8 +1049,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             //This will treat an atom that was just added this iteration as a old result and the resulting join will be very wrong  
             std::unordered_set<GroundAtom, TupleHash> iteration_add_storage;
 
-            bool static_removals = false;
-
             if(save_obj.matching_columns.size()==0){
                 auto remember = save_obj.result;
                 unordered_set<int> project_over;
@@ -1124,7 +1117,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             save_obj.result_table[old_key].erase(pos);
                             save_obj.result_deleted_single.insert(del);
                             if(save_obj.result_table[old_key].size()==0) save_obj.result_table.erase(old_key);
-                            static_removals = true;
                         }
                     }
                 }
@@ -1339,7 +1331,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             for (unsigned pos = 0; pos < to_remove_me.size(); ++pos) {
                                 if (!to_remove_me[pos]) tup.push_back(add[pos]);
                             }
-                            if(static_removals) thesis_filter_static(action, tup, save_obj);
+                            if(save_obj.check_static) thesis_filter_static(action, tup, save_obj);
                             if(tup.size()!=0){
                                 std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
                                 for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
@@ -1374,7 +1366,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                 for (unsigned pos = 0; pos < to_remove_me.size(); ++pos) {
                                     if (!to_remove_me[pos]) tup.push_back(add[pos]);
                                 }
-                                if(static_removals) thesis_filter_static(action, tup, save_obj);
+                                if(save_obj.check_static) thesis_filter_static(action, tup, save_obj);
                                 if(tup.size()!=0){
                                     std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
                                     for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
@@ -1412,7 +1404,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                 for (unsigned pos = 0; pos < to_remove_me.size(); ++pos) {
                                     if (!to_remove_me[pos]) copy.push_back(tup[pos]);
                                 }
-                                if(static_removals) thesis_filter_static(action, copy, save_obj);
+                                if(save_obj.check_static) thesis_filter_static(action, copy, save_obj);
                                 if(copy.size()!=0){
                                     std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
                                     for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
@@ -1447,7 +1439,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             for (unsigned pos = 0; pos < to_remove_me.size(); ++pos) {
                                 if (!to_remove_me[pos]) new_elem.push_back(tup[pos]);
                             }
-                            if(static_removals) thesis_filter_static(action, new_elem, save_obj);
+                            if(save_obj.check_static) thesis_filter_static(action, new_elem, save_obj);
                             if(new_elem.size()!=0){
                                 save_obj.result_table[add].insert(new_elem);
                                 std::unordered_set<GroundAtom, TupleHash>::iterator old = added_to_table[j.second].begin();

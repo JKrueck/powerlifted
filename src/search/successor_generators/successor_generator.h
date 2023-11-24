@@ -53,6 +53,8 @@ struct ThesisSave{
 
     std::vector<Atom> static_pre_deletes;
 
+    bool check_static = false;
+
 
     ThesisSave() = default;
 

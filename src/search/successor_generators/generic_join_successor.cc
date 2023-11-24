@@ -75,6 +75,7 @@ void GenericJoinSuccessor::filter_static(const ActionSchema &action, Table &work
                 if ((atom.is_negated() && is_equal)
                         || (!atom.is_negated() && !is_equal)){
                     working_table.tuples.clear();
+                    save.check_static = true;
                     return;
                 }
 
@@ -103,6 +104,7 @@ void GenericJoinSuccessor::filter_static(const ActionSchema &action, Table &work
                     }
                     working_table.tuples = std::move(newtuples);
                     save.static_pre_deletes.push_back(atom);
+                    save.check_static = true;
                 }
 
             }else{ // !args[0].is_constant() && !args[1].is_constant()
@@ -126,6 +128,7 @@ void GenericJoinSuccessor::filter_static(const ActionSchema &action, Table &work
                     }
                     working_table.tuples = std::move(newtuples);
                     save.static_pre_deletes.push_back(atom);
+                    save.check_static = true;
                 }
             }
         }
