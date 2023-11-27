@@ -241,11 +241,11 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             old_indices_gblhack = old_thesis.old_indices;
 
             if(false){
-                if(applicable.size()!=0) std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
-
+                std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
+                //if(applicable.size()!=0)
             
                
-                if(sid.id()!=0){//sid.id()!=0
+                if(false){//sid.id()!=0
                     cout << "instantiations: "<< endl;
                     for(auto it:applicable){
                         cout << "\t";
