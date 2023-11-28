@@ -36,7 +36,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
     thesis_join_table_at_state.resize(task.get_action_schemas().size());
     //As we always want to use the join tables from the prior state, we need to save all of them on a per state basis
     //To-Do: Think about when we don´t need them anymore and can delete them from memory
-    std::unordered_map<int, std::vector<std::vector<ThesisSave>>> thesis_join_table_memory; 
+    std::map<int, std::vector<std::vector<ThesisSave>>> thesis_join_table_memory; 
     thesis_join_table_memory.insert({0,thesis_join_table_at_state});
 
     //Save the intermediate semi-join tables at a global level and per action
@@ -44,14 +44,15 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
     thesis_semijoin_table_at_state.resize(task.get_action_schemas().size());
     //As we always want to use the join tables from the prior state, we need to save all of them on a per state basis
     //To-Do: Think about when we don´t need them anymore and can delete them from memory
-    std::unordered_map<int, std::vector<std::vector<ThesisSave>>> thesis_semijoin_table_memory;
+    std::map<int, std::vector<std::vector<ThesisSave>>> thesis_semijoin_table_memory;
     thesis_semijoin_table_memory.insert({0,thesis_semijoin_table_at_state});
 
     //Storage for classes per state
     //intended to work similar to queue
-    std::unordered_map<int,ThesisClass> thesis_state_memory;
+    std::map<int,ThesisClass> thesis_state_memory;
     ThesisClass initial = ThesisClass(true,task.get_action_schema_by_index(0));//this->thesis_enabled
     initial.set_parent_state_id(0);
+    initial.old_indices.resize(task.get_action_schemas().size());
     thesis_state_memory.insert({0,initial});
 
     //saving what was the previous state globally and then using the packer to pass it to yannakakis instead of 
@@ -65,11 +66,13 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
     std::unordered_map<int,int> parents_counter;
     currently_relevant.insert(0);
 
+    std::vector<std::unordered_map<int, GroundAtom>> old_indices_gblhack;
+    old_indices_gblhack.resize(task.get_action_schemas().size());
+
      if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_init, thesis_state_memory.at(0))) return utils::ExitCode::SUCCESS;
 
-    int state_counter = 0;
+    time_t intermediate = clock();
     while (not queue.empty()) {
-        state_counter++;
         StateID sid = queue.front();
         queue.pop();
         SearchNode &node = space.get_node(sid);
@@ -78,15 +81,12 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
         currently_relevant.erase(sid.id());
         parents_counter.insert_or_assign(sid.id(),0);
         
-        if(state_counter == 250){
-            cout << "succtime in state " << sid.id() <<" : " << thesis_time / CLOCKS_PER_SEC  << '\n';
-            state_counter = 0;
-        }
-
         //Get the thesis object that belongs to the state from the queue
         ThesisClass old_thesis = thesis_state_memory.at(sid.id());
         //remove the thesis object from memory
         thesis_state_memory.erase(sid.id());
+        
+        
 
         if (node.status == SearchNode::Status::CLOSED) {
             continue;
@@ -161,6 +161,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
             }
             time_t thesis_timer = clock();
             time_t thesis_initial_timer = clock();
+            old_thesis.old_indices = old_indices_gblhack;
             auto applicable = generator.get_applicable_actions(action, state,task, old_thesis,
                                 thesis_join_table_at_state,thesis_semijoin_table_at_state,old_state);
 
@@ -174,10 +175,38 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
             thesis_semijoin_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_semijoin_table_at_state.at(action.get_index()));
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
 
+            old_indices_gblhack = old_thesis.old_indices;
+
             statistics.inc_generated(applicable.size());
+
+            if(false){
+                std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
+                //if(applicable.size()!=0)
+            
+               
+                if(false){//sid.id()!=0
+                    cout << "instantiations: "<< endl;
+                    for(auto it:applicable){
+                        cout << "\t";
+                        for(auto it2:it.get_instantiation()){
+                            cout << it2 << " ";
+                        }  
+                        cout << endl;
+                    }
+                }
+            }
 
             for (const LiftedOperatorId &op_id:applicable) {
 
+                
+                if((clock()-intermediate)/CLOCKS_PER_SEC >= 10.0 && sid.id()!=0){
+                    cout << "Intermediate Average Full Reducer time me: " << (old_thesis.fullreducer_time_me / old_thesis.counter_me)/CLOCKS_PER_SEC << endl;
+                    cout << "Intermediate Average Full Reducer time normal: " << (old_thesis.fullreducer_time_normal / old_thesis.counter_normal)/CLOCKS_PER_SEC  << endl;
+                    cout << "Intermediate Average Join Step time me: " << (old_thesis.joinstep_time_me / old_thesis.counter_me)/CLOCKS_PER_SEC  << endl;
+                    cout << "Intermediate Average Join Step time normal: " << (old_thesis.joinstep_time_normal / old_thesis.counter_normal)/CLOCKS_PER_SEC  << endl;
+                    intermediate = clock();
+                }
+                
                 //Create one new Thesis object per state
                 ThesisClass thesis_successor(false,action);
                 
@@ -185,6 +214,39 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
                 thesis_successor.set_parent_state_id(sid.id());
                 thesis_successor.action_id = action.get_index();
                 thesis_successor.set_instantiation(op_id.get_instantiation());
+                //Time tracking
+                thesis_successor.counter_me = old_thesis.counter_me;
+                thesis_successor.counter_normal = old_thesis.counter_normal;
+                thesis_successor.fullreducer_time_me = old_thesis.fullreducer_time_me;
+                thesis_successor.fullreducer_time_normal = old_thesis.fullreducer_time_normal;
+                thesis_successor.joinstep_time_me = old_thesis.joinstep_time_me;
+                thesis_successor.joinstep_time_normal = old_thesis.joinstep_time_normal;
+                thesis_successor.time_tables_me = old_thesis.time_tables_me;
+                thesis_successor.time_tables_normal = old_thesis.time_tables_normal;
+                thesis_successor.join_time = old_thesis.join_time;
+                thesis_successor.time_me = old_thesis.time_me;
+                thesis_successor.time_normal = old_thesis.time_normal;
+                thesis_successor.time_det_changes = old_thesis.time_det_changes;
+                thesis_successor.time_det_changesCross = old_thesis.time_det_changesCross;
+                thesis_successor.counter_weirdCase = old_thesis.counter_weirdCase;
+                thesis_successor.counter_det_changeCross = old_thesis.counter_det_changeCross;
+                thesis_successor.joinstep_case1 = old_thesis.joinstep_case1;
+                thesis_successor.joinstep_case2 = old_thesis.joinstep_case2;
+                thesis_successor.joinstep_case3 = old_thesis.joinstep_case3;
+                thesis_successor.joinstep_case4 = old_thesis.joinstep_case4;
+                thesis_successor.joinstep_case5 = old_thesis.joinstep_case5;
+                thesis_successor.counter_joinstep_case1 = old_thesis.counter_joinstep_case1;
+                thesis_successor.counter_joinstep_case2 = old_thesis.counter_joinstep_case2;
+                thesis_successor.counter_joinstep_case3 = old_thesis.counter_joinstep_case3;
+                thesis_successor.counter_joinstep_case4 = old_thesis.counter_joinstep_case4;
+                thesis_successor.counter_joinstep_case5 = old_thesis.counter_joinstep_case5;
+                thesis_successor.time_recomputeKeys = old_thesis.time_recomputeKeys;
+                thesis_successor.counter_recomputeKeys = old_thesis.counter_recomputeKeys;
+                thesis_successor.time_weirdJoin = old_thesis.time_weirdJoin;
+                thesis_successor.counter_weirdJoin = old_thesis.counter_weirdJoin;
+
+
+                thesis_successor.old_indices = old_thesis.old_indices;
 
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
@@ -216,6 +278,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
         if(sid.id()!=0) parents_counter[old_thesis.get_parent_state_id()]--;
         if(parents_counter[old_thesis.get_parent_state_id()]<=0){
             thesis_semijoin_table_memory.erase(old_thesis.get_parent_state_id());
+            thesis_join_table_memory.erase(old_thesis.get_parent_state_id());
             //cout << "Removed obsolete parent from memory" << endl;
         } 
     }

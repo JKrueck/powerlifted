@@ -1525,6 +1525,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     thesis.joinstep_time_me += clock()-join;
     project(working_table, distinguished_variables[action.get_index()]);
     thesis.time_me+= clock()- full_time;
+    cout << "HEHE" << endl;
     return working_table;
 
 }

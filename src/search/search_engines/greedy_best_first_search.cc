@@ -82,14 +82,13 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     thesis_previous_state.insert_or_assign(StateID::no_state, StateID::no_state);
 
     std::unordered_map<int,std::vector<int>> test_map;
-    int state_counter = 0; 
 
     std::unordered_map<int,int> memory_access_map;
 
      if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, thesis_state_memory.at(0))) return utils::ExitCode::SUCCESS;
 
+    time_t intermeditate = clock();
     while (not queue.empty()) {
-        state_counter++;
         StateID sid = queue.remove_min();
         SearchNode &node = space.get_node(sid);
 
@@ -149,13 +148,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             cout << endl;
         }
         
-        if(state_counter == 1000){
-            cout << "Intermediate Average Full Reducer time me: " << (old_thesis.fullreducer_time_me / old_thesis.counter_me)/CLOCKS_PER_SEC << endl;
-            cout << "Intermediate Average Full Reducer time normal: " << (old_thesis.fullreducer_time_normal / old_thesis.counter_normal)/CLOCKS_PER_SEC  << endl;
-            cout << "Intermediate Average Join Step time me: " << (old_thesis.joinstep_time_me / old_thesis.counter_me)/CLOCKS_PER_SEC  << endl;
-            cout << "Intermediate Average Join Step time normal: " << (old_thesis.joinstep_time_normal / old_thesis.counter_normal)/CLOCKS_PER_SEC  << endl;
-            state_counter = 0;
-        }
     
         //generator.thesis_compute_del_impacts(task);
         //get all hash tables that were computed in the previous state
@@ -304,6 +296,13 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
 
+                if((clock()-intermeditate)/CLOCKS_PER_SEC >= 10.0 && sid.id()!=0){
+                    cout << "Intermediate Average Full Reducer time me: " << (old_thesis.fullreducer_time_me / old_thesis.counter_me)/CLOCKS_PER_SEC << endl;
+                    cout << "Intermediate Average Full Reducer time normal: " << (old_thesis.fullreducer_time_normal / old_thesis.counter_normal)/CLOCKS_PER_SEC  << endl;
+                    cout << "Intermediate Average Join Step time me: " << (old_thesis.joinstep_time_me / old_thesis.counter_me)/CLOCKS_PER_SEC  << endl;
+                    cout << "Intermediate Average Join Step time normal: " << (old_thesis.joinstep_time_normal / old_thesis.counter_normal)/CLOCKS_PER_SEC  << endl;
+                    intermeditate = clock();
+                }
                 
             
                 /*if(child_node.state_id.id()!=1){
