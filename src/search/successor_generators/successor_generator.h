@@ -108,6 +108,8 @@ public:
 
     double fullreducer_time_me = 0.0;
     double fullreducer_time_normal = 0.0;
+    double max_fullreducer_me = 0.0;
+    double max_fullreducer_normal = 0.0;
     double joinstep_time_me = 0.0;
     double joinstep_time_normal = 0.0;
     double join_time = 0.0;
@@ -117,22 +119,8 @@ public:
     double time_tables_me = 0.0;
     double time_tables_normal = 0.0;
 
-    double time_det_changes = 0.0;
-    double time_det_changesCross = 0.0;
-    double time_recomputeKeys = 0.0;
-    double time_weirdJoin = 0.0;
 
-    double joinstep_case1 = 0.0;
-    double joinstep_case2 = 0.0;
-    double joinstep_case3 = 0.0;
-    double joinstep_case4 = 0.0;
-    double joinstep_case5 = 0.0;
 
-    int counter_joinstep_case1 = 0;
-    int counter_joinstep_case2 = 0;
-    int counter_joinstep_case3 = 0;
-    int counter_joinstep_case4 = 0;
-    int counter_joinstep_case5 = 0;
 
     int counter_weirdCase = 0;
     int counter_det_changeCross = 0;

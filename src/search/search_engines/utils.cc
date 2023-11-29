@@ -43,6 +43,8 @@ void print_goal_found(
     if(thes.counter_normal!=0) cout << "Average time used for Full Reducer normally: " << (thes.fullreducer_time_normal / thes.counter_normal)  << endl;
     if(thes.counter_me!=0) cout << "Percentage of time used on my full reducer in yannakakis: " << ((thes.fullreducer_time_me / thes.counter_me)/(thes.time_me/thes.counter_me)) << endl;
     if(thes.counter_normal!=0) cout << "Percentage of time normally used on full reducer in yannakakis: " << ((thes.fullreducer_time_normal / thes.counter_normal)/(thes.time_normal/thes.counter_normal)) << endl;
+    cout << "Maximal time used on one iteration of my Full Reducer: " << thes.max_fullreducer_me << endl;
+    cout << "Maximal time used on one iteration of normal Full Reducer: " << thes.max_fullreducer_normal << endl;
     
     cout << "---" << endl;
     

@@ -271,24 +271,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 thesis_successor.join_time = old_thesis.join_time;
                 thesis_successor.time_me = old_thesis.time_me;
                 thesis_successor.time_normal = old_thesis.time_normal;
-                thesis_successor.time_det_changes = old_thesis.time_det_changes;
-                thesis_successor.time_det_changesCross = old_thesis.time_det_changesCross;
-                thesis_successor.counter_weirdCase = old_thesis.counter_weirdCase;
-                thesis_successor.counter_det_changeCross = old_thesis.counter_det_changeCross;
-                thesis_successor.joinstep_case1 = old_thesis.joinstep_case1;
-                thesis_successor.joinstep_case2 = old_thesis.joinstep_case2;
-                thesis_successor.joinstep_case3 = old_thesis.joinstep_case3;
-                thesis_successor.joinstep_case4 = old_thesis.joinstep_case4;
-                thesis_successor.joinstep_case5 = old_thesis.joinstep_case5;
-                thesis_successor.counter_joinstep_case1 = old_thesis.counter_joinstep_case1;
-                thesis_successor.counter_joinstep_case2 = old_thesis.counter_joinstep_case2;
-                thesis_successor.counter_joinstep_case3 = old_thesis.counter_joinstep_case3;
-                thesis_successor.counter_joinstep_case4 = old_thesis.counter_joinstep_case4;
-                thesis_successor.counter_joinstep_case5 = old_thesis.counter_joinstep_case5;
-                thesis_successor.time_recomputeKeys = old_thesis.time_recomputeKeys;
-                thesis_successor.counter_recomputeKeys = old_thesis.counter_recomputeKeys;
-                thesis_successor.time_weirdJoin = old_thesis.time_weirdJoin;
-                thesis_successor.counter_weirdJoin = old_thesis.counter_weirdJoin;
+                thesis_successor.max_fullreducer_me = old_thesis.max_fullreducer_me;
+                thesis_successor.max_fullreducer_normal = old_thesis.max_fullreducer_normal;
+
+
 
 
                 thesis_successor.old_indices = old_thesis.old_indices;
@@ -296,7 +282,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
 
-                if((clock()-intermeditate)/CLOCKS_PER_SEC >= 10.0 && sid.id()!=0){
+                if((clock()-intermeditate)/CLOCKS_PER_SEC >= 30.0 && sid.id()!=0){
                     cout << "Intermediate Average Full Reducer time me: " << (old_thesis.fullreducer_time_me / old_thesis.counter_me)/CLOCKS_PER_SEC << endl;
                     cout << "Intermediate Average Full Reducer time normal: " << (old_thesis.fullreducer_time_normal / old_thesis.counter_normal)/CLOCKS_PER_SEC  << endl;
                     cout << "Intermediate Average Join Step time me: " << (old_thesis.joinstep_time_me / old_thesis.counter_me)/CLOCKS_PER_SEC  << endl;

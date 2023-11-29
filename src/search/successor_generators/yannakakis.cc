@@ -1028,7 +1028,10 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         thesis_semijoin.at(action.get_index()).at(i).refresh_tables();
     }
     affected_tables.clear();
-    thesis.fullreducer_time_me+= clock()-full_reducer;
+    double iteration_time = clock()-full_reducer;
+    thesis.fullreducer_time_me+= iteration_time;
+    if(iteration_time>thesis.max_fullreducer_me) thesis.max_fullreducer_me = iteration_time;
+    
 
     time_t join = clock();
 
@@ -1525,7 +1528,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     thesis.joinstep_time_me += clock()-join;
     project(working_table, distinguished_variables[action.get_index()]);
     thesis.time_me+= clock()- full_time;
-    cout << "HEHE" << endl;
     return working_table;
 
 }
@@ -1585,7 +1587,6 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
 
         assert(!tables.empty());
         assert(tables.size() == actiondata.relevant_precondition_atoms.size());
-        thesis.time_tables_me += clock()-tables_time;
 
         
         std::unordered_map<int,int> last_changed;
@@ -1608,7 +1609,9 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             }
             counter++;
         }
-        thesis.fullreducer_time_normal+= clock() - full_red;
+        double iteration_time = clock() - full_red;
+        thesis.fullreducer_time_normal+= iteration_time;
+        if(iteration_time>thesis.max_fullreducer_normal) thesis.max_fullreducer_normal = iteration_time;
     
         const JoinTree &jt = join_trees[action.get_index()];
 

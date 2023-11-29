@@ -226,23 +226,9 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
                 thesis_successor.join_time = old_thesis.join_time;
                 thesis_successor.time_me = old_thesis.time_me;
                 thesis_successor.time_normal = old_thesis.time_normal;
-                thesis_successor.time_det_changes = old_thesis.time_det_changes;
-                thesis_successor.time_det_changesCross = old_thesis.time_det_changesCross;
                 thesis_successor.counter_weirdCase = old_thesis.counter_weirdCase;
                 thesis_successor.counter_det_changeCross = old_thesis.counter_det_changeCross;
-                thesis_successor.joinstep_case1 = old_thesis.joinstep_case1;
-                thesis_successor.joinstep_case2 = old_thesis.joinstep_case2;
-                thesis_successor.joinstep_case3 = old_thesis.joinstep_case3;
-                thesis_successor.joinstep_case4 = old_thesis.joinstep_case4;
-                thesis_successor.joinstep_case5 = old_thesis.joinstep_case5;
-                thesis_successor.counter_joinstep_case1 = old_thesis.counter_joinstep_case1;
-                thesis_successor.counter_joinstep_case2 = old_thesis.counter_joinstep_case2;
-                thesis_successor.counter_joinstep_case3 = old_thesis.counter_joinstep_case3;
-                thesis_successor.counter_joinstep_case4 = old_thesis.counter_joinstep_case4;
-                thesis_successor.counter_joinstep_case5 = old_thesis.counter_joinstep_case5;
-                thesis_successor.time_recomputeKeys = old_thesis.time_recomputeKeys;
                 thesis_successor.counter_recomputeKeys = old_thesis.counter_recomputeKeys;
-                thesis_successor.time_weirdJoin = old_thesis.time_weirdJoin;
                 thesis_successor.counter_weirdJoin = old_thesis.counter_weirdJoin;
 
 
