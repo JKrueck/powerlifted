@@ -33,6 +33,7 @@ struct ThesisSave{
     Table result;
     std::vector<int> result_index;
 
+    //First:=order.second; Second:=order.first
     std::vector<std::pair<int,int>> matching_columns;
 
     std::unordered_set<std::vector<int>,TupleHash> pos1_deleted;

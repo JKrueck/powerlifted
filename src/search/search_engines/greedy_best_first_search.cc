@@ -92,7 +92,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         StateID sid = queue.remove_min();
         SearchNode &node = space.get_node(sid);
 
-        //cout << "----current state: " << sid.id() << "----" << endl;
+        cout << "----current state: " << sid.id() << "----" << endl;
 
         if(sid.id()!=0){
             skip = false;
@@ -208,8 +208,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
 
-            if (sid.id()==240) {
-                if(action.get_index()==9){
+            if (sid.id()==27) {
+                if(action.get_index()==0){
                    int stop13 = 5;
                 }
             }
@@ -232,8 +232,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
             old_indices_gblhack = old_thesis.old_indices;
 
-            if(false){
-                std::cout << "Number of instantiations of action " << action.get_name() << " : " << applicable.size() << endl;
+            if(true){
+                //Number of instantiations of action 
+                if(applicable.size()!=0)
+                    std::cout << "" << action.get_name() << " : " << applicable.size() << endl;
                 //if(applicable.size()!=0)
             
                
