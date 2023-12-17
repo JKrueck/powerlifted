@@ -111,8 +111,11 @@ public:
     double fullreducer_time_normal = 0.0;
     double max_fullreducer_me = 0.0;
     double max_fullreducer_normal = 0.0;
+    double min_fullreducer_me = 1000000.0;
+    double min_fullreducer_normal = 10000000.0;
     double joinstep_time_me = 0.0;
     double joinstep_time_normal = 0.0;
+    double crossproduct_time = 0.0;
     double join_time = 0.0;
     double time_me = 0.0;
     double time_normal = 0.0;

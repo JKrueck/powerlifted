@@ -22,8 +22,8 @@ class YannakakisSuccessorGenerator : public GenericJoinSuccessor {
                     //const DBState &state,const Task &task, Table &thesis_table, std::unordered_set<int> &thesis_matching);
 
     Table thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<ThesisSave>> &thesis_tables, std::vector<std::vector<ThesisSave>> &thesis_semijoin, DBState &old_state);
-    void deal_with_add_semi(std::pair<int,int> &table_predicates, ThesisSave &save, ThesisSave &join_save, bool revert_join, std::unordered_set<GroundAtom,TupleHash> add_diff, bool first, int tab_id, bool call_on_add_eff);
-    void deal_with_del_semi(std::pair<int,int> &table_predicates, ThesisSave &save, ThesisSave &join_save,  bool revert_join, std::unordered_set<GroundAtom,TupleHash> del_diff, bool first, int tab_id);
+    void deal_with_add_semi(std::pair<int,int> &table_predicates, ThesisSave &save, ThesisSave &join_save, bool revert_join, std::unordered_set<GroundAtom,TupleHash> add_diff, bool first, int tab_id, bool call_on_add_eff, bool ugly_hack);
+    void deal_with_del_semi(std::pair<int,int> &table_predicates, ThesisSave &save, ThesisSave &join_save,  bool revert_join, std::unordered_set<GroundAtom,TupleHash> del_diff, bool first, int tab_id, bool ugly_hack);
     void deal_with_add_full(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_set<GroundAtom,TupleHash> add_diff, bool first, int index_size);
     void deal_with_del_full(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_set<GroundAtom,TupleHash> del_diff, bool first, int index_size);
     void recompute_keys(ThesisSave &save, Table& current_tab, bool first);

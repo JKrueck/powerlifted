@@ -45,6 +45,8 @@ void print_goal_found(
     if(thes.counter_normal!=0) cout << "Percentage of time normally used on full reducer in yannakakis: " << ((thes.fullreducer_time_normal / thes.counter_normal)/(thes.time_normal/thes.counter_normal)) << endl;
     cout << "Maximal time used on one iteration of my Full Reducer: " << thes.max_fullreducer_me << endl;
     cout << "Maximal time used on one iteration of normal Full Reducer: " << thes.max_fullreducer_normal << endl;
+    cout << "Minimal time used on one iteration of my Full Reducer: " << thes.min_fullreducer_me << endl;
+    cout << "Minimal time used on one iteration of normal Full Reducer: " << thes.min_fullreducer_normal << endl;
     
     cout << "---" << endl;
     
@@ -53,6 +55,7 @@ void print_goal_found(
     if(thes.counter_me!=0) cout << "Average time used for join step in my stuff: " << (thes.joinstep_time_me / thes.counter_me)  << endl;
     if(thes.counter_normal!=0) cout << "Average time used for join step normally: " << (thes.joinstep_time_normal / thes.counter_normal)  << endl;
     if(thes.counter_me!=0) cout << "Percentage of time used on my join step in yannakakis: " << ((thes.joinstep_time_me / thes.counter_me)/(thes.time_me/thes.counter_me))<< endl;
+    if(thes.counter_me!=0) cout << "Share of the crossproduct on the join step: " << thes.crossproduct_time / thes.joinstep_time_me << endl;
     if(thes.counter_normal!=0) cout << "Percentage of time normally used on join step in yannakakis: " << ((thes.joinstep_time_normal / thes.counter_normal)/(thes.time_normal/thes.counter_normal)) << endl;
     
 
