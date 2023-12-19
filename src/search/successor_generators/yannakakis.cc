@@ -1348,23 +1348,32 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             if(!save_obj.join_changed_size_second){
                 for(auto del:save_obj.pos2_deleted){
                     std::vector<int> key(save_obj.matching_columns.size());
+                    std::vector<int> key_hack(save_obj.matching_columns.size());
                     for(size_t pos = 0; pos < save_obj.matching_columns.size(); pos++) {
                         key[pos] = del[save_obj.matching_columns[pos].second];
+                    }
+                    GroundAtom copy;
+                    if(extreme_hack_flag){
+                        copy = del;
+                        std::reverse(copy.begin(),copy.end());
+                        for(size_t pos = 0; pos < save_obj.matching_columns.size(); pos++) {
+                            key_hack[pos] = copy[save_obj.matching_columns[pos].second];
+                        }
                     }
                     if(save_obj.pos2_hashtable.count(key)!=0){
                         int size1,size2;
                         if(save_obj.pos1_hashtable.count(key)!=0) size1 = save_obj.pos1_hashtable[key].size();
                         else size1 = 0;
                         auto pos = save_obj.pos2_hashtable[key].find(del);
-                        if(pos!=save_obj.pos2_hashtable[key].end()) save_obj.pos2_hashtable[key].erase(del);
                         if(save_obj.pos2_hashtable.count(key)!=0) size2 = save_obj.pos2_hashtable[key].size();
                         else size2 = 0;
+                        if(pos!=save_obj.pos2_hashtable[key].end()) save_obj.pos2_hashtable[key].erase(del);
                         if(save_obj.pos2_hashtable[key].size()==0) save_obj.pos2_hashtable.erase(key);
                         //If there is more than one entry that matches this key in pos1, then we can´t just delete the result key
                         //This would also delete the legitimate join results of the other entries in pos2
                         if(save_obj.pos1_hashtable.count(key)!=0 && size1==1 && size2==1){
                             auto check = save_obj.pos1_hashtable[key];
-                            for(auto del:check){
+                            for(auto del:check){//hfhfgh
                                 std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
                                 for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
                                     old_key[pos] = del[pos];
@@ -1396,6 +1405,67 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             for(auto tup:to_change){
                                 for (unsigned pos = 0; pos < to_remove_me.size(); ++pos) {
                                     if (!to_remove_me[pos]) tup.push_back(del[pos]);
+                                }
+                                std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
+                                for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
+                                    old_key[pos] = tup[pos];
+                                }
+                                auto pos = save_obj.result_table[old_key].find(tup);
+                                if(pos!=save_obj.result_table[old_key].end()){
+                                    save_obj.result_table[old_key].erase(tup);
+                                    save_obj.result_deleted_single.insert(tup);
+                                }
+                                if(save_obj.result_table[old_key].size()==0) save_obj.result_table.erase(old_key);
+                            }
+                        
+                            
+                        } 
+                    }
+                    if(extreme_hack_flag && save_obj.pos2_hashtable.count(key_hack)!=0){
+                        int size1,size2;
+                        if(save_obj.pos1_hashtable.count(key_hack)!=0) size1 = save_obj.pos1_hashtable[key_hack].size();
+                        else size1 = 0;
+                        auto pos = save_obj.pos2_hashtable[key_hack].find(copy);
+                        if(save_obj.pos2_hashtable.count(key_hack)!=0) size2 = save_obj.pos2_hashtable[key_hack].size();
+                        else size2 = 0;
+                        if(pos!=save_obj.pos2_hashtable[key_hack].end()) save_obj.pos2_hashtable[key_hack].erase(copy);
+                        if(save_obj.pos2_hashtable[key_hack].size()==0) save_obj.pos2_hashtable.erase(key_hack);
+                        //If there is more than one entry that matches this key in pos1, then we can´t just delete the result key
+                        //This would also delete the legitimate join results of the other entries in pos2
+                        if(save_obj.pos1_hashtable.count(key_hack)!=0 && size1==1 && size2==1){
+                            auto check = save_obj.pos1_hashtable[key_hack];
+                            for(auto del:check){//hfhfgh
+                                std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
+                                for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
+                                    old_key[pos] = del[pos];
+                                }
+                                if(save_obj.result_table.count(old_key)!=0){
+                                    save_obj.result_deleted_single.insert(save_obj.result_table[old_key].begin(),save_obj.result_table[old_key].end());
+                                    save_obj.result_table.erase(old_key);
+                                    deleted_from_table[j.second].insert(old_key);
+                                }
+                            }
+                        //Instead we need to find the exact result and delete it
+                        //This means we need to expensively pre-calculate the join
+                        //I dont want this
+                        /*
+                        Checking every element for the positions of the deleted element takes time linear in the size of that hash-bucket
+                        vs.
+                        size(pos1_hashtable[key]) * size(matchting_columns) * size of elements in hashtable
+                        I think option one should typically be faster?? Depends on the size of the result bin
+                        @todo : Evaluate this
+                        */
+                        }else{
+                            if(size1==0 && size2==0) continue;
+                            thesis.counter_weirdCase++;
+                            std::vector<bool> to_remove_me(tables[j.first].tuple_index.size(), false);
+                            for (const auto &m : save_obj.matching_columns) {
+                                to_remove_me[m.second] = true;
+                            }
+                            std::unordered_set<GroundAtom, TupleHash> to_change = save_obj.pos1_hashtable[key_hack];
+                            for(auto tup:to_change){
+                                for (unsigned pos = 0; pos < to_remove_me.size(); ++pos) {
+                                    if (!to_remove_me[pos]) tup.push_back(copy[pos]);
                                 }
                                 std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
                                 for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
@@ -1558,7 +1628,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 int access_counter = 0;
                 for(auto add:added_result){
                     bool pass = false;
-                    if(!save_obj.pos1_hashtable.empty()){
+                    if(!save_obj.pos1_hashtable.empty() && !save_obj.pos1_hashtable.begin()->second.empty()){
                         if(add.size()==save_obj.pos1_hashtable.begin()->second.begin()->size()) pass = true;
                     }else{
                         if(add.size()<=save_obj.result.tuple_index.size()) pass = true;

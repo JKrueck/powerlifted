@@ -208,8 +208,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
 
-            if (sid.id()==27) {
-                if(action.get_index()==0){
+            if (sid.id()==28) {
+                if(action.get_index()==6){
                    int stop13 = 5;
                 }
             }
@@ -234,7 +234,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
             if(false){
                 //Number of instantiations of action 
-                if(applicable.size()!=0)
+                if(applicable.size()!=0)//
                     std::cout << "" << action.get_name() << " : " << applicable.size() << endl;
                 //if(applicable.size()!=0)
             
