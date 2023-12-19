@@ -1748,6 +1748,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     }
     counter = 0;
 
+
     Table &working_table = tables[remaining_join[action.get_index()][0]];
     for (size_t i = 1; i < remaining_join[action.get_index()].size(); ++i) {
         ThesisSave join_save;
@@ -1761,7 +1762,9 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         thesis_tables.at(action.get_index()).at(i).refresh_tables();
     }*/
 
+    iteration_time = clock()-join;
     thesis.joinstep_time_me += clock()-join;
+    if(iteration_time>thesis.max_join_me) thesis.max_join_me = iteration_time;
     project(working_table, distinguished_variables[action.get_index()]);
     thesis.time_me+= clock()- full_time;
     return working_table;
@@ -1924,7 +1927,9 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
                 return working_table;
             }
         }
+        iteration_time = clock()-join;
         thesis.joinstep_time_normal += clock()-join;
+        if(iteration_time>thesis.max_join_normal) thesis.max_join_normal = iteration_time;
         project(working_table, distinguished_variables[action.get_index()]);
         thesis.time_normal+= clock()- full_time;
         return working_table;

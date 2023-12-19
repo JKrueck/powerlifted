@@ -117,6 +117,8 @@ public:
     double joinstep_time_normal = 0.0;
     double crossproduct_time = 0.0;
     double join_time = 0.0;
+    double max_join_me = 0.0;
+    double max_join_normal = 0.0;
     double time_me = 0.0;
     double time_normal = 0.0;
 

@@ -278,6 +278,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 thesis_successor.min_fullreducer_me = old_thesis.min_fullreducer_me;
                 thesis_successor.min_fullreducer_normal = old_thesis.min_fullreducer_normal;
                 thesis_successor.crossproduct_time = old_thesis.crossproduct_time;
+                thesis_successor.max_join_me = old_thesis.max_join_me;
+                thesis_successor.max_join_normal = old_thesis.max_join_normal;
 
 
 

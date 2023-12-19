@@ -57,7 +57,8 @@ void print_goal_found(
     if(thes.counter_me!=0) cout << "Percentage of time used on my join step in yannakakis: " << ((thes.joinstep_time_me / thes.counter_me)/(thes.time_me/thes.counter_me))<< endl;
     if(thes.counter_me!=0) cout << "Share of the crossproduct on the join step: " << thes.crossproduct_time / thes.joinstep_time_me << endl;
     if(thes.counter_normal!=0) cout << "Percentage of time normally used on join step in yannakakis: " << ((thes.joinstep_time_normal / thes.counter_normal)/(thes.time_normal/thes.counter_normal)) << endl;
-    
+    cout << "Maximal time used on one iteration of my Join Step: " << thes.max_join_me << endl;
+    cout << "Maximal time used on one iteration of normal Join Step: " << thes.max_join_normal << endl;
 
     //cout << "Average time used for table generation in my stuff: " << (thes.time_tables_me / thes.counter_me) / CLOCKS_PER_SEC << endl;
     //cout << "Average time used for table generation normally: " << (thes.time_tables_normal / thes.counter_normal) / CLOCKS_PER_SEC << endl;
