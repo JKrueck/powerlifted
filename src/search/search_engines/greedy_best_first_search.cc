@@ -281,6 +281,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 thesis_successor.max_join_me = old_thesis.max_join_me;
                 thesis_successor.max_join_normal = old_thesis.max_join_normal;
 
+                thesis_successor.max_succ_time_me = old_thesis.max_succ_time_me;
+                thesis_successor.max_succ_time_normal = old_thesis.max_succ_time_normal;
+
 
 
 

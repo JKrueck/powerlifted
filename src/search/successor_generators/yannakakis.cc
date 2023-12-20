@@ -1119,7 +1119,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     std::unordered_map<int,std::unordered_set<GroundAtom, TupleHash>> deleted_from_table;
     
     counter = 0;
-    /*for (const auto &j : jt.get_order()) {
+    for (const auto &j : jt.get_order()) {
         //Get the new structure
         ThesisSave &save_obj = thesis_tables.at(action.get_index()).at(counter);
         if(save_obj.pos1_added.size()!=0 || save_obj.pos1_deleted.size()!=0 || save_obj.pos2_added.size()!=0 || save_obj.pos2_deleted.size()!=0 ||  deleted_from_table.count(j.first)!=0 || deleted_from_table.count(j.second)!=0 || added_to_table.count(j.first)!=0 || added_to_table.count(j.second)!=0 || affected_tables.count(j.first)!=0 || affected_tables.count(j.second)!=0){
@@ -1239,7 +1239,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             if(save_obj.result_table[old_key].size()==0) save_obj.result_table.erase(old_key);
                         }
                     }
-                }
+                }*/
                     
             }else{
                 //if(save_obj.result_table.size()==0) break;
@@ -1393,7 +1393,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         size(pos1_hashtable[key]) * size(matchting_columns) * size of elements in hashtable
                         I think option one should typically be faster?? Depends on the size of the result bin
                         @todo : Evaluate this
-                        
+                        */
                         }else{
                             if(size1==0 && size2==0) continue;
                             thesis.counter_weirdCase++;
@@ -1454,7 +1454,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         size(pos1_hashtable[key]) * size(matchting_columns) * size of elements in hashtable
                         I think option one should typically be faster?? Depends on the size of the result bin
                         @todo : Evaluate this
-                        
+                        */
                         }else{
                             if(size1==0 && size2==0) continue;
                             thesis.counter_weirdCase++;
@@ -1615,7 +1615,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                     iteration_add_storage.insert(tup);
                                     //Don't know what this is supposed to do
                                     /*if(boost::hash_range(tup.begin(),tup.end())!=boost::hash_range(add.begin(),add.end())) 
-                                        added_to_table[j.second].erase(add);
+                                        added_to_table[j.second].erase(add);*/
                                 }
                             }
                         }
@@ -1660,7 +1660,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                     added_to_table[j.second].insert(copy);
                                     //Don't know what this is supposed to do
                                     /*if(boost::hash_range(tup.begin(),tup.end())!=boost::hash_range(add.begin(),add.end())) 
-                                        added_to_table[j.second].erase(add);
+                                        added_to_table[j.second].erase(add);*/
                                 }
                             }
                         }
@@ -1746,30 +1746,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     for(long unsigned int i=0;i<thesis_tables.at(action.get_index()).size();i++){
         thesis_tables.at(action.get_index()).at(i).refresh_tables();
     }
-    counter = 0;*/
-
-    for (const auto &j : jt.get_order()) {
-        unordered_set<int> project_over;
-        for (auto x : tables[j.second].tuple_index) {
-            project_over.insert(x);
-        }
-        for (auto x : tables[j.first].tuple_index) {
-            if (distinguished_variables[action.get_index()].count(x) > 0) {
-                project_over.insert(x);
-            }
-        }
-        Table &working_table = tables[j.second];
-        hash_join(working_table, tables[j.first]);
-        // Project must be after removal of inequality constraints, otherwise we might keep only the tuple violating
-        // some inequality. Variables in inequalities are also considered distinguished.
-        ThesisSave join_save;
-        filter_static(action, working_table, join_save);
-        project(working_table, project_over);
-        if (working_table.tuples.empty()) {
-            return working_table;
-        }
-    }
-
+    counter = 0;
 
     Table &working_table = tables[remaining_join[action.get_index()][0]];
     for (size_t i = 1; i < remaining_join[action.get_index()].size(); ++i) {
@@ -1788,7 +1765,9 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     thesis.joinstep_time_me += clock()-join;
     if(iteration_time>thesis.max_join_me) thesis.max_join_me = iteration_time;
     project(working_table, distinguished_variables[action.get_index()]);
+    iteration_time = clock()- full-time;
     thesis.time_me+= clock()- full_time;
+    if(iteration_time>thesis.max_succ_time_me) thesis.max_succ_time_me = iteration_time;
     return working_table;
 
 }
@@ -1953,7 +1932,9 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         thesis.joinstep_time_normal += clock()-join;
         if(iteration_time>thesis.max_join_normal) thesis.max_join_normal = iteration_time;
         project(working_table, distinguished_variables[action.get_index()]);
+        iteration_time = clock()-full_time;
         thesis.time_normal+= clock()- full_time;
+        if(iteration_time>thesis.max_succ_time_normal) thesis.max_succ_time_normal = iteration_time;
         return working_table;
     }
 

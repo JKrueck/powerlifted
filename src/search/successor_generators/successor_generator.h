@@ -126,12 +126,8 @@ public:
     double time_tables_normal = 0.0;
 
 
-
-
-    int counter_weirdCase = 0;
-    int counter_det_changeCross = 0;
-    int counter_recomputeKeys = 0;
-    int counter_weirdJoin = 0;
+    double max_succ_time_me = 0.0;
+    double max_succ_time_normal = 0.0;
 
 
     int counter_me = 0;
