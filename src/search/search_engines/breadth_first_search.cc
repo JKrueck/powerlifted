@@ -226,10 +226,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
                 thesis_successor.join_time = old_thesis.join_time;
                 thesis_successor.time_me = old_thesis.time_me;
                 thesis_successor.time_normal = old_thesis.time_normal;
-                thesis_successor.counter_weirdCase = old_thesis.counter_weirdCase;
-                thesis_successor.counter_det_changeCross = old_thesis.counter_det_changeCross;
-                thesis_successor.counter_recomputeKeys = old_thesis.counter_recomputeKeys;
-                thesis_successor.counter_weirdJoin = old_thesis.counter_weirdJoin;
+                
 
 
                 thesis_successor.old_indices = old_thesis.old_indices;

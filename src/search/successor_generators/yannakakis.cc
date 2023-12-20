@@ -1396,7 +1396,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         */
                         }else{
                             if(size1==0 && size2==0) continue;
-                            thesis.counter_weirdCase++;
                             std::vector<bool> to_remove_me(tables[j.first].tuple_index.size(), false);
                             for (const auto &m : save_obj.matching_columns) {
                                 to_remove_me[m.second] = true;
@@ -1457,7 +1456,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         */
                         }else{
                             if(size1==0 && size2==0) continue;
-                            thesis.counter_weirdCase++;
                             std::vector<bool> to_remove_me(tables[j.first].tuple_index.size(), false);
                             for (const auto &m : save_obj.matching_columns) {
                                 to_remove_me[m.second] = true;
@@ -1765,7 +1763,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     thesis.joinstep_time_me += clock()-join;
     if(iteration_time>thesis.max_join_me) thesis.max_join_me = iteration_time;
     project(working_table, distinguished_variables[action.get_index()]);
-    iteration_time = clock()- full-time;
+    iteration_time = clock()- full_time;
     thesis.time_me+= clock()- full_time;
     if(iteration_time>thesis.max_succ_time_me) thesis.max_succ_time_me = iteration_time;
     return working_table;

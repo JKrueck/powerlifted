@@ -32,8 +32,8 @@ void print_goal_found(
     cout << "Total time: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;
     cout << "Time used for successor generation: " << thesis_time_needed << endl;
     cout << "Time used for initial state succ gen: " << thesis_init << endl;
-    cout << "Maximal time used for one dynamic Yannakakis iteration: " << thesis.max_succ_time_me << endl;
-    cout << "Maximal time used for one normal Yannakakis iteration: " << thesis.max_succ_time_normal << endl;
+    cout << "Maximal time used for one dynamic Yannakakis iteration: " << thes.max_succ_time_me << endl;
+    cout << "Maximal time used for one normal Yannakakis iteration: " << thes.max_succ_time_normal << endl;
     cout << "---" << endl;
 
     cout << "Count of calls to me: " << thes.counter_me << endl;
