@@ -72,7 +72,9 @@ void print_goal_found(
     if(thes.counter_normal!=0) cout << "Average normal time: " << (thes.time_normal/thes.counter_normal)  << endl;
     if(thes.counter_me!=0) cout << "Average me time: " << (thes.time_me/thes.counter_me)  << endl;
 
-    cout << "Share of the successor generation on the overall runtime: " << (thesis_time_needed/CLOCKS_PER_SEC)/(double(clock()-timer_start)/CLOCKS_PER_SEC) << endl;
+    auto perc = (thesis_time_needed/CLOCKS_PER_SEC)/(double(clock()-timer_start)/CLOCKS_PER_SEC);
+    if(perc<0.0001) perc = 0;
+    cout << "Share of the successor generation on the overall runtime: " << perc << endl;
 
     cout << "CLOCKS_PER_SEC: " << CLOCKS_PER_SEC << endl; 
     
