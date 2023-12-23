@@ -30,7 +30,7 @@ void print_goal_found(
 {
     cout << "Goal found at: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;
     cout << "Total time: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;
-    cout << "Time used for successor generation: " << thesis_time_needed << endl;
+    cout << "Time used for successor generation: " << thesis_time_needed/CLOCKS_PER_SEC << endl;
     cout << "Time used for initial state succ gen: " << thesis_init << endl;
     cout << "Maximal time used for one dynamic Yannakakis iteration: " << thes.max_succ_time_me << endl;
     cout << "Maximal time used for one normal Yannakakis iteration: " << thes.max_succ_time_normal << endl;
@@ -72,7 +72,7 @@ void print_goal_found(
     if(thes.counter_normal!=0) cout << "Average normal time: " << (thes.time_normal/thes.counter_normal)  << endl;
     if(thes.counter_me!=0) cout << "Average me time: " << (thes.time_me/thes.counter_me)  << endl;
 
-    cout << "Share of the successor generation on the overall runtime: " << thesis_time_needed/(double(clock()-timer_start)) << endl;
+    cout << "Share of the successor generation on the overall runtime: " << (thesis_time_needed/CLOCKS_PER_SEC)/(double(clock()-timer_start)/CLOCKS_PER_SEC) << endl;
 
     cout << "CLOCKS_PER_SEC: " << CLOCKS_PER_SEC << endl; 
     
