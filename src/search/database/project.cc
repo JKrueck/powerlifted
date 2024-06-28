@@ -8,7 +8,7 @@
 
 using namespace std;
 
-void project(Table &t, const std::unordered_set<int> &over) {
+void project(Table &t, const std::unordered_set<int> &over, ThesisSave &join_save, int key_index) {
 
     /*
      * This projection is not a canonical projection. We still need to keep *a full assignment*
@@ -33,6 +33,17 @@ void project(Table &t, const std::unordered_set<int> &over) {
         if (keys.count(key) == 0) {
             keys.insert(key);
             new_tuples.push_back(tuple);
+        }else{
+            if(key_index == INT_MAX) continue;
+            int anotherTest = 0;
+            std::cout << "Projecting deleted something" << std::endl;
+            std::vector<int> old_key(key_index);
+            for(size_t pos = 0; pos < key_index; pos++){
+                old_key[pos] = tuple[pos];
+            }
+
+            join_save.result_table[old_key].erase(tuple);
+            join_save.result_deleted.insert(tuple);
         }
     }
 

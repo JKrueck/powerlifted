@@ -1147,7 +1147,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 Table &working_table = tables[j.second];
                 hash_join(working_table, tables[j.first]);
                 filter_static(action, working_table, save_obj);
-                project(working_table, project_over);
+                project(working_table, project_over, save_obj, thesis.old_indices.at(action.get_index()).at(j.second).size());
 
                 save_obj.result = working_table;
                 //time_t time_cross = clock();
@@ -1272,7 +1272,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                 save_obj.result_table.erase(copy);
                                 deleted_from_table[j.second].insert(copy);
                             }
-                    }
+                        }
                     }
                 }
                 if(affected_tables.count(j.second)!=0){
@@ -1309,7 +1309,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         }
 
 
-
+                        //Here we seem to start with a element that could have the wrong size and compute the needed join to find the element that should be deleted
                         if(save_obj.pos2_hashtable.count(key)!=0){
                             std::unordered_set<GroundAtom, TupleHash> to_change = save_obj.pos2_hashtable[key];
                             std::vector<bool> to_remove_me(tables[j.first].tuple_index.size(), false);
@@ -1762,7 +1762,9 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     iteration_time = clock()-join;
     thesis.joinstep_time_me += clock()-join;
     if(iteration_time>thesis.max_join_me) thesis.max_join_me = iteration_time;
-    project(working_table, distinguished_variables[action.get_index()]);
+
+    ThesisSave join_save;
+    project(working_table, distinguished_variables[action.get_index()],join_save, INT_MAX);
     iteration_time = clock()- full_time;
     thesis.time_me+= clock()- full_time;
     if(iteration_time>thesis.max_succ_time_me) thesis.max_succ_time_me = iteration_time;
@@ -1897,7 +1899,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
            
 
             filter_static(action, working_table, join_save);
-            project(working_table, project_over);
+            project(working_table, project_over, join_save, thesis.old_indices.at(action.get_index()).at(j.second).size());
             if(thesis.is_enabled()) join_save.result = working_table;
             if (working_table.tuples.empty()) {
                 std::vector<ThesisSave> thesis_empty_joins;
@@ -1929,7 +1931,8 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         iteration_time = clock()-join;
         thesis.joinstep_time_normal += clock()-join;
         if(iteration_time>thesis.max_join_normal) thesis.max_join_normal = iteration_time;
-        project(working_table, distinguished_variables[action.get_index()]);
+        ThesisSave join_save;
+        project(working_table, distinguished_variables[action.get_index()], join_save, INT_MAX);
         iteration_time = clock()-full_time;
         thesis.time_normal+= clock()- full_time;
         if(iteration_time>thesis.max_succ_time_normal) thesis.max_succ_time_normal = iteration_time;

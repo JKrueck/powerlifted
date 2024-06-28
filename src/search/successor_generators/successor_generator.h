@@ -42,7 +42,10 @@ struct ThesisSave{
     std::unordered_set<std::vector<int>,TupleHash> pos2_deleted;
     std::unordered_set<std::vector<int>,TupleHash> pos2_added;
 
+    //Contains the del facts
     std::unordered_set<std::vector<int>,TupleHash> result_deleted;
+
+    //Contains the deleted facts as they appear in the result -- possibly already larger than the del fact being considered
     std::unordered_set<std::vector<int>,TupleHash> result_deleted_single;
     std::unordered_set<std::vector<int>,TupleHash> result_deleted_static;
     bool del_res = false;
