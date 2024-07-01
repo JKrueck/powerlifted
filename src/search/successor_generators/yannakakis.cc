@@ -853,7 +853,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
 
     std::unordered_map<int, std::unordered_set<GroundAtom, TupleHash>> table_delete_list;
     bool extreme_hack_flag = false;
-    if(std::strcmp(task.get_domain_name().c_str(),"chemical") == 0) extreme_hack_flag = true;
+    //if(std::strcmp(task.get_domain_name().c_str(),"chemical") == 0) extreme_hack_flag = true;
 
     time_t full_reducer = clock();
     long unsigned int counter = 0;
