@@ -14,6 +14,7 @@
 #include "../rules/product.h"
 #include "../rules/project.h"
 
+#include <set>
 #include <limits>
 #include <queue>
 
