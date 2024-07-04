@@ -49,8 +49,8 @@ def build(debug_flag, compiler):
     if compiler != 'default':
         extra_options = ['-DCMAKE_CXX_COMPILER='+compiler]
 
-    if options.hacky_server_flag:
-        extra_options += ["-DBoost_NO_SYSTEM_PATHS=TRUE", "-DBOOST_ROOT=/mnt/data_server/eisenhut/opt"]
+#    if options.hacky_server_flag:
+#        extra_options += ["-DBoost_NO_SYSTEM_PATHS=TRUE", "-DBOOST_ROOT=/mnt/data_server/eisenhut/opt"]
 
     subprocess.check_call(['cmake', SEARCH_DIR,
                            '-DCMAKE_BUILD_TYPE='+BUILD_TYPE] + extra_options,
