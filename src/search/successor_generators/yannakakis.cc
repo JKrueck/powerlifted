@@ -304,20 +304,25 @@ void YannakakisSuccessorGenerator::deal_with_del_semi(std::pair<int,int> &table_
             if(ugly_hack && del.size() == 2 && chem_counter % 2 !=0 && last_insert.size()!=0){
                 if(del.at(0) == last_insert.at(1) && del.at(1) == last_insert.at(0)) skip = true;
             }
-            if(!skip){
-                if(!revert_join){
-                    join_save.pos1_deleted.insert(del);
-                    join_save.pos1_added.erase(del);
-                    last_insert = del;
-                }else{
-                    join_save.pos2_deleted.insert(del);
-                    join_save.pos2_added.erase(del);
-                    last_insert = del;
-                } 
-            }
+            
             //Remember that del has been deleted from this table
             save.pos1_deleted.insert(del);
             if(save.pos1_hashtable.count(key)!=0){
+
+
+                //Remember about this fact for the JoinStep
+                if(!skip){
+                    if(!revert_join){
+                        join_save.pos1_deleted.insert(del);
+                        join_save.pos1_added.erase(del);
+                        last_insert = del;
+                    }else{
+                        join_save.pos2_deleted.insert(del);
+                        join_save.pos2_added.erase(del);
+                        last_insert = del;
+                    } 
+                }
+
                 //As the element at save_obj.pos1_hashtable.at(key) is a unordered_set, this takes constant time on average
                 auto pos = save.pos1_hashtable.at(key).find(del);
                 if(pos!=save.pos1_hashtable.at(key).end()){//
@@ -852,8 +857,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     //std::unordered_map<int,int> last_change;
 
     std::unordered_map<int, std::unordered_set<GroundAtom, TupleHash>> table_delete_list;
-    bool extreme_hack_flag = false;
-    //if(std::strcmp(task.get_domain_name().c_str(),"chemical") == 0) extreme_hack_flag = true;
+    bool extreme_hack_flag;
+    if(std::strcmp(task.get_domain_name().c_str(),"chemical") == 0) extreme_hack_flag = false;
 
     time_t full_reducer = clock();
     long unsigned int counter = 0;
@@ -1132,6 +1137,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             //This will treat an atom that was just added this iteration as a old result and the resulting join will be very wrong  
             std::unordered_set<GroundAtom, TupleHash> iteration_add_storage;
 
+            //Do the Cross Product
             if(save_obj.matching_columns.size()==0){
                 time_t cross_product = clock();
                 auto remember = save_obj.result;
@@ -1173,51 +1179,72 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
 
             //If filter_static removes some elements
             for(auto del:save_obj.result_deleted_static){
-                std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
+                //Generate the JoinStep Key for that statically removed element
+                std::vector<int> join_step_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
                 for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
-                    old_key[pos] = del[pos];
+                    join_step_key[pos] = del[pos];
                 }
-                if(save_obj.result_table.count(old_key)!=0){
-                    auto pos = save_obj.result_table[old_key].find(del);
-                    if(pos!=save_obj.result_table[old_key].end()){
-                        save_obj.result_table[old_key].erase(pos);
+                //If the statically removed element exists in the current result...
+                if(save_obj.result_table.count(join_step_key)!=0){
+                    //...find it and...
+                    auto pos = save_obj.result_table[join_step_key].find(del);
+                    if(pos!=save_obj.result_table[join_step_key].end()){
+                        //...delete it
+                        save_obj.result_table[join_step_key].erase(pos);
                         save_obj.result_deleted_single.insert(del);
-                        if(save_obj.result_table[old_key].size()==0) save_obj.result_table.erase(old_key);
+                        if(save_obj.result_table[join_step_key].size()==0) save_obj.result_table.erase(join_step_key);
                     }
                 }
             }
+
+            //If the size of the first table has NOT changed in comparison to the SemiJoin Results
+            //-> we can use the normal semijoin keys here
             if(!save_obj.join_changed_size_first){
+                //Check all facts that were deleted from table 1
                 for(auto del:save_obj.pos1_deleted){
+                    //Generate the SemiJoin key for the deleted fact
                     std::vector<int> key(save_obj.matching_columns.size());
-                    std::vector<int> key_hack(save_obj.matching_columns.size());
                     for(size_t pos = 0; pos < save_obj.matching_columns.size(); pos++) {
                         key[pos] = del[save_obj.matching_columns[pos].first];
                     }
+
+                    //Create a hacky key for chemical???
+                    std::vector<int> key_hack(save_obj.matching_columns.size());
                     GroundAtom copy;
+                    //If we are in the chem domain
                     if(extreme_hack_flag){
+                        //create a copy of the deleted fact
                         copy = del;
+                        //reverse the object order of the copy
                         std::reverse(copy.begin(),copy.end());
+                        //Create a reverse JoinStep key based on the matching columns of the join
                         for(size_t pos = 0; pos < save_obj.matching_columns.size(); pos++) {
                             key_hack[pos] = copy[save_obj.matching_columns[pos].first];
                         }
                     }
+                    //If the deleted fact is in table 1...
                     if(save_obj.pos1_hashtable.count(key)!=0){
+                        //..find it and delete it
                         auto pos = save_obj.pos1_hashtable[key].find(del);
                         if(pos!=save_obj.pos1_hashtable[key].end()) save_obj.pos1_hashtable[key].erase(pos);
                         if(save_obj.pos1_hashtable[key].size()==0) save_obj.pos1_hashtable.erase(key);
                     }
+                    //If the ?reverse? key is here find and delete it?
                     if(extreme_hack_flag && save_obj.pos1_hashtable.count(key_hack)!=0){
+                        //cout << "actually happens" << endl;
                         auto pos = save_obj.pos1_hashtable[key_hack].find(copy);
                         if(pos!=save_obj.pos1_hashtable[key_hack].end()) save_obj.pos1_hashtable[key_hack].erase(pos);
                         if(save_obj.pos1_hashtable[key_hack].size()==0) save_obj.pos1_hashtable.erase(key_hack);
                     }
-                    
+                    //If it is in the result find and delete it
                     if(save_obj.result_table.count(del)!=0){
                         save_obj.result_deleted.insert(del);
+                        //Save that a single fact was deleted
                         save_obj.result_deleted_single.insert(save_obj.result_table[del].begin(),save_obj.result_table[del].end());
                         save_obj.result_table.erase(del);
                         deleted_from_table[j.second].insert(del);
                     }
+                    //Same but with the weird key
                     if(extreme_hack_flag && save_obj.result_table.count(copy)!=0){
                         save_obj.result_deleted.insert(copy);
                         save_obj.result_deleted_single.insert(save_obj.result_table[copy].begin(),save_obj.result_table[copy].end());
@@ -1225,24 +1252,11 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         deleted_from_table[j.second].insert(copy);
                     }
                 }
-                //If filter_static removes some elements
-                /*for(auto del:save_obj.result_deleted_static){
-                    std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
-                    for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
-                        old_key[pos] = del[pos];
-                    }
-                    if(save_obj.result_table.count(old_key)!=0){
-                        auto pos = save_obj.result_table[old_key].find(del);
-                        if(pos!=save_obj.result_table[old_key].end()){
-                            save_obj.result_table[old_key].erase(pos);
-                            save_obj.result_deleted_single.insert(del);
-                            if(save_obj.result_table[old_key].size()==0) save_obj.result_table.erase(old_key);
-                        }
-                    }
-                }*/
-                    
-            }else{
-                //if(save_obj.result_table.size()==0) break;
+            }
+            //If the size of the first table HAS changed in comparison to the SemiJoin Results
+            //->need to use the JoinStep keys
+            if(save_obj.join_changed_size_first){
+                //Go through all previously deleted elements 
                 for(auto del:deleted_from_table[j.second]){
                     GroundAtom copy;
                     if(save_obj.result_table.count(del)!=0){
@@ -1321,16 +1335,16 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                 for (unsigned pos = 0; pos < to_remove_me.size(); ++pos) {
                                     if (!to_remove_me[pos]) copy.push_back(tup[pos]);
                                 }
-                                std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
+                                std::vector<int> join_step_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
                                 for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
-                                    old_key[pos] = copy[pos];
+                                    join_step_key[pos] = copy[pos];
                                 }
-                                auto pos = save_obj.result_table[old_key].find(copy);
-                                if(pos!=save_obj.result_table[old_key].end()){
-                                    save_obj.result_table[old_key].erase(copy);
+                                auto pos = save_obj.result_table[join_step_key].find(copy);
+                                if(pos!=save_obj.result_table[join_step_key].end()){
+                                    save_obj.result_table[join_step_key].erase(copy);
                                     save_obj.result_deleted_single.insert(copy);
                                 }
-                                if(save_obj.result_table[old_key].size()==0) save_obj.result_table.erase(old_key);
+                                if(save_obj.result_table[join_step_key].size()==0) save_obj.result_table.erase(join_step_key);
                             }
                         }
                     }
@@ -1374,14 +1388,14 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         if(save_obj.pos1_hashtable.count(key)!=0 && size1==1 && size2==1){
                             auto check = save_obj.pos1_hashtable[key];
                             for(auto del:check){//hfhfgh
-                                std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
+                                std::vector<int> join_step_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
                                 for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
-                                    old_key[pos] = del[pos];
+                                    join_step_key[pos] = del[pos];
                                 }
-                                if(save_obj.result_table.count(old_key)!=0){
-                                    save_obj.result_deleted_single.insert(save_obj.result_table[old_key].begin(),save_obj.result_table[old_key].end());
-                                    save_obj.result_table.erase(old_key);
-                                    deleted_from_table[j.second].insert(old_key);
+                                if(save_obj.result_table.count(join_step_key)!=0){
+                                    save_obj.result_deleted_single.insert(save_obj.result_table[join_step_key].begin(),save_obj.result_table[join_step_key].end());
+                                    save_obj.result_table.erase(join_step_key);
+                                    deleted_from_table[j.second].insert(join_step_key);
                                 }
                             }
                         //Instead we need to find the exact result and delete it
@@ -1405,16 +1419,16 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                 for (unsigned pos = 0; pos < to_remove_me.size(); ++pos) {
                                     if (!to_remove_me[pos]) tup.push_back(del[pos]);
                                 }
-                                std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
+                                std::vector<int> join_step_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
                                 for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
-                                    old_key[pos] = tup[pos];
+                                    join_step_key[pos] = tup[pos];
                                 }
-                                auto pos = save_obj.result_table[old_key].find(tup);
-                                if(pos!=save_obj.result_table[old_key].end()){
-                                    save_obj.result_table[old_key].erase(tup);
+                                auto pos = save_obj.result_table[join_step_key].find(tup);
+                                if(pos!=save_obj.result_table[join_step_key].end()){
+                                    save_obj.result_table[join_step_key].erase(tup);
                                     save_obj.result_deleted_single.insert(tup);
                                 }
-                                if(save_obj.result_table[old_key].size()==0) save_obj.result_table.erase(old_key);
+                                if(save_obj.result_table[join_step_key].size()==0) save_obj.result_table.erase(join_step_key);
                             }
                         
                             
@@ -1434,14 +1448,14 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         if(save_obj.pos1_hashtable.count(key_hack)!=0 && size1==1 && size2==1){
                             auto check = save_obj.pos1_hashtable[key_hack];
                             for(auto del:check){//hfhfgh
-                                std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
+                                std::vector<int> join_step_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
                                 for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
-                                    old_key[pos] = del[pos];
+                                    join_step_key[pos] = del[pos];
                                 }
-                                if(save_obj.result_table.count(old_key)!=0){
-                                    save_obj.result_deleted_single.insert(save_obj.result_table[old_key].begin(),save_obj.result_table[old_key].end());
-                                    save_obj.result_table.erase(old_key);
-                                    deleted_from_table[j.second].insert(old_key);
+                                if(save_obj.result_table.count(join_step_key)!=0){
+                                    save_obj.result_deleted_single.insert(save_obj.result_table[join_step_key].begin(),save_obj.result_table[join_step_key].end());
+                                    save_obj.result_table.erase(join_step_key);
+                                    deleted_from_table[j.second].insert(join_step_key);
                                 }
                             }
                         //Instead we need to find the exact result and delete it
@@ -1465,16 +1479,16 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                 for (unsigned pos = 0; pos < to_remove_me.size(); ++pos) {
                                     if (!to_remove_me[pos]) tup.push_back(copy[pos]);
                                 }
-                                std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
+                                std::vector<int> join_step_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
                                 for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
-                                    old_key[pos] = tup[pos];
+                                    join_step_key[pos] = tup[pos];
                                 }
-                                auto pos = save_obj.result_table[old_key].find(tup);
-                                if(pos!=save_obj.result_table[old_key].end()){
-                                    save_obj.result_table[old_key].erase(tup);
+                                auto pos = save_obj.result_table[join_step_key].find(tup);
+                                if(pos!=save_obj.result_table[join_step_key].end()){
+                                    save_obj.result_table[join_step_key].erase(tup);
                                     save_obj.result_deleted_single.insert(tup);
                                 }
-                                if(save_obj.result_table[old_key].size()==0) save_obj.result_table.erase(old_key);
+                                if(save_obj.result_table[join_step_key].size()==0) save_obj.result_table.erase(join_step_key);
                             }
                         
                             
@@ -1484,14 +1498,14 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             }else{
                 //if(save_obj.result_table.size()==0) break;
                 for(auto del:deleted_from_table[j.first]){
-                    std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.first).size());
+                    std::vector<int> join_step_key(thesis.old_indices.at(action.get_index()).at(j.first).size());
                     for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.first).size(); pos++){
-                        old_key[pos] = del[pos];
+                        join_step_key[pos] = del[pos];
                     }
-                    if(save_obj.result_table.count(old_key)!=0){
-                        save_obj.result_deleted_single.insert(save_obj.result_table[old_key].begin(),save_obj.result_table[old_key].end());
-                        save_obj.result_table.erase(old_key);
-                        deleted_from_table[j.first].insert(old_key);
+                    if(save_obj.result_table.count(join_step_key)!=0){
+                        save_obj.result_deleted_single.insert(save_obj.result_table[join_step_key].begin(),save_obj.result_table[join_step_key].end());
+                        save_obj.result_table.erase(join_step_key);
+                        deleted_from_table[j.first].insert(join_step_key);
                     }
                 }
                 if (affected_tables.count(j.first)!=0){
@@ -1522,16 +1536,16 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                     for (unsigned pos = 0; pos < to_remove_me.size(); ++pos) {
                                         if (!to_remove_me[pos]) tup.push_back(del[pos]);
                                     }
-                                    std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
+                                    std::vector<int> join_step_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
                                     for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
-                                        old_key[pos] = tup[pos];
+                                        join_step_key[pos] = tup[pos];
                                     }
-                                    auto pos = save_obj.result_table[old_key].find(tup);
-                                    if(pos!=save_obj.result_table[old_key].end()){
-                                        save_obj.result_table[old_key].erase(tup);
+                                    auto pos = save_obj.result_table[join_step_key].find(tup);
+                                    if(pos!=save_obj.result_table[join_step_key].end()){
+                                        save_obj.result_table[join_step_key].erase(tup);
                                         save_obj.result_deleted_single.insert(tup);
                                     }
-                                    if(save_obj.result_table[old_key].size()==0) save_obj.result_table.erase(old_key);
+                                    if(save_obj.result_table[join_step_key].size()==0) save_obj.result_table.erase(join_step_key);
                                 }
                             }
                         }
@@ -1570,11 +1584,11 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             //If this join has been impacted by filter_static before, also filter this result
                             if(save_obj.check_static) thesis_filter_static(action, tup, save_obj);
                             if(tup.size()!=0){
-                                std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
+                                std::vector<int> join_step_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
                                 for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
-                                    old_key[pos] = tup[pos];
+                                    join_step_key[pos] = tup[pos];
                                 }
-                                save_obj.result_table[old_key].insert(tup);
+                                save_obj.result_table[join_step_key].insert(tup);
                                 iteration_add_storage.insert(tup);
                             }
                         }
@@ -1605,11 +1619,11 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                 }
                                 if(save_obj.check_static) thesis_filter_static(action, tup, save_obj);
                                 if(tup.size()!=0){
-                                    std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
+                                    std::vector<int> join_step_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
                                     for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
-                                        old_key[pos] = tup[pos];
+                                        join_step_key[pos] = tup[pos];
                                     }
-                                    save_obj.result_table[old_key].insert(tup);
+                                    save_obj.result_table[join_step_key].insert(tup);
                                     iteration_add_storage.insert(tup);
                                     //Don't know what this is supposed to do
                                     /*if(boost::hash_range(tup.begin(),tup.end())!=boost::hash_range(add.begin(),add.end())) 
@@ -1650,11 +1664,11 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                 }
                                 if(save_obj.check_static) thesis_filter_static(action, copy, save_obj);
                                 if(copy.size()!=0){
-                                    std::vector<int> old_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
+                                    std::vector<int> join_step_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
                                     for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
-                                        old_key[pos] = copy[pos];
+                                        join_step_key[pos] = copy[pos];
                                     }
-                                    save_obj.result_table[old_key].insert(copy);
+                                    save_obj.result_table[join_step_key].insert(copy);
                                     added_to_table[j.second].insert(copy);
                                     //Don't know what this is supposed to do
                                     /*if(boost::hash_range(tup.begin(),tup.end())!=boost::hash_range(add.begin(),add.end())) 

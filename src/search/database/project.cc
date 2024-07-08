@@ -41,7 +41,7 @@ void project(Table &t, const std::unordered_set<int> &over, ThesisSave &join_sav
             for(size_t pos = 0; pos < key_index; pos++){
                 old_key[pos] = tuple[pos];
             }
-
+            
             join_save.result_table[old_key].erase(tuple);
             join_save.result_deleted.insert(tuple);
         }

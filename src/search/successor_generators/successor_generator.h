@@ -36,8 +36,10 @@ struct ThesisSave{
     //First:=order.second; Second:=order.first
     std::vector<std::pair<int,int>> matching_columns;
 
+    //Facts deleted through the semi-join process
     std::unordered_set<std::vector<int>,TupleHash> pos1_deleted;
     std::unordered_set<std::vector<int>,TupleHash> pos1_added;
+    
     //Only needed for Join Step Computation
     std::unordered_set<std::vector<int>,TupleHash> pos2_deleted;
     std::unordered_set<std::vector<int>,TupleHash> pos2_added;
