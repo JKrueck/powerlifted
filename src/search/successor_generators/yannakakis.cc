@@ -858,7 +858,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
 
     std::unordered_map<int, std::unordered_set<GroundAtom, TupleHash>> table_delete_list;
     bool extreme_hack_flag;
-    if(std::strcmp(task.get_domain_name().c_str(),"chemical") == 0) extreme_hack_flag = false;
+    if(std::strcmp(task.get_domain_name().c_str(),"chemical") == 0) extreme_hack_flag = true;
 
     time_t full_reducer = clock();
     long unsigned int counter = 0;
@@ -1137,6 +1137,17 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             //This will treat an atom that was just added this iteration as a old result and the resulting join will be very wrong  
             std::unordered_set<GroundAtom, TupleHash> iteration_add_storage;
 
+            unordered_set<int> project_over;
+            for (auto x : tables[j.second].tuple_index) {
+                project_over.insert(x);
+            }
+            for (auto x : tables[j.first].tuple_index) {
+                if (distinguished_variables[action.get_index()].count(x) > 0) {
+                    project_over.insert(x);
+                }
+            }
+            
+            
             //Do the Cross Product
             if(save_obj.matching_columns.size()==0){
                 time_t cross_product = clock();
@@ -1254,7 +1265,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 }
             }
             //If the size of the first table HAS changed in comparison to the SemiJoin Results
-            //->need to use the JoinStep keys
+            //->need to use the JoinStep keys ??? or not????
             if(save_obj.join_changed_size_first){
                 //Go through all previously deleted elements 
                 for(auto del:deleted_from_table[j.second]){
@@ -1289,7 +1300,9 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         }
                     }
                 }
+                //If the first table has been affected by the state transition
                 if(affected_tables.count(j.second)!=0){
+                    //Check all facts we deleted in this join in the parent state
                     for(auto del:old_pos1.result_deleted_single){
                         GroundAtom copy;
                         //If the join result gets bigger, we need to compute the element we want to remove
@@ -1323,7 +1336,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                         }
 
 
-                        //Here we seem to start with a element that could have the wrong size and compute the needed join to find the element that should be deleted
+                        //???What does this mean??Here we seem to start with a element that could have the wrong size and compute the needed join to find the element that should be deleted
+                        //If the deleted fact also shows up in Table 2
                         if(save_obj.pos2_hashtable.count(key)!=0){
                             std::unordered_set<GroundAtom, TupleHash> to_change = save_obj.pos2_hashtable[key];
                             std::vector<bool> to_remove_me(tables[j.first].tuple_index.size(), false);
@@ -1348,6 +1362,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             }
                         }
                     }
+                    //Delete entire keys
                     for(auto del:old_pos1.result_deleted){
                         if(save_obj.result_table.count(del)!=0){
                             save_obj.result_deleted.insert(del);
@@ -1358,14 +1373,17 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 }
                 
             }
-
+            //If the second table does not change its attribute size  with the current join
             if(!save_obj.join_changed_size_second){
+                //For all facts deleted from table 2
                 for(auto del:save_obj.pos2_deleted){
+                    //Generate the key for the deleted fact
                     std::vector<int> key(save_obj.matching_columns.size());
-                    std::vector<int> key_hack(save_obj.matching_columns.size());
                     for(size_t pos = 0; pos < save_obj.matching_columns.size(); pos++) {
                         key[pos] = del[save_obj.matching_columns[pos].second];
                     }
+                    //Generate the key for the reversed fact
+                    std::vector<int> key_hack(save_obj.matching_columns.size());
                     GroundAtom copy;
                     if(extreme_hack_flag){
                         copy = del;
@@ -1374,16 +1392,24 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                             key_hack[pos] = copy[save_obj.matching_columns[pos].second];
                         }
                     }
+                    //If that key for the deleted fact occurs in table 2
                     if(save_obj.pos2_hashtable.count(key)!=0){
+                        
                         int size1,size2;
+                        //If the key has a match in Table1 set size1 to the amount of facts in Table1 that have that key
                         if(save_obj.pos1_hashtable.count(key)!=0) size1 = save_obj.pos1_hashtable[key].size();
                         else size1 = 0;
+                        //Check whether the deleted fact occurs in Table2
                         auto pos = save_obj.pos2_hashtable[key].find(del);
+                        //Pretty unnesecary
+                        //If the key has a match in Table2 set size2 to the amount of facts in Table2 that have that key
                         if(save_obj.pos2_hashtable.count(key)!=0) size2 = save_obj.pos2_hashtable[key].size();
                         else size2 = 0;
+                        //If the deleted fact occurs in Table2, erase it 
                         if(pos!=save_obj.pos2_hashtable[key].end()) save_obj.pos2_hashtable[key].erase(del);
+                        //If that was the only fact of this key, delete the key
                         if(save_obj.pos2_hashtable[key].size()==0) save_obj.pos2_hashtable.erase(key);
-                        //If there is more than one entry that matches this key in pos1, then we can´t just delete the result key
+                        //If there is more than one entry that matches this key in Table1, then we can´t just delete the result key
                         //This would also delete the legitimate join results of the other entries in pos2
                         if(save_obj.pos1_hashtable.count(key)!=0 && size1==1 && size2==1){
                             auto check = save_obj.pos1_hashtable[key];
@@ -1398,18 +1424,10 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                     deleted_from_table[j.second].insert(join_step_key);
                                 }
                             }
-                        //Instead we need to find the exact result and delete it
-                        //This means we need to expensively pre-calculate the join
-                        //I dont want this
-                        /*
-                        Checking every element for the positions of the deleted element takes time linear in the size of that hash-bucket
-                        vs.
-                        size(pos1_hashtable[key]) * size(matchting_columns) * size of elements in hashtable
-                        I think option one should typically be faster?? Depends on the size of the result bin
-                        @todo : Evaluate this
-                        */
                         }else{
                             if(size1==0 && size2==0) continue;
+                            //Compute the join results between the deleted fact from Table2 and its matches in Table1 
+                            //Delete it if it appears in the result
                             std::vector<bool> to_remove_me(tables[j.first].tuple_index.size(), false);
                             for (const auto &m : save_obj.matching_columns) {
                                 to_remove_me[m.second] = true;
@@ -1430,10 +1448,9 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                 }
                                 if(save_obj.result_table[join_step_key].size()==0) save_obj.result_table.erase(join_step_key);
                             }
-                        
-                            
                         } 
                     }
+                    //Same as above but with the key for the reversed fact
                     if(extreme_hack_flag && save_obj.pos2_hashtable.count(key_hack)!=0){
                         int size1,size2;
                         if(save_obj.pos1_hashtable.count(key_hack)!=0) size1 = save_obj.pos1_hashtable[key_hack].size();
@@ -1490,12 +1507,12 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                                 }
                                 if(save_obj.result_table[join_step_key].size()==0) save_obj.result_table.erase(join_step_key);
                             }
-                        
-                            
                         } 
                     }
                 }
-            }else{
+            }
+            //If the AttributeSize of Table2 has changed
+            if(save_obj.join_changed_size_second){
                 //if(save_obj.result_table.size()==0) break;
                 for(auto del:deleted_from_table[j.first]){
                     std::vector<int> join_step_key(thesis.old_indices.at(action.get_index()).at(j.first).size());
@@ -1718,8 +1735,10 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 }
             }
             affected_tables[j.second] = counter;
+            
             //filter_static(action, working_table, save_obj);
             tables[j.second] = save_obj.generate_table();
+            project(tables[j.second],project_over,save_obj, thesis.old_indices.at(action.get_index()).at(j.second).size());
             if(tables[j.second].tuples.size()==0){
                 //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
                 //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
