@@ -1123,6 +1123,11 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     std::unordered_map<int,std::unordered_set<GroundAtom, TupleHash>> added_to_table;
     std::unordered_map<int,std::unordered_set<GroundAtom, TupleHash>> deleted_from_table;
     
+    
+    if(action.get_index()==12){
+        int weneedtostop = 1;
+    }
+    
     counter = 0;
     for (const auto &j : jt.get_order()) {
         //Get the new structure
@@ -1152,15 +1157,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             if(save_obj.matching_columns.size()==0){
                 time_t cross_product = clock();
                 auto remember = save_obj.result;
-                unordered_set<int> project_over;
-                for (auto x : tables[j.second].tuple_index) {
-                    project_over.insert(x);
-                }
-                for (auto x : tables[j.first].tuple_index) {
-                    if (distinguished_variables[action.get_index()].count(x) > 0) {
-                        project_over.insert(x);
-                    }
-                }
+
                 Table &working_table = tables[j.second];
                 hash_join(working_table, tables[j.first]);
                 filter_static(action, working_table, save_obj);
@@ -1736,9 +1733,13 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             }
             affected_tables[j.second] = counter;
             
-            //filter_static(action, working_table, save_obj);
             tables[j.second] = save_obj.generate_table();
+
+
+            //cout << "Yannakakis project: ";
             project(tables[j.second],project_over,save_obj, thesis.old_indices.at(action.get_index()).at(j.second).size());
+            //cout << counter << endl;
+            
             if(tables[j.second].tuples.size()==0){
                 //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
                 //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
