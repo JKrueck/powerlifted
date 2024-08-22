@@ -139,7 +139,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
             }
             thesis_time += clock() - thesis_timer;
             old_thesis.set_add_effect_map(predicate_to_add_diff);
-            old_thesis.set_delete_effects(diff_delete);
+            old_thesis.set_delete_effect_map(diff_delete);
         }
 
 

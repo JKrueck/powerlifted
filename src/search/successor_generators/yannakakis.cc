@@ -572,121 +572,6 @@ void YannakakisSuccessorGenerator::deal_with_del_full(std::pair<int,int> &table_
     }
 
 }
-/*
-If the table we need for our current computation was generated in a join with other matching columns between the joined tables, we need to recompute the keys
-and put the elements into the appropriate hash-table bins
-*/
-void YannakakisSuccessorGenerator::recompute_keys(ThesisSave &save, Table &current_tab, bool first){
-    
-    if(first){
-        save.pos1_hashtable.clear();
-    }else{
-        save.pos2_hashtable.clear();
-    }
-    
-    for(auto entry:current_tab.tuples){
-        std::vector<int> key(save.matching_columns.size());
-        for(size_t i = 0; i < save.matching_columns.size(); i++) {
-            if(first){
-                key[i] = entry[save.matching_columns[i].first];
-            }else{
-                key[i] = entry[save.matching_columns[i].second];
-            }
-        }
-        if(first){
-            if(save.pos1_hashtable.count(key)!=0){
-                save.pos1_hashtable[key].insert(entry);
-            }else{
-                std::unordered_set<std::vector<int>,TupleHash> will_die;
-                will_die.insert(entry);
-                save.pos1_hashtable.insert_or_assign(key,will_die);
-                save.pos1_added.insert(entry);
-            }
-        }else{
-            if(save.pos2_hashtable.count(key)!=0){
-                save.pos2_hashtable[key].insert(entry);
-            }else{
-                std::unordered_set<std::vector<int>,TupleHash> will_die;
-                will_die.insert(entry);
-                save.pos2_hashtable.insert_or_assign(key,will_die);
-            }
-        }
-
-    }
-}
-void YannakakisSuccessorGenerator::weird_join(ThesisSave& save, std::vector<int>& index1, std::vector<int>& index2){
-    vector<bool> to_remove_me(index2.size(), false);
-    for (const auto &m : save.matching_columns) {
-        to_remove_me[m.second] = true;
-    }
-
-    for (size_t j = 0; j < index2.size(); ++j) {
-        if (!to_remove_me[j]) {
-            index1.push_back(index2[j]);
-        }
-    }
-    for(auto &store:save.pos2_hashtable){
-        for(auto tuple:store.second){
-            if(save.pos1_hashtable.count(store.first)!=0){
-                std::unordered_set<GroundAtom, TupleHash> to_change = save.pos1_hashtable[store.first];
-                for(auto tup:to_change){
-                    for (unsigned j = 0; j < to_remove_me.size(); ++j) {
-                        if (!to_remove_me[j]) tup.push_back(tuple[j]);
-                    }
-                    save.result_table[store.first].insert(tup);
-                    save.result_deleted.erase(tup);
-                }
-            }
-        }
-    }
-}
-/*
-Determines the delta between the old result and new result
-Changes are saves in the ThesisSave structure
-*/
-/*std::unordered_set<GroundAtom,TupleHash> YannakakisSuccessorGenerator::determine_changes(ThesisSave& save, std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash>& old_result){
-    std::unordered_set<GroundAtom,TupleHash> del_return;
-    //Fistly determine the add delta
-    for(auto new_entry:save.result_table){
-        //If a key does not occur in the old table, then all entries that key maps to are new
-        if(old_result.count(new_entry.first)==0){
-            if(save.table_delta_add.count(new_entry.first)==0){
-                save.table_delta_add.insert_or_assign(new_entry.first, new_entry.second);
-            }else{
-                save.table_delta_add[new_entry.first].insert(new_entry.second.begin(),new_entry.second.end());
-            }
-        //If it does occur, we need to check for every element if it is already there
-        }else{
-            for(auto elem:new_entry.second){
-                if(old_result[new_entry.first].find(elem)==old_result[new_entry.first].end()){
-                    if(save.table_delta_add.count(new_entry.first)==0){
-                        std::unordered_set<std::vector<int>,TupleHash> dummy;
-                        dummy.insert(elem);
-                        save.table_delta_add.insert_or_assign(new_entry.first, dummy);
-                    }else{
-                        save.table_delta_add[new_entry.first].insert(elem);
-                    }
-                }
-            }
-        }
-    }
-    //Now check for deleted elements
-    for(auto old_entry:old_result){
-        //If a key does not occur in the old table, then all entries that key maps to were deleted
-        if(save.result_table.count(old_entry.first)==0){
-           del_return.insert(old_entry.second.begin(),old_entry.second.end());
-        //If it does occur, we need to check for every element if it is already there
-        }else{
-            for(auto elem:save.result_table[old_entry.first]){
-                if(save.result_table[old_entry.first].find(elem)==save.result_table[old_entry.first].end()){
-                   del_return.insert(elem);
-                }
-            }
-        }
-    }
-
-    return del_return;
-}*/
 
 void YannakakisSuccessorGenerator::determine_changes_crossProduct(ThesisSave& save, Table& old_tab, Table& new_tab){
     std::vector<bool> old_found(old_tab.tuples.size(), false);
@@ -789,21 +674,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     std::unordered_map<int,bool>  diff_delete = thesis.get_del_eff();
 
     const JoinTree &jt = join_trees[action.get_index()];
-
-    //if an add-effect does not appear in any join, only the added atom will be in the corresponding table in the end
-    //if the action schema is cyclic this creates a bug in the partial reducer as the old atoms are missing
-    //Probably dont need this anymore --- 17.10
-    /*std::unordered_map<int,bool> thesis_hack;
-    int mega_idiot_counter = 0;
-    for(auto precon:action.get_precondition()){
-        for(auto join:jt.get_order()){
-            if(join.first == mega_idiot_counter || join.second == mega_idiot_counter){
-                thesis_hack.insert_or_assign(precon.get_predicate_symbol_idx(),true);
-                break;
-            }
-        }
-        mega_idiot_counter++;
-    }*/
    
     //Save for which tables we need to re compute the hash join -- there can be more tables than predicates because of static preds
     std::unordered_map<int,bool> compute_hash_join;
@@ -822,8 +692,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     
    
     std::vector<bool> nullary = state.get_nullary_atoms();
-    //Create a modified state with the new relations
-    //DBState mod_state = DBState(std::move(new_relations), std::move(nullary));
 
     const auto &actiondata = action_data[action.get_index()];
     vector<Table> tables;
@@ -833,9 +701,9 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
         std::vector<ThesisSave> thesis_empty_joins;
         thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_joins);
-        //cout << "err1" << endl;
         return Table::EMPTY_TABLE();
     }
+
     assert(!tables.empty());
     assert(tables.size() == actiondata.relevant_precondition_atoms.size());
     
@@ -853,10 +721,11 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     std::unordered_map<int,int> affected_tables;
     std::pair<int,int> table_predicates;
 
-    //The FullReducer iteration table first was changed for the last time
-    //std::unordered_map<int,int> last_change;
 
     std::unordered_map<int, std::unordered_set<GroundAtom, TupleHash>> table_delete_list;
+
+    //The organic synthesis domain contains double facts - modeling a bond in both directions
+    //These double facts somehow still cause problems
     bool extreme_hack_flag;
     if(std::strcmp(task.get_domain_name().c_str(),"chemical") == 0) extreme_hack_flag = true;
 
@@ -865,10 +734,8 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
     for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {  
         table_predicates.first = action.get_precondition().at(sj.first).get_predicate_symbol_idx();
         table_predicates.second = action.get_precondition().at(sj.second).get_predicate_symbol_idx();
+
         //If there is a change in the computation of this semi-join   
-        if(counter==28){
-            int afafasf = 1;
-        }
         if((compute_semi_join.at(sj.first) || compute_semi_join.at(sj.second)) && (affected_tables.count(sj.first)==0 && affected_tables.count(sj.second)==0)){
             //If that change is(are) only a newly added atom(s) 
             if((thesis_affected_by_del.count(sj.second) == 0 && thesis_affected_by_del.count(sj.first) == 0) || thesis_affected_by_del.size() ==0){
@@ -877,6 +744,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 auto remember = save_obj.pos1_hashtable;
                 int join_elem;
                 bool revert_join = false;
+
                 if(counter<(full_reducer_order[action.get_index()].size()/2)) join_elem = counter;
                 else{
                     join_elem = full_reducer_order[action.get_index()].size()/2- (counter - full_reducer_order[action.get_index()].size()/2+1);
@@ -893,18 +761,20 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     deal_with_add_semi(table_predicates,save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, predicate_to_add_diff.at(table_predicates.second),true, sj.second, true, extreme_hack_flag);
                 
                 }
+
                 //Generate the WHOLE complete new_table
                 //Unnessescary probably
-
                 tables[sj.second] = save_obj.generate_table();
                 affected_tables.insert_or_assign(sj.second,counter);
-            }else{//If that change was a delete effect (and maybe also add effect)
+            }else{
+                //If that change was a delete effect (and maybe also add effect)
                 //Get the new structure
                 ThesisSave &save_obj = thesis_semijoin.at(action.get_index()).at(counter);
                 auto remember = save_obj.pos1_hashtable;
                 std::unordered_set<GroundAtom, TupleHash> save;
                 int join_elem;
                 bool revert_join = false;
+
                 if(counter<(full_reducer_order[action.get_index()].size()/2)) join_elem = counter;
                 else{
                     join_elem = full_reducer_order[action.get_index()].size()/2- (counter - full_reducer_order[action.get_index()].size()/2+1);
@@ -926,8 +796,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     delete_condition2 = true;
                     affected_tables.insert_or_assign(sj.second,counter);
                 }else{
-                    //predicate_impacted = thesis_affected_by_del.at(sj.first);
-                    //thesis_affected_by_del.insert_or_assign(sj.second,predicate_impacted);
                     //Remember that the table at the second position was affected by a del effecy
                     affected_tables.insert_or_assign(sj.second,counter);
                 }
@@ -951,11 +819,9 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                     //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
                     //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
                     std::vector<ThesisSave> thesis_empty_semijoins;
-                    //cout << "err2" << endl;
                     thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
                     return Table::EMPTY_TABLE();
                 }
-                //if(compute_semi_join.at(sj.first)&&!compute_semi_join.at(sj.second)) compute_hash_join.at(sj.second);
             }
         }else if(affected_tables.count(sj.first)!=0 && affected_tables.count(sj.second) == 0 ){
             //This is very similar to just computing a new semi-join --- talk about this
@@ -966,16 +832,16 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             std::unordered_set<GroundAtom, TupleHash> save;
             int join_elem;
             bool revert_join = false;
+
             if(counter<(full_reducer_order[action.get_index()].size()/2)) join_elem = counter;
             else{
                 join_elem = full_reducer_order[action.get_index()].size()/2- (counter - full_reducer_order[action.get_index()].size()/2+1);
                 revert_join = true;
             } 
             if(save_obj.matching_columns.size()==0){
+
                 semi_join(tables[sj.second],tables[sj.first],save_obj);
-                //This belongs to the sj.first table and therefore shouldnt be remebered
-                //save_obj.pos1_added = old_save.pos1_added;
-                //save_obj.pos1_deleted = old_save.pos1_deleted;
+
             }else{
                 
                 deal_with_add_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save.pos1_added, false, sj.first, false, extreme_hack_flag);
@@ -995,14 +861,12 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 }
 
                 tables[sj.second] = save_obj.generate_table();
-                //compute_hash_join.at(sj.second) = true;
             }
             //If the resulting semi-join was empty
             if(tables[sj.second].tuples.size()==0){
                 //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
                 //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
                 std::vector<ThesisSave> thesis_empty_semijoins;
-                //cout << "err2" << endl;
                 thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
                 return Table::EMPTY_TABLE();
             }
@@ -1010,12 +874,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             affected_tables.insert_or_assign(sj.second,counter);
         }else if(affected_tables.count(sj.second)!=0 && affected_tables.count(sj.first) == 0){
             /*
-            The elements in table[sj.second] have changed in comparison to the same semi-join in the parent state
-            This means that in contrast to Datalog Exploration, the position hashtables can persist between different join rules
-            To account for this, we start by just doing the corresponding half of the semi-join, which updates the hash-table
-            We can save ourselves the other half of the semi-join, as our memory on that SHOULD still be correct
-            
-
             What if both tables have changed????
             For now do a full semi-join between them
             */
@@ -1026,6 +884,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             std::unordered_set<GroundAtom, TupleHash> save;
             int join_elem;
             bool revert_join = false;
+
             if(counter<(full_reducer_order[action.get_index()].size()/2)) join_elem = counter;
             else{
                 join_elem = full_reducer_order[action.get_index()].size()/2- (counter - full_reducer_order[action.get_index()].size()/2+1);
@@ -1064,6 +923,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             std::unordered_set<GroundAtom, TupleHash> save;
             int join_elem;
             bool revert_join = false;
+
             if(counter<(full_reducer_order[action.get_index()].size()/2)) join_elem = counter;
             else{
                 join_elem = full_reducer_order[action.get_index()].size()/2- (counter - full_reducer_order[action.get_index()].size()/2+1);
@@ -1086,14 +946,10 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
 
                 tables[sj.second] = save_obj.generate_table();
             }
-            //ThesisSave dummy;
-            //semi_join(tables[sj.second],tables[sj.first],dummy);
-            //thesis_semijoin.at(action.get_index()).at(counter) = dummy;
             if(tables[sj.second].tuples.size()==0){
                 //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
                 //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
                 std::vector<ThesisSave> thesis_empty_semijoins;
-                //cout << "err2" << endl;
                 thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
                 return Table::EMPTY_TABLE();
             }
@@ -1102,7 +958,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
             tables[sj.second] = thesis_semijoin.at(action.get_index()).at(counter).result;
             tables[sj.second].tuple_index = thesis_semijoin.at(action.get_index()).at(counter).result_index;
         }
-        //last_change.insert_or_assign(sj.second,counter);
         counter++;
     }
 
@@ -1112,6 +967,7 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
         thesis_semijoin.at(action.get_index()).at(i).refresh_tables();
     }
     affected_tables.clear();
+
     double iteration_time = clock()-full_reducer;
     thesis.fullreducer_time_me+= iteration_time;
     if(iteration_time>thesis.max_fullreducer_me) thesis.max_fullreducer_me = iteration_time;
@@ -1122,11 +978,6 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
 
     std::unordered_map<int,std::unordered_set<GroundAtom, TupleHash>> added_to_table;
     std::unordered_map<int,std::unordered_set<GroundAtom, TupleHash>> deleted_from_table;
-    
-    
-    if(action.get_index()==12){
-        int weneedtostop = 1;
-    }
     
     counter = 0;
     for (const auto &j : jt.get_order()) {
@@ -1164,20 +1015,10 @@ Table YannakakisSuccessorGenerator::thesis_instantiate2(const ActionSchema &acti
                 project(working_table, project_over, save_obj, thesis.old_indices.at(action.get_index()).at(j.second).size());
 
                 save_obj.result = working_table;
-                //time_t time_cross = clock();
+
                 determine_changes_crossProduct(save_obj, remember, save_obj.result);
                 added_to_table[j.second].insert(save_obj.pos1_added.begin(),save_obj.pos1_added.end());
                 save_obj.pos1_added.clear();
-
-
-                //thesis.time_det_changesCross+=clock()-time_cross;
-                //thesis.counter_det_changeCross++;
-                
-                //if (affected_tables.count(j.second)!=0) save_obj.pos1_deleted = old_pos1.pos1_deleted;
-                //if (affected_tables.count(j.first)!=0) save_obj.pos2_deleted = old_pos2.pos1_deleted;
-
-                //if (affected_tables.count(j.second)!=0) save_obj.pos1_added = old_pos1.pos1_added;
-                //if (affected_tables.count(j.first)!=0)save_obj.pos2_added = old_pos1.pos1_added;
                 
                 affected_tables[j.second] = counter;
                 counter++;

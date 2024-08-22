@@ -37,12 +37,14 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     utils::Timer t;
     heuristic_layer = heuristic.compute_heuristic(task.initial_state, task);
     t.stop();
+
     cout << "Time to evaluate initial state: " << t() << endl;
     root_node.open(0, heuristic_layer);
     if (heuristic_layer == numeric_limits<int>::max()) {
         cerr << "Initial state is unsolvable!" << endl;
         exit(1);
     }
+    
     statistics.inc_evaluations();
     cout << "Initial heuristic value " << heuristic_layer << endl;
     statistics.report_f_value_progress(heuristic_layer);
@@ -53,7 +55,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     std::vector<std::vector<ThesisSave>> thesis_join_table_at_state;
     thesis_join_table_at_state.resize(task.get_action_schemas().size());
     //As we always want to use the join tables from the prior state, we need to save all of them on a per state basis
-    //To-Do: Think about when we don´t need them anymore and can delete them from memory
     std::unordered_map<int, std::vector<std::vector<ThesisSave>>> thesis_join_table_memory; 
     thesis_join_table_memory.insert({0,thesis_join_table_at_state});
 
@@ -61,14 +62,13 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     std::vector<std::vector<ThesisSave>> thesis_semijoin_table_at_state_first;
     thesis_semijoin_table_at_state_first.resize(task.get_action_schemas().size());
     //As we always want to use the join tables from the prior state, we need to save all of them on a per state basis
-    //To-Do: Think about when we don´t need them anymore and can delete them from memory
     std::unordered_map<int, std::vector<std::vector<ThesisSave>>> thesis_semijoin_table_memory;
     thesis_semijoin_table_memory.insert({0,thesis_semijoin_table_at_state_first});
 
     //Storage for classes per state
     //intended to work similar to queue
     std::unordered_map<int,ThesisClass> thesis_state_memory;
-    ThesisClass initial = ThesisClass(true,task.get_action_schema_by_index(0));//this->thesis_enabled
+    ThesisClass initial = ThesisClass(true,task.get_action_schema_by_index(0));
     initial.set_parent_state_id(0);
     initial.old_indices.resize(task.get_action_schemas().size());
     thesis_state_memory.insert({0,initial});
@@ -83,11 +83,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
     std::unordered_map<int,std::vector<int>> test_map;
 
-    std::unordered_map<int,int> memory_access_map;
 
-     if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, thesis_state_memory.at(0))) return utils::ExitCode::SUCCESS;
+    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, thesis_state_memory.at(0))) return utils::ExitCode::SUCCESS;
 
-    time_t intermeditate = clock();
+    time_t intermediate = clock();
     while (not queue.empty()) {
         StateID sid = queue.remove_min();
         SearchNode &node = space.get_node(sid);
@@ -98,11 +97,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             skip = false;
         }
 
-
-        //remove the thesis object from memory
-        /*if(!hack){ 
-            thesis_state_memory.erase(sid.id());
-        }*/
         int h = node.h;
         int g = node.g;
         if (node.status == SearchNode::Status::CLOSED) {
@@ -110,8 +104,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         }
         node.close();
         statistics.report_f_value_progress(h); // In GBFS f = h.
-        
         statistics.inc_expanded();
+
         bool print = false;
         if(sid.id()==0){
             print = true;
@@ -136,8 +130,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         //remove the thesis object from memory
         thesis_state_memory.erase(sid.id());
 
-        //cout << "Memory needed for table storage: " << sizeof(thesis_semijoin_table_memory) + sizeof(thesis_join_table_memory) << " Bytes"<< endl;
-
         if(false) {//sid.id() != 0 && sid.id()<130
             cout << "parent state: " << old_thesis.get_parent_state_id() << endl;
             cout << "action used to get here: " << old_thesis.get_action_id() << "->" << task.get_action_schema_by_index(old_thesis.get_action_id()).get_name()<< endl;
@@ -148,8 +140,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             cout << endl;
         }
         
-    
-        //generator.thesis_compute_del_impacts(task);
         //get all hash tables that were computed in the previous state
         thesis_join_table_at_state = thesis_join_table_memory.at(old_thesis.get_parent_state_id());
         std::vector<std::vector<ThesisSave>> thesis_semijoin_table_at_state = thesis_semijoin_table_memory.at(old_thesis.get_parent_state_id());
@@ -166,41 +156,34 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             return utils::ExitCode::SUCCESS;
         } 
 
-        if ((sid.id()==714)) {
-            int stop13 = 1;
-        }
-
-        //time_t thesis_timer = clock();
         if(this->thesis_enabled && sid.id()!=0){
             old_thesis.set_status(true);
             std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_add_diff;
             std::unordered_map<int,bool> diff_delete;
+
+            //Go trough all effects of the last applied action
             for(auto thesis_effects:task.get_action_schema_by_index(old_thesis.get_action_id()).get_effects()){
+                //If it is a delete effect
                 if(thesis_effects.is_negated()){
-                    //GroundAtom thesis_delete_effect;
-                    //for(auto thesis_argument_it:thesis_effects.get_arguments()){
-                        //thesis_delete_effect.push_back(op_id.get_instantiation().at(thesis_argument_it.get_index()));
-                    //}
-                    
+                    //Insert the predicate of the delete effect
                     diff_delete.insert_or_assign(thesis_effects.get_predicate_symbol_idx(),true);
                     std::vector<int> thesis_deleted_fact;
                     for(auto arg:thesis_effects.get_arguments()){
                         thesis_deleted_fact.push_back(old_thesis.get_instantiation().at(arg.get_index()));
                     }
-                    //old_thesis.deleted_facts.insert({thesis_effects.get_predicate_symbol_idx(),thesis_deleted_fact});
+                    //Save the deleted facts of the corresponding predicate
                     old_thesis.deleted_facts[thesis_effects.get_predicate_symbol_idx()].insert(thesis_deleted_fact);
                 }else{
                     GroundAtom thesis_add_effect;
                     for(auto thesis_argument_it:thesis_effects.get_arguments()){
                         thesis_add_effect.push_back(old_thesis.get_instantiation().at(thesis_argument_it.get_index()));
                     }
-                    //predicate_to_add_diff.insert({thesis_effects.get_predicate_symbol_idx(),thesis_set_storage});
+                    //Save the added facts of the corresponding predicate
                     predicate_to_add_diff[thesis_effects.get_predicate_symbol_idx()].insert(thesis_add_effect);
                 }
             }
-            //thesis_time += clock() - thesis_timer;
             old_thesis.set_add_effect_map(predicate_to_add_diff);
-            old_thesis.set_delete_effects(diff_delete);
+            old_thesis.set_delete_effect_map(diff_delete);
         }
 
 
@@ -215,19 +198,25 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             }
 
             DBState old_state;
+
             time_t thesis_timer = clock();
             time_t thesis_initial_timer = clock();
             old_thesis.old_indices = old_indices_gblhack;
+
+            
             auto applicable = generator.get_applicable_actions(action, state,task, old_thesis,
                                 thesis_join_table_at_state,thesis_semijoin_table_at_state,old_state);
 
             //Sort the instantiations by their hash
+            //Maybe think about this. Now that we know that the algo works correctly, we can maybe remove this
             std::sort(applicable.begin(),applicable.end());
             
             thesis_time += clock() - thesis_timer;
             if(sid.id()==0){
                 thesis_initial_succ += clock() - thesis_initial_timer;
             }
+
+            //Save the new dynamic tables that were generated through the applocable actions calculation
             thesis_semijoin_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_semijoin_table_at_state.at(action.get_index()));
             thesis_join_table_memory.at(sid.id()).at(action.get_index()) = std::move(thesis_join_table_at_state.at(action.get_index()));
             old_indices_gblhack = old_thesis.old_indices;
@@ -236,9 +225,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 //Number of instantiations of action 
                 if(applicable.size()!=0)//
                     std::cout << "" << action.get_name() << " " << action.get_index() << " : " << applicable.size() << endl;
-                //if(applicable.size()!=0)
-            
-               
                 if(false){//sid.id()!=0
                     cout << "instantiations: "<< endl;
                     for(auto it:applicable){
@@ -261,6 +247,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 thesis_successor.set_parent_state_id(sid.id());
                 thesis_successor.action_id = action.get_index();
                 thesis_successor.set_instantiation(op_id.get_instantiation());
+
                 //Time tracking
                 thesis_successor.counter_me = old_thesis.counter_me;
                 thesis_successor.counter_normal = old_thesis.counter_normal;
@@ -292,15 +279,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
 
-                if((clock()-intermeditate)/CLOCKS_PER_SEC >= 30.0 && sid.id()!=0){
-                    //cout << "Intermediate Average Full Reducer time me: " << (old_thesis.fullreducer_time_me / old_thesis.counter_me)/CLOCKS_PER_SEC << endl;
-                    //cout << "Intermediate Average Full Reducer time normal: " << (old_thesis.fullreducer_time_normal / old_thesis.counter_normal)/CLOCKS_PER_SEC  << endl;
-                    //cout << "Intermediate Average Join Step time me: " << (old_thesis.joinstep_time_me / old_thesis.counter_me)/CLOCKS_PER_SEC  << endl;
-                    //cout << "Intermediate Average Join Step time normal: " << (old_thesis.joinstep_time_normal / old_thesis.counter_normal)/CLOCKS_PER_SEC  << endl;
-                    //intermeditate = clock();
-                }
-                
-            
                 /*if(child_node.state_id.id()!=1){
                     if(child_node.state_id.id()!=14){
                         if(child_node.state_id.id()!=19){
@@ -317,9 +295,12 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                             }       
                     }
                 }*/
+
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);
                 statistics.inc_evaluations();
+
+
                 test_map.insert({child_node.state_id.id(),op_id.get_instantiation()});
                 
                 if (new_h == UNSOLVABLE_STATE) {
@@ -330,16 +311,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                         statistics.inc_pruned_states();
 
                         thesis_state_memory.insert({child_node.state_id.id(),thesis_successor});
-
-                        //create a new empty join_table memory for the new state
-                        //std::vector<std::vector<Table>> thesis_join_at_state;
-                        //thesis_join_at_state.resize(task.get_action_schemas().size());
-                        //thesis_join_table_memory.insert({child_node.state_id.id(),thesis_join_table_at_state});
-                        //create a new empty semijoin_table memory for the new state
-                        //std::vector<std::vector<Table>> thesis_semijoin_at_state;
-                        //thesis_semijoin_at_state.resize(task.get_action_schemas().size());
-                        //memory_access_map.insert_or_assign(child_node.state_id.id(),sid.id());
-                        //thesis_semijoin_table_memory.insert({child_node.state_id.id(),thesis_semijoin_table_at_state});
                         //remember that sid is the parent state of the current child node
                         thesis_previous_state.insert_or_assign(child_node.state_id,sid);
                     }
@@ -355,13 +326,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
                     //create a new empty join_table memory for the new state
                     std::vector<std::vector<Table>> thesis_join_at_state;
-                    //thesis_join_at_state.resize(task.get_action_schemas().size());
-                    //thesis_join_table_memory.insert({child_node.state_id.id(),thesis_join_table_at_state});
-                    //create a new empty semijoin_table memory for the new state
                     std::vector<std::vector<Table>> thesis_semijoin_at_state;
-                    //thesis_semijoin_at_state.resize(task.get_action_schemas().size());
-                    //thesis_semijoin_table_memory.insert({child_node.state_id.id(),thesis_semijoin_table_at_state});
-                    //memory_access_map.insert_or_assign(child_node.state_id.id(),sid.id());
                     //remember that sid is the parent state of the current child node
                     thesis_previous_state.insert_or_assign(child_node.state_id,sid);
 
@@ -377,13 +342,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
                         //create a new empty join_table memory for the new state
                         std::vector<std::vector<Table>> thesis_join_at_state;
-                        //thesis_join_at_state.resize(task.get_action_schemas().size());
-                        //thesis_join_table_memory.insert({child_node.state_id.id(),thesis_join_table_at_state});
-                        //create a new empty semijoin_table memory for the new state
                         std::vector<std::vector<Table>> thesis_semijoin_at_state;
-                        //thesis_semijoin_at_state.resize(task.get_action_schemas().size());
-                        //thesis_semijoin_table_memory.insert({child_node.state_id.id(),thesis_semijoin_table_at_state});
-                        //memory_access_map.insert_or_assign(child_node.state_id.id(),sid.id());
                         //remember that sid is the parent state of the current child node
                         thesis_previous_state.insert_or_assign(child_node.state_id,sid);
                     }
@@ -391,10 +350,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 
             }
         }
-        //After we have determined the join-tables of all actions for the current state save it again
-        //doing this with pointer was a pain, so pointerless for now
-        //DISREGARD
-        //thesis_join_table_per_state.insert_or_assign(sid.id(),thesis_current_tables);
     }
 
     print_no_solution_found(timer_start, thesis_time, thesis_initial_succ);
