@@ -102,7 +102,7 @@ void hash_join(Table &t1, const Table &t2){
     //if(remember<t1.tuple_index.size()) save.join_changed_sized = true;
     t1.tuples = std::move(new_tuples);
 }
-void hash_join(Table &t1, const Table &t2, ThesisSave &save, std::vector<int>& semi_indice1, std::vector<int>& semi_indice2) {
+void hash_join(Table &t1, const Table &t2, DynamicTables &save, std::vector<int>& semi_indice1, std::vector<int>& semi_indice2) {
     /*
      * This function implements a hash join as follows
      *

@@ -26,7 +26,7 @@ void print_no_solution_found(const clock_t& timer_start,double thesis_time_neede
 
 void print_goal_found(
     const SuccessorGenerator &generator,
-    const clock_t& timer_start,double thesis_time_needed, double thesis_init, ThesisClass thes)
+    const clock_t& timer_start,double thesis_time_needed, double thesis_init, DynamicState thes)
 {
     cout << "Goal found at: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;
     cout << "Total time: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;

@@ -17,20 +17,18 @@ class YannakakisSuccessorGenerator : public GenericJoinSuccessor {
  */
   explicit YannakakisSuccessorGenerator(const Task &task);
     Table instantiate(const ActionSchema &action,
-                    const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<ThesisSave>> &thesis_tables, std::vector<std::vector<ThesisSave>> &thesis_semijoin, DBState &old_state) final;
-    //Table thesis_instantiate(const ActionSchema &action,
-                    //const DBState &state,const Task &task, Table &thesis_table, std::unordered_set<int> &thesis_matching);
+                    const DBState &state,const Task &task, DynamicState &thesis, std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state) final;
 
-    Table thesis_instantiate2(const ActionSchema &action,const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<ThesisSave>> &thesis_tables, std::vector<std::vector<ThesisSave>> &thesis_semijoin, DBState &old_state);
-    void deal_with_add_semi(std::pair<int,int> &table_predicates, ThesisSave &save, ThesisSave &join_save, bool revert_join, std::unordered_set<GroundAtom,TupleHash> add_diff, bool first, int tab_id, bool call_on_add_eff, bool ugly_hack);
-    void deal_with_del_semi(std::pair<int,int> &table_predicates, ThesisSave &save, ThesisSave &join_save,  bool revert_join, std::unordered_set<GroundAtom,TupleHash> del_diff, bool first, int tab_id, bool ugly_hack);
-    void deal_with_add_full(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_set<GroundAtom,TupleHash> add_diff, bool first, int index_size);
-    void deal_with_del_full(std::pair<int,int> &table_predicates, ThesisSave &save, std::unordered_set<GroundAtom,TupleHash> del_diff, bool first, int index_size);
-    void recompute_keys(ThesisSave &save, Table& current_tab, bool first);
-    void weird_join(ThesisSave& save, std::vector<int>& index1, std::vector<int>& index2);
-    std::unordered_set<GroundAtom,TupleHash> determine_changes(ThesisSave& save, std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash>& old_result);
-    void determine_changes_crossProduct(ThesisSave& save, Table& old_tab, Table& new_tab);
-    void thesis_filter_static(const ActionSchema &action, GroundAtom &check, ThesisSave &save);
+    Table dynamic_instantiate(const ActionSchema &action,const DBState &state,const Task &task, DynamicState &thesis, std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state);
+    void deal_with_add_semi(std::pair<int,int> &table_predicates, DynamicTables &save, DynamicTables &join_save, bool revert_join, std::unordered_set<GroundAtom,TupleHash> add_diff, bool first, int tab_id, bool call_on_add_eff, bool ugly_hack);
+    void deal_with_del_semi(std::pair<int,int> &table_predicates, DynamicTables &save, DynamicTables &join_save,  bool revert_join, std::unordered_set<GroundAtom,TupleHash> del_diff, bool first, int tab_id, bool ugly_hack);
+    void deal_with_add_full(std::pair<int,int> &table_predicates, DynamicTables &save, std::unordered_set<GroundAtom,TupleHash> add_diff, bool first, int index_size);
+    void deal_with_del_full(std::pair<int,int> &table_predicates, DynamicTables &save, std::unordered_set<GroundAtom,TupleHash> del_diff, bool first, int index_size);
+    void recompute_keys(DynamicTables &save, Table& current_tab, bool first);
+    void weird_join(DynamicTables& save, std::vector<int>& index1, std::vector<int>& index2);
+    std::unordered_set<GroundAtom,TupleHash> determine_changes(DynamicTables& save, std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash>& old_result);
+    void determine_changes_crossProduct(DynamicTables& save, Table& old_tab, Table& new_tab);
+    void thesis_filter_static(const ActionSchema &action, GroundAtom &check, DynamicTables &save);
 
     bool thesis_called = false;
  private:

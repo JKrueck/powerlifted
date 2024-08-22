@@ -19,7 +19,7 @@ using namespace std;
 * an empty relation is produced.
 *
 */
-size_t semi_join(Table &t1, const Table &t2, ThesisSave &save) {
+size_t semi_join(Table &t1, const Table &t2, DynamicTables &save) {
 
     auto matches = compute_matching_columns(t1, t2);
     save.matching_columns = matches;

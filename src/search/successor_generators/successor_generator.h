@@ -46,7 +46,7 @@ public:
      * instantiation of the action schema.
      */
     virtual std::vector<LiftedOperatorId> get_applicable_actions(
-            const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<ThesisSave>> &thesis_tables, std::vector<std::vector<ThesisSave>> &thesis_semijoin, DBState &old_state) = 0;
+            const ActionSchema &action, const DBState &state,const Task &task, DynamicState &thesis, std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state) = 0;
 
     /**
      * Generate the state that results from applying the given action to the given state.
@@ -54,7 +54,7 @@ public:
     virtual DBState generate_successor(const LiftedOperatorId &op,
                                const ActionSchema& action,
                                const DBState &state,
-                                ThesisClass *thes_class) = 0;
+                                DynamicState *thes_class) = 0;
 
     void add_to_added_atoms(int i, const std::vector<int> & atom) {
         added_atoms.emplace_back(i, atom);

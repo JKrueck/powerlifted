@@ -26,7 +26,7 @@ GenericJoinSuccessor::GenericJoinSuccessor(const Task &task)
 }
 
 Table GenericJoinSuccessor::instantiate(const ActionSchema &action,
-                                        const DBState &state,const Task &task, ThesisClass &thesis, std::vector<std::vector<ThesisSave>> &thesis_tables, std::vector<std::vector<ThesisSave>> &thesis_semijoin, DBState &old_state)
+                                        const DBState &state,const Task &task, DynamicState &thesis, std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state)
 {
 
     if (action.is_ground()) {
@@ -45,8 +45,8 @@ Table GenericJoinSuccessor::instantiate(const ActionSchema &action,
 
     Table &working_table = tables[0];   
     for (size_t i = 1; i < tables.size(); ++i) {
-        ThesisSave save;
-        ThesisSave save2;
+        DynamicTables save;
+        DynamicTables save2;
         hash_join(working_table, tables[i]);
         // Filter out equalities
         filter_static(action, working_table, save);
@@ -58,7 +58,7 @@ Table GenericJoinSuccessor::instantiate(const ActionSchema &action,
     return working_table;
 }
 
-void GenericJoinSuccessor::filter_static(const ActionSchema &action, Table &working_table, ThesisSave &save)
+void GenericJoinSuccessor::filter_static(const ActionSchema &action, Table &working_table, DynamicTables &save)
 {
     const auto& tup_idx = working_table.tuple_index;
 
@@ -343,7 +343,7 @@ DBState GenericJoinSuccessor::generate_successor(
     const LiftedOperatorId &op,
     const ActionSchema& action,
     const DBState &state,
-    ThesisClass *thesis_class) {
+    DynamicState *thesis_class) {
 
     added_atoms.clear();
     vector<bool> new_nullary_atoms(state.get_nullary_atoms());
@@ -492,16 +492,16 @@ void GenericJoinSuccessor::apply_lifted_action_effects(const ActionSchema &actio
  * we know the actions are applicable.
  */
 std::vector<LiftedOperatorId> GenericJoinSuccessor::get_applicable_actions(
-        const ActionSchema &action, const DBState &state,const Task &task, ThesisClass &thesis,
-        std::vector<std::vector<ThesisSave>> &thesis_tables, std::vector<std::vector<ThesisSave>> &thesis_semijoin, DBState &old_state)
+        const ActionSchema &action, const DBState &state,const Task &task, DynamicState &thesis,
+        std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state)
 {
     std::vector<LiftedOperatorId> applicable;
     if (is_trivially_inapplicable(state, action)) {
         if(thesis.is_enabled()){
             //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
             //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
-            std::vector<ThesisSave> thesis_empty_joins;
-            std::vector<ThesisSave> thesis_empty_semijoins;
+            std::vector<DynamicTables> thesis_empty_joins;
+            std::vector<DynamicTables> thesis_empty_semijoins;
             thesis_tables.at(action.get_index()) = std::move(thesis_empty_joins);
             thesis_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
         }

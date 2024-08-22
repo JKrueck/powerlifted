@@ -52,23 +52,23 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
 
     //Save the intermediate hash-join tables at a global level and per action
-    std::vector<std::vector<ThesisSave>> thesis_join_table_at_state;
+    std::vector<std::vector<DynamicTables>> thesis_join_table_at_state;
     thesis_join_table_at_state.resize(task.get_action_schemas().size());
     //As we always want to use the join tables from the prior state, we need to save all of them on a per state basis
-    std::unordered_map<int, std::vector<std::vector<ThesisSave>>> thesis_join_table_memory; 
+    std::unordered_map<int, std::vector<std::vector<DynamicTables>>> thesis_join_table_memory; 
     thesis_join_table_memory.insert({0,thesis_join_table_at_state});
 
     //Save the intermediate semi-join tables at a global level and per action
-    std::vector<std::vector<ThesisSave>> thesis_semijoin_table_at_state_first;
+    std::vector<std::vector<DynamicTables>> thesis_semijoin_table_at_state_first;
     thesis_semijoin_table_at_state_first.resize(task.get_action_schemas().size());
     //As we always want to use the join tables from the prior state, we need to save all of them on a per state basis
-    std::unordered_map<int, std::vector<std::vector<ThesisSave>>> thesis_semijoin_table_memory;
+    std::unordered_map<int, std::vector<std::vector<DynamicTables>>> thesis_semijoin_table_memory;
     thesis_semijoin_table_memory.insert({0,thesis_semijoin_table_at_state_first});
 
     //Storage for classes per state
     //intended to work similar to queue
-    std::unordered_map<int,ThesisClass> thesis_state_memory;
-    ThesisClass initial = ThesisClass(true,task.get_action_schema_by_index(0));
+    std::unordered_map<int,DynamicState> thesis_state_memory;
+    DynamicState initial = DynamicState(true,task.get_action_schema_by_index(0));
     initial.set_parent_state_id(0);
     initial.old_indices.resize(task.get_action_schemas().size());
     thesis_state_memory.insert({0,initial});
@@ -77,7 +77,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     old_indices_gblhack.resize(task.get_action_schemas().size());
 
     //saving what was the previous state globally and then using the packer to pass it to yannakakis instead of 
-    //always saving the previous state in ThesisClass
+    //always saving the previous state in DynamicState
     std::unordered_map<StateID,StateID,ThesisStateIDHasher> thesis_previous_state;
     thesis_previous_state.insert_or_assign(StateID::no_state, StateID::no_state);
 
@@ -126,7 +126,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         DBState state = packer.unpack(space.get_state(sid));
 
         //Get the thesis object that belongs to the state from the queue
-        ThesisClass old_thesis = thesis_state_memory.at(sid.id());
+        DynamicState old_thesis = thesis_state_memory.at(sid.id());
         //remove the thesis object from memory
         thesis_state_memory.erase(sid.id());
 
@@ -142,7 +142,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         
         //get all hash tables that were computed in the previous state
         thesis_join_table_at_state = thesis_join_table_memory.at(old_thesis.get_parent_state_id());
-        std::vector<std::vector<ThesisSave>> thesis_semijoin_table_at_state = thesis_semijoin_table_memory.at(old_thesis.get_parent_state_id());
+        std::vector<std::vector<DynamicTables>> thesis_semijoin_table_at_state = thesis_semijoin_table_memory.at(old_thesis.get_parent_state_id());
         thesis_semijoin_table_at_state.resize(task.get_action_schemas().size());
         if(sid.id()!=0){
             thesis_semijoin_table_memory.insert_or_assign(sid.id(),thesis_semijoin_table_at_state);
@@ -241,7 +241,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             
             for (const LiftedOperatorId& op_id:applicable) {
                 //Create one new Thesis object per state
-                ThesisClass thesis_successor(false,action);
+                DynamicState thesis_successor(false,action);
                 
                 
                 thesis_successor.set_parent_state_id(sid.id());

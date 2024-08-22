@@ -9,6 +9,6 @@
 
 class Table;
 
-void project(Table &t, const std::unordered_set<int> &over, ThesisSave &join_save, int key_index);
+void project(Table &t, const std::unordered_set<int> &over, DynamicTables &join_save, int key_index);
 
 #endif //SEARCH_PROJECT_H

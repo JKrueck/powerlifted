@@ -6,7 +6,7 @@
 #include "../successor_generators/successor_generator.h"
 
 class Table;
-struct ThesisSave;
+struct DynamicTables;
 
 /**
  * @brief Semi join two tables using loop-based approach. Result is written in
@@ -20,6 +20,6 @@ struct ThesisSave;
  * @param t2: Table on the right of the semi-join.
  * @return  Size of the working table.
  */
-std::size_t semi_join(Table &t1, const Table &t2, ThesisSave &save);
+std::size_t semi_join(Table &t1, const Table &t2, DynamicTables &save);
 
 #endif //SEARCH_SEMI_JOIN_H

@@ -170,7 +170,7 @@ FullReducerSuccessorGenerator::FullReducerSuccessorGenerator(const Task &task)
  * @return
  */
 Table FullReducerSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state,
-            const Task &task, ThesisClass &thesis, std::vector<std::vector<ThesisSave>> &thesis_tables, std::vector<std::vector<ThesisSave>> &thesis_semijoin, DBState &old_state
+            const Task &task, DynamicState &thesis, std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state
                                                 )
 {
     if (action.is_ground()) {

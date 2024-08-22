@@ -8,7 +8,7 @@
 
 using namespace std;
 
-void project(Table &t, const std::unordered_set<int> &over, ThesisSave &join_save, int key_index) {
+void project(Table &t, const std::unordered_set<int> &over, DynamicTables &join_save, int key_index) {
 
     /*
      * This projection is not a canonical projection. We still need to keep *a full assignment*

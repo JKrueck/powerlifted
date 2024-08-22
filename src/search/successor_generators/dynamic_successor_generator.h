@@ -11,7 +11,8 @@
 #include "../structures.h"
 #include "../action_schema.h"
 
-struct ThesisSave{
+//Formerly ThesisSave
+struct DynamicTables{
     std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash> pos1_hashtable;
     std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash> pos2_hashtable;
     
@@ -21,7 +22,6 @@ struct ThesisSave{
 
     //First:=order.second; Second:=order.first
     std::vector<std::pair<int,int>> matching_columns;
-
     //Facts deleted through the semi-join process
     std::unordered_set<std::vector<int>,TupleHash> pos1_deleted;
     std::unordered_set<std::vector<int>,TupleHash> pos1_added;
@@ -49,7 +49,7 @@ struct ThesisSave{
     bool check_static = false;
 
 
-    ThesisSave() = default;
+    DynamicTables() = default;
 
     Table generate_table(){
         this->result.tuples.clear();
@@ -62,7 +62,7 @@ struct ThesisSave{
         return this->result;
     }
 
-    ThesisSave* refresh_tables(){
+    DynamicTables* refresh_tables(){
         this->pos1_added.clear();
         this->pos1_deleted.clear();
         this->pos2_added.clear();
@@ -76,22 +76,23 @@ struct ThesisSave{
 
 };
 
-class ThesisClass
+//Formerly ThesisClass
+class DynamicState
 {
 
 private:
-    bool thesis_enable;
+    bool dynamic_enabled;
     
     int parent_state_id;
     
     //added and deleted atoms in comparison to the parent state of this object
-    std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> thesis_add_effect_map;
-    std::unordered_map<int,bool> thesis_delete_effects;
-    std::vector<int> thesis_instantiation;
+    std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> add_effect_map;
+    std::unordered_map<int,bool> delete_effects;
+    std::vector<int> instantiation;
 
 public:
 
-    ThesisClass(bool enable, ActionSchema act) :   thesis_enable(enable),action_id(act.get_index())
+    DynamicState(bool enable, ActionSchema act) :   dynamic_enabled(enable),action_id(act.get_index())
     {}
 
     //Statistics
@@ -128,19 +129,19 @@ public:
     std::vector<std::unordered_map<int, std::vector<int>>> old_indices;
 
     void set_add_effect_map(std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> map){
-        this->thesis_add_effect_map = std::move(map);
+        this->add_effect_map = std::move(map);
     }
 
     std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> get_add_effect_map(){
-        return this->thesis_add_effect_map;
+        return this->add_effect_map;
     }
 
     void set_delete_effect_map(std::unordered_map<int,bool> del_eff){
-        this->thesis_delete_effects = std::move(del_eff);
+        this->delete_effects = std::move(del_eff);
     }
 
     std::unordered_map<int,bool>  get_del_eff(){
-        return this->thesis_delete_effects;
+        return this->delete_effects;
     }
 
 
@@ -157,22 +158,22 @@ public:
     }
 
     bool is_enabled() const{
-        return thesis_enable;
+        return dynamic_enabled;
     }
 
     //Enable or disable dynamic successor generation
     void set_status(bool status){
-        this->thesis_enable = status;
+        this->dynamic_enabled= status;
     }
 
     void set_instantiation(const std::vector<int>& inst){
         for(auto it:inst){
-            thesis_instantiation.push_back(it);
+            instantiation.push_back(it);
         }
     }
 
     std::vector<int> get_instantiation(){
-        return thesis_instantiation;
+        return instantiation;
     }
             
 
