@@ -19,6 +19,8 @@ class BreadthFirstWidthSearch : public SearchBase {
     bool only_effects_opt;
     bool early_stop;
 
+    bool thesis_enabled;
+
 protected:
     SearchSpace<PackedStateT> space;
 

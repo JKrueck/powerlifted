@@ -23,6 +23,8 @@ class AlternatedBFWS : public SearchBase {
 
     std::string heuristic_type;
 
+    bool thesis_enabled;
+
 protected:
     SearchSpace<PackedStateT> space;
 
@@ -35,6 +37,7 @@ public:
         std::cout << "Using Dual-Queue BFWS" << std::endl;
         // By default we use h-add as heuristic, unless explicitly asked to use FF
         heuristic_type = opt.get_evaluator();
+        thesis_enabled = opt.get_thesis_state();
     }
 
     using StatePackerT = typename PackedStateT::StatePackerT;

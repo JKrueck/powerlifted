@@ -11,6 +11,8 @@
 #include "../structures.h"
 #include "../action_schema.h"
 
+#include "../search_engines/nodes.h"
+
 //Formerly ThesisSave
 struct DynamicTables{
     std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash> pos1_hashtable;
@@ -176,6 +178,50 @@ public:
         return instantiation;
     }
             
+
+};
+
+class GenericDynamicSearchSetup{
+public:
+
+    std::vector<std::vector<DynamicTables>> join_table_per_state;
+    std::unordered_map<int, std::vector<std::vector<DynamicTables>>> join_table_memory; 
+    std::vector<std::vector<DynamicTables>> semijoin_table_first_state;
+    std::unordered_map<int, std::vector<std::vector<DynamicTables>>> semijoin_table_memory;
+    std::unordered_map<int,DynamicState> dynamic_state_memory;
+    std::vector<std::unordered_map<int, GroundAtom>> old_indices_gblhack;
+    std::unordered_map<StateID,StateID,ThesisStateIDHasher> dynamic_previous_state;
+
+    GenericDynamicSearchSetup(Task task){
+
+        //Save the intermediate hash-join tables at a global level and per action
+        this->join_table_per_state.resize(task.get_action_schemas().size());
+        //As we always want to use the join tables from the prior state, we need to save all of them on a per state basis
+        this->join_table_memory.insert({0,this->join_table_per_state});
+
+        //Save the intermediate semi-join tables at a global level and per action
+        this->semijoin_table_first_state.resize(task.get_action_schemas().size());
+        //As we always want to use the join tables from the prior state, we need to save all of them on a per state basis
+        this->semijoin_table_memory.insert({0,this->semijoin_table_first_state});
+
+        //Storage for classes per state
+        //intended to work similar to queue
+        DynamicState initial = DynamicState(true,task.get_action_schema_by_index(0));
+        initial.set_parent_state_id(0);
+        initial.old_indices.resize(task.get_action_schemas().size());
+        this->dynamic_state_memory.insert({0,initial});
+
+        
+        this->old_indices_gblhack.resize(task.get_action_schemas().size());
+
+        //saving what was the previous state globally and then using the packer to pass it to yannakakis instead of 
+        //always saving the previous state in DynamicState
+        
+        this->dynamic_previous_state.insert_or_assign(StateID::no_state, StateID::no_state);
+    };
+
+    void state_delta(const Task& task, DynamicState& old, std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>>& predicate_to_add_diff, std::unordered_map<int,bool>& diff_delete);
+    void time_tracking(DynamicState& dynamic_successor, DynamicState& old_dynamic_state);
 
 };
 

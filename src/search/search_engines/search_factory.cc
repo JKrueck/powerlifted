@@ -37,11 +37,11 @@ SearchFactory::create(const Options &opt, const std::string& method, const std::
     else if (boost::iequals(method, "bfws2")) {
         if (using_ext_state) return new BreadthFirstWidthSearch<ExtensionalPackedState>(2, opt, StandardNovelty::R_0);
         else return new BreadthFirstWidthSearch<SparsePackedState>(2, opt, StandardNovelty::R_0);
-    }
+    }*/
     else if (boost::iequals(method, "bfws1-rx")) {
         if (using_ext_state) return new BreadthFirstWidthSearch<ExtensionalPackedState>(1, opt, StandardNovelty::R_X);
         else return new BreadthFirstWidthSearch<SparsePackedState>(1, opt, StandardNovelty::R_X);
-    }
+    }/*
     else if (boost::iequals(method, "bfws2-rx")) {
         if (using_ext_state) return new BreadthFirstWidthSearch<ExtensionalPackedState>(2, opt, StandardNovelty::R_X);
         else return new BreadthFirstWidthSearch<SparsePackedState>(2, opt, StandardNovelty::R_X);
@@ -69,11 +69,11 @@ SearchFactory::create(const Options &opt, const std::string& method, const std::
     else if (boost::iequals(method, "dq-bfws2-rx")) {
         if (using_ext_state) return new DualQueueBFWS<ExtensionalPackedState>(2, opt);
         else return new DualQueueBFWS<SparsePackedState>(2, opt);
-    }
+    }*/
     else if (boost::iequals(method, "alt-bfws1")) {
         if (using_ext_state) return new AlternatedBFWS<ExtensionalPackedState>(1, opt);
         else return new AlternatedBFWS<SparsePackedState>(1, opt);
-    }
+    }/*
     else if (boost::iequals(method, "alt-bfws2")) {
         if (using_ext_state) return new AlternatedBFWS<ExtensionalPackedState>(2, opt);
         else return new AlternatedBFWS<SparsePackedState>(2, opt);

@@ -57,6 +57,7 @@ add_executable(search
         successor_generators/successor_generator_factory.cc successor_generators/successor_generator_factory.h
         #successor_generators/naive_successor.h
         #successor_generators/ordered_join_successor.cc successor_generators/ordered_join_successor.h
+        successor_generators/dynamic_successor_generator.cc successor_generators/dynamic_successor_generator.h
         successor_generators/generic_join_successor.cc successor_generators/generic_join_successor.h
         #successor_generators/full_reducer_successor_generator.cc successor_generators/full_reducer_successor_generator.h
         database/semi_join.h database/semi_join.cc
@@ -83,14 +84,14 @@ add_executable(search
         algorithms/dynamic_bitset.h
         search_statistics.cc search_statistics.h
         options.h open_lists/greedy_open_list.h
-        #search_engines/breadth_first_width_search.cc search_engines/breadth_first_width_search.h
+        search_engines/breadth_first_width_search.cc search_engines/breadth_first_width_search.h
         novelty/standard_novelty.cc novelty/standard_novelty.h
         open_lists/tiebreaking_open_list.h
         novelty/achieved_ground_atoms.h
         novelty/atom_counter.h
         #search_engines/dual_queue_bfws.cc search_engines/dual_queue_bfws.h
         novelty/node_novelty.h
-        #search_engines/alternated_bfws.cc search_engines/alternated_bfws.h
+        search_engines/alternated_bfws.cc search_engines/alternated_bfws.h
         #search_engines/lazy_search.cc search_engines/lazy_search.h
         #search_engines/lazy_search.cc search_engines/lazy_search.h
         #search_engines/astar_search.cc search_engines/astar_search.h

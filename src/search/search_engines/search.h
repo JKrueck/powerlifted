@@ -17,7 +17,7 @@ class Heuristic;
 class Task;
 class DBState;
 class SearchNode;
-class ThesisClass;
+class DynamicState;
 template <typename StateT> class SearchSpace;
 
 class SearchBase {
