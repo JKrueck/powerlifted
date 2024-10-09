@@ -727,7 +727,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
     //The organic synthesis domain contains double facts - modeling a bond in both directions
     //These double facts somehow still cause problems
     bool extreme_hack_flag;
-    if(std::strcmp(task.get_domain_name().c_str(),"chemical") == 0) extreme_hack_flag = true;
+    if(std::strcmp(task.get_domain_name().c_str(),"chemical") == 0) extreme_hack_flag = false;
 
     time_t full_reducer = clock();
     long unsigned int counter = 0;
@@ -1584,17 +1584,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             }
             affected_tables[j.second] = counter;
             
-            tables[j.second] = save_obj.generate_table();
-
-            project(tables[j.second],project_over,save_obj, thesis.old_indices.at(action.get_index()).at(j.second).size());
             
-            if(tables[j.second].tuples.size()==0){
-                //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
-                //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
-                std::vector<DynamicTables> thesis_empty_semijoins;
-                dynamic_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
-                return Table::EMPTY_TABLE();
-            }
             if(iteration_add_storage.size()!=0){
                 std::unordered_set<GroundAtom, TupleHash>::iterator old = added_to_table[j.second].begin();
                 size_t example_size = iteration_add_storage.begin()->size();
@@ -1607,6 +1597,20 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 }
                 added_to_table[j.second].insert(iteration_add_storage.begin(), iteration_add_storage.end());
             }
+
+            tables[j.second] = save_obj.generate_table();
+
+            project(tables[j.second],project_over,save_obj, thesis.old_indices.at(action.get_index()).at(j.second).size());
+            
+            if(tables[j.second].tuples.size()==0){
+                //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
+                //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
+                std::vector<DynamicTables> thesis_empty_semijoins;
+                dynamic_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
+                return Table::EMPTY_TABLE();
+            }
+
+
         }else{
             tables[j.second] = thesis_tables.at(action.get_index()).at(counter).result;
             tables[j.second].tuple_index = thesis_tables.at(action.get_index()).at(counter).result_index;
