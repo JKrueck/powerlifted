@@ -1785,6 +1785,8 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
 
             }
             counter++;
+           
+            //cout << counter << endl;
         }
         // For the case where the action schema is cyclic
         Table &working_table = tables[remaining_join[action.get_index()][0]];
@@ -1808,6 +1810,8 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         thesis.time_normal+= clock()- full_time;
         if(iteration_time>thesis.max_succ_time_normal) thesis.max_succ_time_normal = iteration_time;
         
+        cout << working_table.tuples.size() << endl;
+
         return working_table;
     }
 

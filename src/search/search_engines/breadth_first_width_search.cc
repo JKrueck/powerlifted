@@ -90,7 +90,7 @@ utils::ExitCode BreadthFirstWidthSearch<PackedStateT>::search(const Task &task,
     statistics.inc_evaluations();
     cout << "Initial heuristic value " << heuristic_layer << endl;
 
-    GenericDynamicSearchSetup dynamic_setup(task);
+    GenericDynamicSearchSetup dynamic_setup(task, this->thesis_enabled);
 
     statistics.report_f_value_progress(heuristic_layer);
     queue.do_insertion(root_node.state_id, {novelty_value,

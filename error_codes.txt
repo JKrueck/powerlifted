@@ -1,0 +1,4 @@
+11: No solution found
+22: Out of memory
+250: out of range
+255: Out of time

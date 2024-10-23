@@ -117,7 +117,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
     cout << "Initial heuristic value " << heuristic_layer << endl;
     int initial_h = delete_free_h->compute_heuristic(task.initial_state, task);
 
-    GenericDynamicSearchSetup dynamic_setup(task);
+    GenericDynamicSearchSetup dynamic_setup(task, this->thesis_enabled);
 
     statistics.report_f_value_progress(initial_h);
     root_node.open(0, initial_h);
@@ -136,6 +136,13 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
     
     while (not open_list.empty()) {
         StateID sid = open_list.get_top_node();
+
+        cout << "state id: "<< sid.id() << endl;
+
+        if(sid.id()==198){
+            int stop1314 = 1123;
+        }
+
         SearchNode &node = space.get_node(sid);
         int g = node.g;
         if (node.status == SearchNode::Status::CLOSED) {
@@ -199,7 +206,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
             
             //Sort the instantiations by their hash
             //Maybe think about this. Now that we know that the algo works correctly, we can maybe remove this
-            std::sort(applicable.begin(),applicable.end());
+            //std::sort(applicable.begin(),applicable.end());
             
             thesis_time += clock() - thesis_timer;
             if(sid.id()==0){
@@ -215,7 +222,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
 
 
             for (const LiftedOperatorId& op_id:applicable) {
-                DynamicState dynamic_successor(false,action);
+                DynamicState dynamic_successor(this->thesis_enabled,action);
                 
                 dynamic_successor.set_parent_state_id(sid.id());
                 dynamic_successor.action_id = action.get_index();
@@ -253,11 +260,18 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                 statistics.inc_evaluated_states();
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
+                
+                if(true){
+                    cout << "Heuristic stuff: "<<h <<  ' '<< dist << ' '<< unsatisfied_goals << ' '<< novelty_value << ' '<< is_preferred << endl;
+                    cout << "action + inst: "<< action.get_name() << ' ' << op_id.get_instantiation() << endl;
+                }
+                
                 if (child_node.status==SearchNode::Status::NEW) {
                     // Inserted for the first time in the map
                     child_node.open(dist, h);
                     if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, dynamic_successor))
                         return utils::ExitCode::SUCCESS;
+               
                     open_list.do_insertion(child_node.state_id,
                                            h,
                                            dist,

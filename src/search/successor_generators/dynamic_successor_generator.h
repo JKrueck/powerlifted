@@ -192,7 +192,7 @@ public:
     std::vector<std::unordered_map<int, GroundAtom>> old_indices_gblhack;
     std::unordered_map<StateID,StateID,ThesisStateIDHasher> dynamic_previous_state;
 
-    GenericDynamicSearchSetup(Task task){
+    GenericDynamicSearchSetup(Task task, bool enable){
 
         //Save the intermediate hash-join tables at a global level and per action
         this->join_table_per_state.resize(task.get_action_schemas().size());
@@ -206,7 +206,7 @@ public:
 
         //Storage for classes per state
         //intended to work similar to queue
-        DynamicState initial = DynamicState(true,task.get_action_schema_by_index(0));
+        DynamicState initial = DynamicState(enable,task.get_action_schema_by_index(0));
         initial.set_parent_state_id(0);
         initial.old_indices.resize(task.get_action_schemas().size());
         this->dynamic_state_memory.insert({0,initial});

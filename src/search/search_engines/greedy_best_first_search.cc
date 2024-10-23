@@ -51,7 +51,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     queue.do_insertion(root_node.state_id, make_pair(heuristic_layer, 0));
 
 
-    GenericDynamicSearchSetup dynamic_setup(task);
+    GenericDynamicSearchSetup dynamic_setup(task, this->thesis_enabled);
     /*//Save the intermediate hash-join tables at a global level and per action
     std::vector<std::vector<DynamicTables>> dynamic_setup.join_table_per_state;
     dynamic_setup.join_table_per_state.resize(task.get_action_schemas().size());
