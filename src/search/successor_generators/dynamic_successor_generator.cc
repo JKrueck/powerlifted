@@ -53,4 +53,14 @@ void GenericDynamicSearchSetup::time_tracking(DynamicState& dynamic_successor, D
 
     dynamic_successor.max_succ_time_me = old_dynamic_state.max_succ_time_me;
     dynamic_successor.max_succ_time_normal = old_dynamic_state.max_succ_time_normal;
+};
+
+void GenericDynamicSearchSetup::clean_state_memory(int current_heuristic){
+    
+    if(this->heuristic_map.count(current_heuristic+2)!=0){
+        for(auto pointer : this->heuristic_map.at(current_heuristic+2)){
+            pointer->clear();
+        }
+    }
+   
 }

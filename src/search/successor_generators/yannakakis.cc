@@ -1810,7 +1810,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         thesis.time_normal+= clock()- full_time;
         if(iteration_time>thesis.max_succ_time_normal) thesis.max_succ_time_normal = iteration_time;
         
-        cout << working_table.tuples.size() << endl;
+        //cout << working_table.tuples.size() << endl;
 
         return working_table;
     }

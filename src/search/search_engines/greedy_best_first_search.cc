@@ -107,6 +107,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         statistics.report_f_value_progress(h); // In GBFS f = h.
         statistics.inc_expanded();
 
+        dynamic_setup.clean_state_memory(h);
+
+
+
         bool print = false;
         if(sid.id()==0){
             print = true;
@@ -350,6 +354,16 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 }
                 
             }
+        }
+
+        if(dynamic_setup.heuristic_map.count(h) == 0){
+            std::vector<std::vector<std::vector<DynamicTables>>*> dummy;
+            dummy.push_back(&dynamic_setup.semijoin_table_memory.at(sid.id()));
+            dummy.push_back(&dynamic_setup.join_table_memory.at(sid.id()));
+            dynamic_setup.heuristic_map.insert_or_assign(h, dummy);
+        }else{
+            dynamic_setup.heuristic_map.at(h).push_back(&dynamic_setup.semijoin_table_memory.at(sid.id()));
+            dynamic_setup.heuristic_map.at(h).push_back(&dynamic_setup.join_table_memory.at(sid.id()));
         }
     }
 

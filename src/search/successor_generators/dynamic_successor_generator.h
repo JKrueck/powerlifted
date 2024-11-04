@@ -183,14 +183,17 @@ public:
 
 class GenericDynamicSearchSetup{
 public:
+    using memory_table = std::unordered_map<int, std::vector<std::vector<DynamicTables>>>;
 
     std::vector<std::vector<DynamicTables>> join_table_per_state;
-    std::unordered_map<int, std::vector<std::vector<DynamicTables>>> join_table_memory; 
+    memory_table join_table_memory; 
     std::vector<std::vector<DynamicTables>> semijoin_table_first_state;
-    std::unordered_map<int, std::vector<std::vector<DynamicTables>>> semijoin_table_memory;
+    memory_table semijoin_table_memory;
     std::unordered_map<int,DynamicState> dynamic_state_memory;
     std::vector<std::unordered_map<int, GroundAtom>> old_indices_gblhack;
     std::unordered_map<StateID,StateID,ThesisStateIDHasher> dynamic_previous_state;
+
+    std::unordered_map<int, std::vector<std::vector<std::vector<DynamicTables>>*>> heuristic_map;
 
     GenericDynamicSearchSetup(Task task, bool enable){
 
@@ -222,6 +225,7 @@ public:
 
     void state_delta(const Task& task, DynamicState& old, std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>>& predicate_to_add_diff, std::unordered_map<int,bool>& diff_delete);
     void time_tracking(DynamicState& dynamic_successor, DynamicState& old_dynamic_state);
+    void clean_state_memory(int current_heuristic);
 
 };
 
