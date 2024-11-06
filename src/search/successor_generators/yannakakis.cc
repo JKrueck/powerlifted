@@ -1682,8 +1682,8 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         Table dynamic_table = dynamic_instantiate(action,state,task, thesis, dynamic_join, dynamic_semijoin,old_state);
         return dynamic_table;
     }else{
-        if(dynamic_semijoin.at(action.get_index()).size()!=0) dynamic_semijoin.at(action.get_index()).clear();
-        if(dynamic_join.at(action.get_index()).size()!=0) dynamic_join.at(action.get_index()).clear();
+        if(dynamic_semijoin.size()!=0 && dynamic_semijoin.at(action.get_index()).size()!=0) dynamic_semijoin.at(action.get_index()).clear();
+        if(dynamic_join.size()!=0 && dynamic_join.at(action.get_index()).size()!=0) dynamic_join.at(action.get_index()).clear();
         
         thesis.counter_normal++;
         time_t full_time = clock();

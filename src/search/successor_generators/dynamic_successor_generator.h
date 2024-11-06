@@ -188,6 +188,7 @@ public:
     std::vector<std::vector<DynamicTables>> join_table_per_state;
     memory_table join_table_memory; 
     std::vector<std::vector<DynamicTables>> semijoin_table_first_state;
+    std::vector<std::vector<DynamicTables>> join_table_first_state;
     memory_table semijoin_table_memory;
     std::unordered_map<int,DynamicState> dynamic_state_memory;
     std::vector<std::unordered_map<int, GroundAtom>> old_indices_gblhack;
@@ -198,9 +199,9 @@ public:
     GenericDynamicSearchSetup(Task task, bool enable){
 
         //Save the intermediate hash-join tables at a global level and per action
-        this->join_table_per_state.resize(task.get_action_schemas().size());
+        this->join_table_first_state.resize(task.get_action_schemas().size());
         //As we always want to use the join tables from the prior state, we need to save all of them on a per state basis
-        this->join_table_memory.insert({0,this->join_table_per_state});
+        this->join_table_memory.insert({0,this->join_table_first_state});
 
         //Save the intermediate semi-join tables at a global level and per action
         this->semijoin_table_first_state.resize(task.get_action_schemas().size());

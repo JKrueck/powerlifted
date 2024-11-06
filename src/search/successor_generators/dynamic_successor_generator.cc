@@ -56,11 +56,16 @@ void GenericDynamicSearchSetup::time_tracking(DynamicState& dynamic_successor, D
 };
 
 void GenericDynamicSearchSetup::clean_state_memory(int current_heuristic){
-    
+    //std::cout << "enter3 \n";
     if(this->heuristic_map.count(current_heuristic+2)!=0){
-        for(auto pointer : this->heuristic_map.at(current_heuristic+2)){
-            pointer->clear();
+        if(this->heuristic_map.at(current_heuristic+2).size()!=0){
+            while(this->heuristic_map.at(current_heuristic+2).size()!=0){
+                auto pointer = this->heuristic_map.at(current_heuristic+2).back();
+                pointer->clear();
+                this->heuristic_map.at(current_heuristic+2).pop_back();
+            }
         }
     }
+    //std::cout << "exit3\n";
    
 }

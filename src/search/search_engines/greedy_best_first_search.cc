@@ -146,12 +146,13 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         }
         
         //get all hash tables that were computed in the previous state
-        dynamic_setup.join_table_per_state = dynamic_setup.join_table_memory.at(old_dynamic_state.get_parent_state_id());
+        std::vector<std::vector<DynamicTables>> join_table_at_state = dynamic_setup.join_table_memory.at(old_dynamic_state.get_parent_state_id());
+        join_table_at_state.resize(task.get_action_schemas().size());
         std::vector<std::vector<DynamicTables>> semijoin_table_at_state = dynamic_setup.semijoin_table_memory.at(old_dynamic_state.get_parent_state_id());
         semijoin_table_at_state.resize(task.get_action_schemas().size());
         if(sid.id()!=0){
             dynamic_setup.semijoin_table_memory.insert_or_assign(sid.id(),semijoin_table_at_state);
-            dynamic_setup.join_table_memory.insert_or_assign(sid.id(), dynamic_setup.join_table_per_state);
+            dynamic_setup.join_table_memory.insert_or_assign(sid.id(), join_table_at_state);
         }
 
 
@@ -211,7 +212,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
             
             auto applicable = generator.get_applicable_actions(action, state,task, old_dynamic_state,
-                                dynamic_setup.join_table_per_state,semijoin_table_at_state,old_state);
+                                join_table_at_state,semijoin_table_at_state,old_state);
 
             //Sort the instantiations by their hash
             //Maybe think about this. Now that we know that the algo works correctly, we can maybe remove this
@@ -224,7 +225,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
             //Save the new dynamic tables that were generated through the applocable actions calculation
             dynamic_setup.semijoin_table_memory.at(sid.id()).at(action.get_index()) = std::move(semijoin_table_at_state.at(action.get_index()));
-            dynamic_setup.join_table_memory.at(sid.id()).at(action.get_index()) = std::move(dynamic_setup.join_table_per_state.at(action.get_index()));
+            dynamic_setup.join_table_memory.at(sid.id()).at(action.get_index()) = std::move(join_table_at_state.at(action.get_index()));
             dynamic_setup.old_indices_gblhack = old_dynamic_state.old_indices;
 
             if(false){
@@ -283,6 +284,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
                 DBState s = generator.generate_successor(op_id, action, state, &dynamic_successor);
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
+
+                if(child_node.state_id.id()==11){
+                    int stop134 = 0;
+                }
 
                 /*if(child_node.state_id.id()!=1){
                     if(child_node.state_id.id()!=14){
@@ -357,14 +362,17 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         }
 
         if(dynamic_setup.heuristic_map.count(h) == 0){
+            //std::cout << "enter1 \n";
             std::vector<std::vector<std::vector<DynamicTables>>*> dummy;
             dummy.push_back(&dynamic_setup.semijoin_table_memory.at(sid.id()));
             dummy.push_back(&dynamic_setup.join_table_memory.at(sid.id()));
             dynamic_setup.heuristic_map.insert_or_assign(h, dummy);
         }else{
+            //std::cout << "enter2 \n";
             dynamic_setup.heuristic_map.at(h).push_back(&dynamic_setup.semijoin_table_memory.at(sid.id()));
             dynamic_setup.heuristic_map.at(h).push_back(&dynamic_setup.join_table_memory.at(sid.id()));
         }
+        //std::cout << "exit1 \n";
     }
 
     print_no_solution_found(timer_start, thesis_time, thesis_initial_succ);
