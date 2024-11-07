@@ -1,3 +1,5 @@
-1: (oxidationofborane o065 o178 o064 o182 o177 o181 c046 c002 b071 c005 h184 h183 h180 h179 h059 h058 )
-2: (etherformationbysulfonatedisplacement h059 o065 c050 o070 o069 s072 h164 c021 o068 h165 c049 c046 )
-; cost = 2
+1: (aldolcondensation o1 o7 na1 h13 h12 c2 c7 o50 h50 h51 h52 c3 c1 o3 c6 )
+2: (michaeladditiontounsaturatedketones c11 h19 c2 c7 c12 o6 c13 c8 o4 )
+3: (dieckmanncyclization o5 c8 c13 h22 o6 c3 o4 c7 c8 h21 c12 c12 c11 c11 c2 h19 c8 )
+4: (decarboxylationofbetaketoesters o2 o50 h51 c7 c6 h13 o3 o4 c5 c8 c13 )
+; cost = 4

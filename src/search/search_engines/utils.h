@@ -25,7 +25,8 @@ void print_goal_found(
     const clock_t& timer_start,
     double thesis_time_needed,
     double thesis_init,
-    DynamicState the);
+    DynamicState the,
+    double cleanup);
 
 
 void extract_plan(

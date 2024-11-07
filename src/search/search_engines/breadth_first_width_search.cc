@@ -47,6 +47,7 @@ utils::ExitCode BreadthFirstWidthSearch<PackedStateT>::search(const Task &task,
     
     double thesis_time = 0.0;
     double thesis_initial_succ = 0.0;
+    double cleanup = 0.0;
     cout << "Starting BFWS" << endl;
     clock_t timer_start = clock();
     StatePackerT packer(task);
@@ -98,8 +99,8 @@ utils::ExitCode BreadthFirstWidthSearch<PackedStateT>::search(const Task &task,
                                             0});
 
     map_state_to_evaluators.insert({root_node.state_id.id(), NodeNovelty(gc_h0, unachieved_atoms_s0)});
-
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, dynamic_setup.dynamic_state_memory.at(0))) return utils::ExitCode::SUCCESS;
+    
+    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, dynamic_setup.dynamic_state_memory.at(0),cleanup)) return utils::ExitCode::SUCCESS;
 
     while (not queue.empty()) {
         StateID sid = queue.remove_min();
@@ -225,7 +226,7 @@ utils::ExitCode BreadthFirstWidthSearch<PackedStateT>::search(const Task &task,
                     continue;
 
                 child_node.open(dist, novelty_value);
-                if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, dynamic_successor)) return utils::ExitCode::SUCCESS;
+                if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, dynamic_successor, cleanup)) return utils::ExitCode::SUCCESS;
                 queue.do_insertion(child_node.state_id, {novelty_value, unsatisfied_goals, dist});
                 map_state_to_evaluators.insert({child_node.state_id.id(), NodeNovelty(unsatisfied_goals, unsatisfied_relevant_atoms)});
             

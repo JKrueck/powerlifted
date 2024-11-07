@@ -25,6 +25,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 {   
     double thesis_time = 0.0;
     double thesis_initial_succ = 0.0;
+    double cleanup_time = 0.0;
     cout << "Starting greedy best first search" << endl;
     clock_t timer_start = clock();
     StatePackerT packer(task);
@@ -85,7 +86,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     std::unordered_map<int,std::vector<int>> test_map;
 
 
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, dynamic_setup.dynamic_state_memory.at(0))) return utils::ExitCode::SUCCESS;
+    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, dynamic_setup.dynamic_state_memory.at(0), cleanup_time)) return utils::ExitCode::SUCCESS;
 
     time_t intermediate = clock();
     while (not queue.empty()) {
@@ -107,7 +108,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         statistics.report_f_value_progress(h); // In GBFS f = h.
         statistics.inc_expanded();
 
+        
+        double time_clean = clock();
         dynamic_setup.clean_state_memory(h);
+        cleanup_time += double(clock()-time_clean);
 
 
 
@@ -157,7 +161,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
 
        
-        if (check_goal(task, generator, timer_start, state, node, space, thesis_time, thesis_initial_succ, old_dynamic_state)){
+        if (check_goal(task, generator, timer_start, state, node, space, thesis_time, thesis_initial_succ, old_dynamic_state, cleanup_time)){
             cout << "Size of semijoin memory: " << dynamic_setup.semijoin_table_memory.size() << endl;
             return utils::ExitCode::SUCCESS;
         } 

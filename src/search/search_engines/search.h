@@ -41,7 +41,8 @@ public:
                     const SearchSpace<PackedStateT> &space,
                     double thesis_time,
                     double thesis_initial,
-                    DynamicState the) const;
+                    DynamicState the,
+                    double cleanup) const;
 
 protected:
 

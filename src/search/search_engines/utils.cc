@@ -26,7 +26,7 @@ void print_no_solution_found(const clock_t& timer_start,double thesis_time_neede
 
 void print_goal_found(
     const SuccessorGenerator &generator,
-    const clock_t& timer_start,double thesis_time_needed, double thesis_init, DynamicState thes)
+    const clock_t& timer_start,double thesis_time_needed, double thesis_init, DynamicState thes, double cleanup)
 {
     cout << "Goal found at: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;
     cout << "Total time: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;
@@ -75,6 +75,8 @@ void print_goal_found(
     auto perc = (thesis_time_needed/CLOCKS_PER_SEC)/(double(clock()-timer_start)/CLOCKS_PER_SEC);
     if(perc<0.0001) perc = 0;
     cout << "Share of the successor generation on the overall runtime: " << perc << endl;
+
+    cout << "Time used for cleaning up memory: " << cleanup / CLOCKS_PER_SEC<< endl;
 
     cout << "CLOCKS_PER_SEC: " << CLOCKS_PER_SEC << endl; 
     

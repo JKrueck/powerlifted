@@ -84,6 +84,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
     
     double thesis_time = 0.0;
     double thesis_initial_succ = 0.0;
+    double cleanup = 0.0;
     cout << "Starting AlternatedBFWS" << endl;
     clock_t timer_start = clock();
     StatePackerT packer(task);
@@ -130,7 +131,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
 
     map_state_to_evaluators.insert({root_node.state_id.id(), NodeNovelty(gc_h0, unachieved_atoms_s0)});
 
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, dynamic_setup.dynamic_state_memory.at(0))) return utils::ExitCode::SUCCESS;
+    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, dynamic_setup.dynamic_state_memory.at(0), cleanup)) return utils::ExitCode::SUCCESS;
 
     int heuristic_layer = initial_h;
     
@@ -269,7 +270,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                 if (child_node.status==SearchNode::Status::NEW) {
                     // Inserted for the first time in the map
                     child_node.open(dist, h);
-                    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, dynamic_successor))
+                    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, dynamic_successor, cleanup))
                         return utils::ExitCode::SUCCESS;
                
                     open_list.do_insertion(child_node.state_id,

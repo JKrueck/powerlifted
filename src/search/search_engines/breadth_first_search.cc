@@ -20,6 +20,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
     cout << "Starting breadth first search" << endl;
     double thesis_time = 0.0;
     double thesis_init = 0.0;
+    double cleanup = 0.0;
     clock_t timer_start = clock();
 
     StatePackerT packer(task);
@@ -69,7 +70,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
     std::vector<std::unordered_map<int, GroundAtom>> old_indices_gblhack;
     old_indices_gblhack.resize(task.get_action_schemas().size());
 
-     if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_init, thesis_state_memory.at(0))) return utils::ExitCode::SUCCESS;
+     if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_init, thesis_state_memory.at(0), cleanup)) return utils::ExitCode::SUCCESS;
 
     time_t intermediate = clock();
     while (not queue.empty()) {
@@ -107,7 +108,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
             thesis_join_table_memory.insert_or_assign(sid.id(), thesis_join_table_at_state);
         }
 
-        if (check_goal(task, generator, timer_start, state, node, space, thesis_time, thesis_init, old_thesis)) return utils::ExitCode::SUCCESS;
+        if (check_goal(task, generator, timer_start, state, node, space, thesis_time, thesis_init, old_thesis, cleanup)) return utils::ExitCode::SUCCESS;
 
         time_t thesis_timer = clock();
         if(this->thesis_enabled && sid.id()!=0){
@@ -236,7 +237,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
                 if (child_node.status == SearchNode::Status::NEW) {
                     child_node.open(node.f+1);
 
-                    if (check_goal(task, generator, timer_start, s, child_node, space, thesis_time, thesis_init, old_thesis)) return utils::ExitCode::SUCCESS;
+                    if (check_goal(task, generator, timer_start, s, child_node, space, thesis_time, thesis_init, old_thesis, cleanup)) return utils::ExitCode::SUCCESS;
 
                     queue.emplace(child_node.state_id);
                     currently_relevant.insert(child_node.state_id.id());
