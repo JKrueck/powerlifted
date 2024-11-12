@@ -60,8 +60,13 @@ void GenericDynamicSearchSetup::clean_state_memory(int current_heuristic){
     if(this->heuristic_map.count(current_heuristic+2)!=0){
         if(this->heuristic_map.at(current_heuristic+2).size()!=0){
             while(this->heuristic_map.at(current_heuristic+2).size()!=0){
-                auto pointer = this->heuristic_map.at(current_heuristic+2).back();
-                pointer->clear();
+                auto it = this->heuristic_map.at(current_heuristic+2).back();
+                if(it.second==0){
+                    this->semijoin_table_memory.erase(it.first);
+                }else{
+                    this->join_table_memory.erase(it.first);
+                }
+    
                 this->heuristic_map.at(current_heuristic+2).pop_back();
             }
         }

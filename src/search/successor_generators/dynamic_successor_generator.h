@@ -194,7 +194,7 @@ public:
     std::vector<std::unordered_map<int, GroundAtom>> old_indices_gblhack;
     std::unordered_map<StateID,StateID,ThesisStateIDHasher> dynamic_previous_state;
 
-    std::unordered_map<int, std::vector<std::vector<std::vector<DynamicTables>>*>> heuristic_map;
+    std::unordered_map<int, std::vector<std::pair<GenericDynamicSearchSetup::memory_table::iterator, int>>> heuristic_map;
 
     GenericDynamicSearchSetup(Task task, bool enable){
 
