@@ -84,7 +84,6 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
     
     double thesis_time = 0.0;
     double thesis_initial_succ = 0.0;
-    double cleanup = 0.0;
     cout << "Starting AlternatedBFWS" << endl;
     clock_t timer_start = clock();
     StatePackerT packer(task);
@@ -118,7 +117,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
     cout << "Initial heuristic value " << heuristic_layer << endl;
     int initial_h = delete_free_h->compute_heuristic(task.initial_state, task);
 
-    GenericDynamicSearchSetup dynamic_setup(task, this->thesis_enabled);
+    GenericDynamicSearchSetup dynamic_setup(task);
 
     statistics.report_f_value_progress(initial_h);
     root_node.open(0, initial_h);
@@ -131,19 +130,11 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
 
     map_state_to_evaluators.insert({root_node.state_id.id(), NodeNovelty(gc_h0, unachieved_atoms_s0)});
 
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, dynamic_setup.dynamic_state_memory.at(0), cleanup)) return utils::ExitCode::SUCCESS;
+    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time)) return utils::ExitCode::SUCCESS;
 
     int heuristic_layer = initial_h;
-    
     while (not open_list.empty()) {
         StateID sid = open_list.get_top_node();
-
-        cout << "state id: "<< sid.id() << endl;
-
-        if(sid.id()==198){
-            int stop1314 = 1123;
-        }
-
         SearchNode &node = space.get_node(sid);
         int g = node.g;
         if (node.status == SearchNode::Status::CLOSED) {
@@ -172,68 +163,32 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                  << ", time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << "]" << '\n';
         }
 
-        //Get the thesis object that belongs to the state from the queue
-        DynamicState old_dynamic_state = dynamic_setup.dynamic_state_memory.at(sid.id());
-        //remove the thesis object from memory
-        dynamic_setup.dynamic_state_memory.erase(sid.id());
-
-        //get all hash tables that were computed in the previous state
-        dynamic_setup.join_table_per_state = dynamic_setup.join_table_memory.at(old_dynamic_state.get_parent_state_id());
-        std::vector<std::vector<DynamicTables>> semijoin_table_at_state = dynamic_setup.semijoin_table_memory.at(old_dynamic_state.get_parent_state_id());
-        semijoin_table_at_state.resize(task.get_action_schemas().size());
-        if(sid.id()!=0){
-            dynamic_setup.semijoin_table_memory.insert_or_assign(sid.id(),semijoin_table_at_state);
-            dynamic_setup.join_table_memory.insert_or_assign(sid.id(), dynamic_setup.join_table_per_state);
-        }
-
-        if(this->thesis_enabled && sid.id()!=0){
-            std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_add_diff;
-            std::unordered_map<int,bool> diff_delete;
-
-            dynamic_setup.state_delta(task, old_dynamic_state, predicate_to_add_diff, diff_delete);
-        }
-
 
         for (const auto& action:task.get_action_schemas()) {
 
-            time_t thesis_timer = clock();
-            time_t thesis_initial_timer = clock();
-            old_dynamic_state.old_indices = dynamic_setup.old_indices_gblhack;
 
-            DBState old_state;
+            //Storage for the Yannakis Table
+            Table thes_table = Table::EMPTY_TABLE();
+            //Storage for the hash-join matches
+            std::unordered_set<int> thesis_matching;
+            //Storage of the correspondence between tuple indices in the join tables and predicate index
+            std::unordered_map<int,std::vector<int>> thesis_indices;
+            //Create one new Thesis object per state
+            ThesisClass thesis_successor(true,action);
 
-            auto applicable = generator.get_applicable_actions(action, state,task, old_dynamic_state,
-                                dynamic_setup.join_table_per_state,semijoin_table_at_state,old_state);
+            std::vector<std::vector<std::pair<Table,bool>>> thesis_join_table_per_state;
+            std::vector<std::vector<Table>> thesis_semijoin;
+            auto applicable = generator.get_applicable_actions(action, state,task, thesis_successor, thesis_join_table_per_state, thesis_semijoin, state);
             
-            //Sort the instantiations by their hash
-            //Maybe think about this. Now that we know that the algo works correctly, we can maybe remove this
-            //std::sort(applicable.begin(),applicable.end());
-            
-            thesis_time += clock() - thesis_timer;
-            if(sid.id()==0){
-                thesis_initial_succ += clock() - thesis_initial_timer;
-            }
-
-            //Save the new dynamic tables that were generated through the applocable actions calculation
-            dynamic_setup.semijoin_table_memory.at(sid.id()).at(action.get_index()) = std::move(semijoin_table_at_state.at(action.get_index()));
-            dynamic_setup.join_table_memory.at(sid.id()).at(action.get_index()) = std::move(dynamic_setup.join_table_per_state.at(action.get_index()));
-            dynamic_setup.old_indices_gblhack = old_dynamic_state.old_indices;
+            //thesis_successor.insert_table(thes_table);
+            //thesis_successor.insert_tuple_indices(thesis_indices);
+            //thesis_successor.insert_match(thesis_matching);
             
             statistics.inc_generated(applicable.size());
 
 
             for (const LiftedOperatorId& op_id:applicable) {
-                DynamicState dynamic_successor(this->thesis_enabled,action);
-                
-                dynamic_successor.set_parent_state_id(sid.id());
-                dynamic_successor.action_id = action.get_index();
-                dynamic_successor.set_instantiation(op_id.get_instantiation());
-
-                dynamic_setup.time_tracking(dynamic_successor, old_dynamic_state);
-                dynamic_successor.old_indices = old_dynamic_state.old_indices;
-                
-                
-                DBState s = generator.generate_successor(op_id, action, state, &dynamic_successor);
+                DBState s = generator.generate_successor(op_id, action, state, &thesis_successor);
 
                 bool is_preferred = is_useful_operator(task, s, delete_free_h->get_useful_atoms());
                 int dist = g + action.get_cost();
@@ -261,18 +216,11 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                 statistics.inc_evaluated_states();
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
-                
-                if(true){
-                    cout << "Heuristic stuff: "<<h <<  ' '<< dist << ' '<< unsatisfied_goals << ' '<< novelty_value << ' '<< is_preferred << endl;
-                    cout << "action + inst: "<< action.get_name() << ' ' << op_id.get_instantiation() << endl;
-                }
-                
                 if (child_node.status==SearchNode::Status::NEW) {
                     // Inserted for the first time in the map
                     child_node.open(dist, h);
-                    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, dynamic_successor, cleanup))
+                    if (check_goal(task, generator, timer_start, s, child_node, space, thesis_time))
                         return utils::ExitCode::SUCCESS;
-               
                     open_list.do_insertion(child_node.state_id,
                                            h,
                                            dist,
@@ -280,13 +228,6 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                                            novelty_value,
                                            is_preferred);
                     map_state_to_evaluators.insert({child_node.state_id.id(), NodeNovelty(unsatisfied_goals, unsatisfied_relevant_atoms)});
-
-                    dynamic_setup.dynamic_state_memory.insert({child_node.state_id.id(),dynamic_successor});
-                    //create a new empty join_table memory for the new state
-                    std::vector<std::vector<Table>> thesis_join_at_state;
-                    std::vector<std::vector<Table>> thesis_semijoin_at_state;
-                    //remember that sid is the parent state of the current child node
-                    dynamic_setup.dynamic_previous_state.insert_or_assign(child_node.state_id,sid);
                 } else {
                     if (dist < child_node.g) {
                         child_node.open(dist, h); // Reopening
@@ -297,21 +238,13 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                                                unsatisfied_goals,
                                                novelty_value,
                                                is_preferred);
-
-                        dynamic_setup.dynamic_state_memory.insert_or_assign(child_node.state_id.id(),dynamic_successor);
-
-                        //create a new empty join_table memory for the new state
-                        std::vector<std::vector<Table>> thesis_join_at_state;
-                        std::vector<std::vector<Table>> thesis_semijoin_at_state;
-                        //remember that sid is the parent state of the current child node
-                        dynamic_setup.dynamic_previous_state.insert_or_assign(child_node.state_id,sid);
                     }
                 }
             }
         }
     }
 
-    print_no_solution_found(timer_start, thesis_time, thesis_initial_succ);
+    print_no_solution_found(timer_start,thesis_time);
 
     return utils::ExitCode::SEARCH_UNSOLVABLE;
 
