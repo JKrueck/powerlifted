@@ -113,8 +113,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         dynamic_setup.clean_state_memory(h);
         cleanup_time += double(clock()-time_clean);
 
-
-
         bool print = false;
         if(sid.id()==0){
             print = true;
