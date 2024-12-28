@@ -17,5 +17,4 @@ local-tests/
 dev/*
 build/*
 .vscode/*
-error_runs/*
 FilePathUndefined
