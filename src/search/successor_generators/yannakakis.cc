@@ -1713,7 +1713,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             
             if (s == 0) {
                 std::vector<DynamicTables> dummy_joins;
-                dynamic_semijoin.at(action.get_index()) = std::move(dummy_joins);
+                if(thesis.is_enabled()) dynamic_semijoin.at(action.get_index()) = std::move(dummy_joins);
                 return Table::EMPTY_TABLE();
             }
             if(thesis.is_enabled()){
@@ -1776,7 +1776,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             if(thesis.is_enabled()) dynamic_join_table.result = working_table;
             if (working_table.tuples.empty()) {
                 std::vector<DynamicTables> thesis_empty_joins;
-                dynamic_join.at(action.get_index()) = std::move(thesis_empty_joins);
+                if(thesis.is_enabled()) dynamic_join.at(action.get_index()) = std::move(thesis_empty_joins);
                 return working_table;
             }
             if(thesis.is_enabled()){
