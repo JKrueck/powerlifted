@@ -93,7 +93,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         StateID sid = queue.remove_min();
         SearchNode &node = space.get_node(sid);
 
-        //cout << "----current state: " << sid.id() << "----" << endl;
+        cout << "----current state: " << sid.id() << "----" << endl;
 
         if(sid.id()!=0){
             skip = false;
@@ -137,7 +137,12 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         //remove the thesis object from memory
         dynamic_setup.dynamic_state_memory.erase(sid.id());
 
-        if(false) {//sid.id() != 0 && sid.id()<130
+        //if the parent state tables have been cleaned up
+        if(dynamic_setup.join_table_memory.count(old_dynamic_state.get_parent_state_id()) == 0){
+            dynamic_setup.enable_block();
+        }
+
+        if(sid.id() != 0) {//sid.id() != 0 && sid.id()<130
             cout << "parent state: " << old_dynamic_state.get_parent_state_id() << endl;
             cout << "action used to get here: " << old_dynamic_state.get_action_id() << "->" << task.get_action_schema_by_index(old_dynamic_state.get_action_id()).get_name()<< endl;
             cout << "with instantiation: ";
@@ -147,15 +152,21 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             cout << endl;
         }
         
-        //get all hash tables that were computed in the previous state
-        std::vector<std::vector<DynamicTables>> join_table_at_state = dynamic_setup.join_table_memory.at(old_dynamic_state.get_parent_state_id());
-        join_table_at_state.resize(task.get_action_schemas().size());
-        std::vector<std::vector<DynamicTables>> semijoin_table_at_state = dynamic_setup.semijoin_table_memory.at(old_dynamic_state.get_parent_state_id());
-        semijoin_table_at_state.resize(task.get_action_schemas().size());
-        if(sid.id()!=0){
-            dynamic_setup.semijoin_table_memory.insert_or_assign(sid.id(),semijoin_table_at_state);
-            dynamic_setup.join_table_memory.insert_or_assign(sid.id(), join_table_at_state);
+        
+        std::vector<std::vector<DynamicTables>> join_table_at_state;
+        std::vector<std::vector<DynamicTables>> semijoin_table_at_state;
+        if(!dynamic_setup.block_status()){
+            //get all hash tables that were computed in the previous state
+            join_table_at_state = dynamic_setup.join_table_memory.at(old_dynamic_state.get_parent_state_id());
+            join_table_at_state.resize(task.get_action_schemas().size());
+            semijoin_table_at_state = dynamic_setup.semijoin_table_memory.at(old_dynamic_state.get_parent_state_id());
+            semijoin_table_at_state.resize(task.get_action_schemas().size());
+            if(sid.id()!=0){
+                dynamic_setup.semijoin_table_memory.insert_or_assign(sid.id(),semijoin_table_at_state);
+                dynamic_setup.join_table_memory.insert_or_assign(sid.id(), join_table_at_state);
+            }
         }
+        
 
 
        
@@ -164,7 +175,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             return utils::ExitCode::SUCCESS;
         } 
 
-        if(this->thesis_enabled && sid.id()!=0){
+        if(this->thesis_enabled && sid.id()!=0 && !dynamic_setup.block_status()){
             std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_add_diff;
             std::unordered_map<int,bool> diff_delete;
 
@@ -200,7 +211,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
 
-            if (sid.id()==32) {
+            if (sid.id()==8) {
                 if(action.get_index()==17){
                    int stop13 = 5;
                 }
@@ -214,7 +225,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
             
             auto applicable = generator.get_applicable_actions(action, state,task, old_dynamic_state,
-                                join_table_at_state,semijoin_table_at_state,old_state);
+                                join_table_at_state,semijoin_table_at_state,old_state, !dynamic_setup.block_status());
 
             //Sort the instantiations by their hash
             //Maybe think about this. Now that we know that the algo works correctly, we can maybe remove this
@@ -230,7 +241,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             dynamic_setup.join_table_memory.at(sid.id()).at(action.get_index()) = std::move(join_table_at_state.at(action.get_index()));
             dynamic_setup.old_indices_gblhack = old_dynamic_state.old_indices;
 
-            if(false){
+            if(true){
                 //Number of instantiations of action 
                 if(applicable.size()!=0)//
                     std::cout << "" << action.get_name() << " " << action.get_index() << " : " << applicable.size() << endl;
@@ -378,6 +389,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             dynamic_setup.heuristic_map.at(h).push_back(std::make_pair(dynamic_setup.semijoin_table_memory.find(sid.id()),0));
             dynamic_setup.heuristic_map.at(h).push_back(std::make_pair(dynamic_setup.join_table_memory.find(sid.id()),1));
         }
+
+        dynamic_setup.disable_block();
         //std::cout << "exit1 \n";
     }
 

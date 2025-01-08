@@ -1673,12 +1673,12 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
  * @return
  */
 Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, const DBState &state,
-        const Task &task, DynamicState &thesis, std::vector<std::vector<DynamicTables>> &dynamic_join, std::vector<std::vector<DynamicTables>> &dynamic_semijoin, DBState &old_state)
+        const Task &task, DynamicState &thesis, std::vector<std::vector<DynamicTables>> &dynamic_join, std::vector<std::vector<DynamicTables>> &dynamic_semijoin, DBState &old_state, bool enable)
 {
     if (action.is_ground()) {
         throw std::runtime_error("Shouldn't be calling instantiate() on a ground action");
     }
-    if(thesis.is_enabled() && (dynamic_semijoin.at(action.get_index()).size()!=0 && dynamic_join.at(action.get_index()).size()!=0)){
+    if(thesis.is_enabled() && (dynamic_semijoin.at(action.get_index()).size()!=0 && dynamic_join.at(action.get_index()).size()!=0) && enable){
         Table dynamic_table = dynamic_instantiate(action,state,task, thesis, dynamic_join, dynamic_semijoin,old_state);
         return dynamic_table;
     }else{

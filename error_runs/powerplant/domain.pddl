@@ -12,6 +12,7 @@
     (0Volt ?x - building)
     (transmissionSafe ?x - powerline)
     (systemsSafe)
+    (needsElectricity ?x - building)
 )
 (:action StartPowerplant
     :parameters (?p - powerplant)
@@ -20,17 +21,17 @@
 )
 (:action TransportHighVoltage
     :parameters (?p - powerplant ?t - transformer ?l - high_voltage_line)
-    :precondition (and (connected ?p ?t ?l) (1000Volt ?p) (transmissionSafe ?l))
+    :precondition (and (connected ?p ?t ?l) (1000Volt ?p) (transmissionSafe ?l) (needsElectricity ?t))
     :effect (1000Volt ?t)
 )
 (:action TransportLowVoltage
     :parameters (?b - building ?h - house ?l - low_voltage_line)
-    :precondition (and (connected ?b ?h ?l) (transmissionSafe ?l) (230Volt ?b))
+    :precondition (and (connected ?b ?h ?l) (transmissionSafe ?l) (230Volt ?b) (needsElectricity ?h))
     :effect (230Volt ?h)
 )
 (:action ChangeVoltage
     :parameters (?t - transformer)
-    :precondition (1000Volt ?t)
+    :precondition (and (1000Volt ?t) (systemsSafe))
     :effect (230Volt ?t)
 )
 )

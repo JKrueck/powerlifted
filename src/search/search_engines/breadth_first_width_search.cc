@@ -121,6 +121,14 @@ utils::ExitCode BreadthFirstWidthSearch<PackedStateT>::search(const Task &task,
         int unsatisfied_goal_parent = map_state_to_evaluators.at(sid.id()).unsatisfied_goals;
         int unsatisfied_relevant_atoms_parent = map_state_to_evaluators.at(sid.id()).unsatisfied_relevant_atoms;
 
+        double time_clean = clock();
+        dynamic_setup.clean_state_memory(h);
+        cleanup_time += double(clock()-time_clean);
+
+        //if the parent state tables have been cleaned up
+        if(dynamic_setup.join_table_memory.count(old_dynamic_state.get_parent_state_id()) == 0){
+            dynamic_setup.enable_block():
+        }
         
         
         //Get the thesis object that belongs to the state from the queue
@@ -128,16 +136,21 @@ utils::ExitCode BreadthFirstWidthSearch<PackedStateT>::search(const Task &task,
         //remove the thesis object from memory
         dynamic_setup.dynamic_state_memory.erase(sid.id());
 
-        //get all hash tables that were computed in the previous state
-        dynamic_setup.join_table_per_state = dynamic_setup.join_table_memory.at(old_dynamic_state.get_parent_state_id());
-        std::vector<std::vector<DynamicTables>> semijoin_table_at_state = dynamic_setup.semijoin_table_memory.at(old_dynamic_state.get_parent_state_id());
-        semijoin_table_at_state.resize(task.get_action_schemas().size());
-        if(sid.id()!=0){
-            dynamic_setup.semijoin_table_memory.insert_or_assign(sid.id(),semijoin_table_at_state);
-            dynamic_setup.join_table_memory.insert_or_assign(sid.id(), dynamic_setup.join_table_per_state);
+        std::vector<std::vector<DynamicTables>> join_table_at_state;
+        std::vector<std::vector<DynamicTables>> semijoin_table_at_state 
+        if(!dynamic_setup.block_status()){
+            //get all hash tables that were computed in the previous state
+            join_table_at_state = dynamic_setup.join_table_memory.at(old_dynamic_state.get_parent_state_id());
+            join_table_at_state.resize(task.get_action_schemas().size());
+            semijoin_table_at_state = dynamic_setup.semijoin_table_memory.at(old_dynamic_state.get_parent_state_id());
+            semijoin_table_at_state.resize(task.get_action_schemas().size());
+            if(sid.id()!=0){
+                dynamic_setup.semijoin_table_memory.insert_or_assign(sid.id(),semijoin_table_at_state);
+                dynamic_setup.join_table_memory.insert_or_assign(sid.id(), join_table_at_state);
+            }
         }
 
-        if(this->thesis_enabled && sid.id()!=0){
+        if(this->thesis_enabled && sid.id()!=0 && !dynamic_setup.block_status()){
             std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_add_diff;
             std::unordered_map<int,bool> diff_delete;
 
@@ -155,7 +168,7 @@ utils::ExitCode BreadthFirstWidthSearch<PackedStateT>::search(const Task &task,
 
 
             auto applicable = generator.get_applicable_actions(action, state,task, old_dynamic_state,
-                                dynamic_setup.join_table_per_state,semijoin_table_at_state,old_state);
+                                dynamic_setup.join_table_per_state,semijoin_table_at_state,old_state,!dynamic_setup.block_status());
             
             
             statistics.inc_generated(applicable.size());
@@ -239,6 +252,24 @@ utils::ExitCode BreadthFirstWidthSearch<PackedStateT>::search(const Task &task,
 
             }
         }
+
+        if(dynamic_setup.heuristic_map.count(h) == 0){
+            //std::cout << "enter1 \n";
+
+            std::vector<std::pair<GenericDynamicSearchSetup::memory_table::iterator, int>> dummy;
+            GenericDynamicSearchSetup::memory_table::iterator it1 = dynamic_setup.semijoin_table_memory.find(sid.id());
+            GenericDynamicSearchSetup::memory_table::iterator it2 = dynamic_setup.join_table_memory.find(sid.id());
+            dummy.push_back(std::make_pair(it1,0));
+            dummy.push_back(std::make_pair(it2,1));
+
+            dynamic_setup.heuristic_map.insert_or_assign(h, dummy);
+        }else{
+            //std::cout << "enter2 \n";
+            dynamic_setup.heuristic_map.at(h).push_back(std::make_pair(dynamic_setup.semijoin_table_memory.find(sid.id()),0));
+            dynamic_setup.heuristic_map.at(h).push_back(std::make_pair(dynamic_setup.join_table_memory.find(sid.id()),1));
+        }
+        dynamic_setup.disable_block();
+
     }
 
     print_no_solution_found(timer_start, thesis_time, thesis_initial_succ);

@@ -24,12 +24,10 @@ SearchFactory::create(const Options &opt, const std::string& method, const std::
         if (using_ext_state) return new AStarSearch<ExtensionalPackedState>();
         else return new AStarSearch<SparsePackedState>();
     }
-    */
     if (boost::iequals(method, "bfs")) {
         if (using_ext_state) return new BreadthFirstSearch<ExtensionalPackedState>(opt.get_thesis_state());
         else return new BreadthFirstSearch<SparsePackedState>(opt.get_thesis_state());
     }
-    /*
     else if (boost::iequals(method, "bfws1")) {
         if (using_ext_state) return new BreadthFirstWidthSearch<ExtensionalPackedState>(1, opt, StandardNovelty::R_0);
         else return new BreadthFirstWidthSearch<SparsePackedState>(1, opt, StandardNovelty::R_0);
@@ -37,11 +35,11 @@ SearchFactory::create(const Options &opt, const std::string& method, const std::
     else if (boost::iequals(method, "bfws2")) {
         if (using_ext_state) return new BreadthFirstWidthSearch<ExtensionalPackedState>(2, opt, StandardNovelty::R_0);
         else return new BreadthFirstWidthSearch<SparsePackedState>(2, opt, StandardNovelty::R_0);
-    }*/
+    }
     else if (boost::iequals(method, "bfws1-rx")) {
         if (using_ext_state) return new BreadthFirstWidthSearch<ExtensionalPackedState>(1, opt, StandardNovelty::R_X);
         else return new BreadthFirstWidthSearch<SparsePackedState>(1, opt, StandardNovelty::R_X);
-    }/*
+    }
     else if (boost::iequals(method, "bfws2-rx")) {
         if (using_ext_state) return new BreadthFirstWidthSearch<ExtensionalPackedState>(2, opt, StandardNovelty::R_X);
         else return new BreadthFirstWidthSearch<SparsePackedState>(2, opt, StandardNovelty::R_X);
@@ -70,7 +68,7 @@ SearchFactory::create(const Options &opt, const std::string& method, const std::
         if (using_ext_state) return new DualQueueBFWS<ExtensionalPackedState>(2, opt);
         else return new DualQueueBFWS<SparsePackedState>(2, opt);
     }*/
-    else if (boost::iequals(method, "alt-bfws1")) {
+    if (boost::iequals(method, "alt-bfws1")) {
         if (using_ext_state) return new AlternatedBFWS<ExtensionalPackedState>(1, opt);
         else return new AlternatedBFWS<SparsePackedState>(1, opt);
     }/*

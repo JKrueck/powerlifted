@@ -17,7 +17,7 @@ class YannakakisSuccessorGenerator : public GenericJoinSuccessor {
  */
   explicit YannakakisSuccessorGenerator(const Task &task);
     Table instantiate(const ActionSchema &action,
-                    const DBState &state,const Task &task, DynamicState &thesis, std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state) final;
+                    const DBState &state,const Task &task, DynamicState &thesis, std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state, bool enable) final;
 
     Table dynamic_instantiate(const ActionSchema &action,const DBState &state,const Task &task, DynamicState &thesis, std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state);
     void deal_with_add_semi(std::pair<int,int> &table_predicates, DynamicTables &save, DynamicTables &join_save, bool revert_join, std::unordered_set<GroundAtom,TupleHash> add_diff, bool first, int tab_id, bool call_on_add_eff, bool ugly_hack);

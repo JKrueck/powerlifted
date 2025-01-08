@@ -196,6 +196,8 @@ public:
 
     std::unordered_map<int, std::vector<std::pair<GenericDynamicSearchSetup::memory_table::iterator, int>>> heuristic_map;
 
+    bool temp_disable;
+
     GenericDynamicSearchSetup(Task task, bool enable){
 
         //Save the intermediate hash-join tables at a global level and per action
@@ -222,11 +224,25 @@ public:
         //always saving the previous state in DynamicState
         
         this->dynamic_previous_state.insert_or_assign(StateID::no_state, StateID::no_state);
+
+        temp_disable = false;
     };
 
     void state_delta(const Task& task, DynamicState& old, std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>>& predicate_to_add_diff, std::unordered_map<int,bool>& diff_delete);
     void time_tracking(DynamicState& dynamic_successor, DynamicState& old_dynamic_state);
     void clean_state_memory(int current_heuristic);
+
+    void enable_block(){
+        this->temp_disable = true;
+    }
+
+    void disable_block(){
+        this->temp_disable = false;
+    }
+
+    bool block_status(){
+        return this->temp_disable;
+    }
 
 };
 

@@ -26,7 +26,7 @@ GenericJoinSuccessor::GenericJoinSuccessor(const Task &task)
 }
 
 Table GenericJoinSuccessor::instantiate(const ActionSchema &action,
-                                        const DBState &state,const Task &task, DynamicState &thesis, std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state)
+                                        const DBState &state,const Task &task, DynamicState &thesis, std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state, bool enable)
 {
 
     if (action.is_ground()) {
@@ -493,7 +493,7 @@ void GenericJoinSuccessor::apply_lifted_action_effects(const ActionSchema &actio
  */
 std::vector<LiftedOperatorId> GenericJoinSuccessor::get_applicable_actions(
         const ActionSchema &action, const DBState &state,const Task &task, DynamicState &thesis,
-        std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state)
+        std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state, bool enable)
 {
     std::vector<LiftedOperatorId> applicable;
     if (is_trivially_inapplicable(state, action)) {
@@ -515,7 +515,7 @@ std::vector<LiftedOperatorId> GenericJoinSuccessor::get_applicable_actions(
         return applicable;
     }
 
-    Table instantiations = instantiate(action, state,task, thesis, thesis_tables,thesis_semijoin, old_state);
+    Table instantiations = instantiate(action, state,task, thesis, thesis_tables,thesis_semijoin, old_state, enable);
     if (instantiations.tuples.empty()) { // No applicable action from this schema
         return applicable;
     }

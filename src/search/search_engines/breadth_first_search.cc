@@ -164,7 +164,7 @@ utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
             time_t thesis_initial_timer = clock();
             old_thesis.old_indices = old_indices_gblhack;
             auto applicable = generator.get_applicable_actions(action, state,task, old_thesis,
-                                thesis_join_table_at_state,thesis_semijoin_table_at_state,old_state);
+                                thesis_join_table_at_state,thesis_semijoin_table_at_state,old_state,!dynamic_setup.block_status());
 
             //Sort the instantiations by their hash
             std::sort(applicable.begin(),applicable.end());

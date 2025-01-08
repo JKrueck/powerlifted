@@ -45,7 +45,7 @@ public:
     explicit GenericJoinSuccessor(const Task &task);
 
     virtual Table instantiate(const ActionSchema &action, const DBState &state,
-            const Task &task, DynamicState &thesis, std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state);
+            const Task &task, DynamicState &thesis, std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state, bool enable);
 
     /**
     * Create the set of tables corresponding to the precondition of the given action.
@@ -74,7 +74,7 @@ public:
 
     std::vector<LiftedOperatorId> get_applicable_actions(
             const ActionSchema &action, const DBState &state,const Task &task, DynamicState &thesis,
-            std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state) override;
+            std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &thesis_semijoin, DBState &old_state, bool enable) override;
 
     const GroundAtom tuple_to_atom(const std::vector<int> &tuple, const Atom &eff);
 
