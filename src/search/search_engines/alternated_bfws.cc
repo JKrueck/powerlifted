@@ -152,7 +152,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
         node.update_h(h);
 
         double time_clean = clock();
-        dynamic_setup.clean_state_memory(g+h);
+        dynamic_setup.clean_state_memory(h);
         cleanup_time += double(clock()-time_clean);
 
         int unsatisfied_goal_parent = map_state_to_evaluators.at(sid.id()).unsatisfied_goals;
@@ -318,10 +318,11 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                 }
             }
         }
+        
+        //Save which tables are associated with which heuristic value
+        //If the heuristic improves some amount we remove the old tables
 
         if(dynamic_setup.heuristic_map.count(h) == 0){
-            //std::cout << "enter1 \n";
-
             std::vector<std::pair<GenericDynamicSearchSetup::memory_table::iterator, int>> dummy;
             GenericDynamicSearchSetup::memory_table::iterator it1 = dynamic_setup.semijoin_table_memory.find(sid.id());
             GenericDynamicSearchSetup::memory_table::iterator it2 = dynamic_setup.join_table_memory.find(sid.id());
