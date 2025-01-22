@@ -53,11 +53,14 @@ void GenericDynamicSearchSetup::time_tracking(DynamicState& dynamic_successor, D
 
     dynamic_successor.max_succ_time_me = old_dynamic_state.max_succ_time_me;
     dynamic_successor.max_succ_time_normal = old_dynamic_state.max_succ_time_normal;
+
+    dynamic_successor.delta_time = old_dynamic_state.delta_time;
+    dynamic_successor.cleanup_time = old_dynamic_state.cleanup_time;
 };
 
 void GenericDynamicSearchSetup::clean_state_memory(int current_heuristic){
     //std::cout << "enter3 \n";
-    if(this->heuristic_map.count(current_heuristic+2)!=0){
+    if(this->heuristic_map.count(current_heuristic+2)!=0 && this->heuristic_map.size()!=1){
         if(this->heuristic_map.at(current_heuristic+2).size()!=0){
             while(this->heuristic_map.at(current_heuristic+2).size()!=0){
                 auto it = this->heuristic_map.at(current_heuristic+2).back();

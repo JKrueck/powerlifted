@@ -120,6 +120,9 @@ public:
     double max_succ_time_me = 0.0;
     double max_succ_time_normal = 0.0;
 
+    double delta_time = 0.0;
+    double cleanup_time = 0.0;
+
 
     int counter_me = 0;
     int counter_normal = 0;

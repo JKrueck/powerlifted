@@ -76,7 +76,8 @@ void print_goal_found(
     if(perc<0.0001) perc = 0;
     cout << "Share of the successor generation on the overall runtime: " << perc << endl;
 
-    cout << "Time used for cleaning up memory: " << cleanup / CLOCKS_PER_SEC<< endl;
+    cout << "Time used for cleaning up memory: " << (thes.cleanup_time) << endl;
+    cout << "Time used for delta computations: " << (thes.delta_time) / CLOCKS_PER_SEC << endl;
 
     cout << "CLOCKS_PER_SEC: " << CLOCKS_PER_SEC << endl; 
     

@@ -85,6 +85,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
     double thesis_time = 0.0;
     double thesis_initial_succ = 0.0;
     double cleanup_time = 0.0;
+
     cout << "Starting AlternatedBFWS" << endl;
     clock_t timer_start = clock();
     StatePackerT packer(task);
@@ -151,10 +152,6 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
         statistics.report_f_value_progress(g+h);
         node.update_h(h);
 
-        double time_clean = clock();
-        dynamic_setup.clean_state_memory(h);
-        cleanup_time += double(clock()-time_clean);
-
         int unsatisfied_goal_parent = map_state_to_evaluators.at(sid.id()).unsatisfied_goals;
         int unsatisfied_relevant_atoms_parent = map_state_to_evaluators.at(sid.id()).unsatisfied_relevant_atoms;
 
@@ -173,11 +170,16 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
         //remove the thesis object from memory
         dynamic_setup.dynamic_state_memory.erase(sid.id());
 
+        double time_clean = clock();
+        //dynamic_setup.clean_state_memory(h);
+        old_dynamic_state.cleanup_time += double(clock()-time_clean);
+
         //if the parent state tables have been cleaned up
         if(dynamic_setup.join_table_memory.count(old_dynamic_state.get_parent_state_id()) == 0){
             dynamic_setup.enable_block();
         }
 
+        
         std::vector<std::vector<DynamicTables>> join_table_at_state;
         std::vector<std::vector<DynamicTables>> semijoin_table_at_state;
         if(!dynamic_setup.block_status()){
@@ -193,12 +195,14 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
         }
 
         //compute the difference to the previous states
+        double time_delta = clock();
         if(this->thesis_enabled && sid.id()!=0 && !dynamic_setup.block_status()){
             std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_add_diff;
             std::unordered_map<int,bool> diff_delete;
 
             dynamic_setup.state_delta(task, old_dynamic_state, predicate_to_add_diff, diff_delete);
         }
+        old_dynamic_state.delta_time += double(clock() - time_delta);
         
         
         for (const auto& action:task.get_action_schemas()) {
