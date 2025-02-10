@@ -23,11 +23,11 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                                                 SuccessorGenerator &generator,
                                                 Heuristic &heuristic)
 {   
-    double thesis_time = 0.0;
-    double thesis_initial_succ = 0.0;
-    double cleanup_time = 0.0;
+    std::chrono::milliseconds::rep dynamic_time = 0;
+    std::chrono::milliseconds::rep thesis_initial_succ = 0;
+    std::chrono::milliseconds::rep cleanup_time = 0;
     cout << "Starting greedy best first search" << endl;
-    clock_t timer_start = clock();
+    const auto timer_start = std::chrono::high_resolution_clock::now();
     StatePackerT packer(task);
 
     bool skip = true;
@@ -85,10 +85,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
     std::unordered_map<int,std::vector<int>> test_map;
 
+    auto search_timepoint = std::chrono::high_resolution_clock::now();
+    std::chrono::milliseconds::rep start_check = std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
+    if (check_goal(task, generator, start_check, task.initial_state, root_node, space, dynamic_time, thesis_initial_succ, dynamic_setup.dynamic_state_memory.at(0), cleanup_time)) return utils::ExitCode::SUCCESS;
 
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, dynamic_setup.dynamic_state_memory.at(0), cleanup_time)) return utils::ExitCode::SUCCESS;
-
-    time_t intermediate = clock();
     while (not queue.empty()) {
         StateID sid = queue.remove_min();
         SearchNode &node = space.get_node(sid);
@@ -117,7 +117,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         if(sid.id()==0){
             print = true;
         }
-        
+        search_timepoint = std::chrono::high_resolution_clock::now();
         if (h < heuristic_layer) {
             heuristic_layer = h;
             cout << "New heuristic value expanded: h=" << h
@@ -125,8 +125,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                  << ", evaluations: " << statistics.get_evaluations()
                  << ", generations: " << statistics.get_generated()
                  << ", state " << sid.id()
-                 << ", succ time: " << thesis_time / CLOCKS_PER_SEC
-                 << ", time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << "]" << '\n';
+                 << ", succ time: " << dynamic_time
+                 << ", time: " << std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count() << "]" << '\n';
             print = true;    
         }
         assert(sid.id() >= 0 && (unsigned) sid.id() < space.size());
@@ -169,8 +169,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         
 
 
-       
-        if (check_goal(task, generator, timer_start, state, node, space, thesis_time, thesis_initial_succ, old_dynamic_state, cleanup_time)){
+        search_timepoint = std::chrono::high_resolution_clock::now();
+        std::chrono::milliseconds::rep middle_point = std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
+        if (check_goal(task, generator,middle_point, state, node, space, dynamic_time, thesis_initial_succ, old_dynamic_state, cleanup_time)){
             cout << "Size of semijoin memory: " << dynamic_setup.semijoin_table_memory.size() << endl;
             return utils::ExitCode::SUCCESS;
         } 
@@ -219,8 +220,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
             DBState old_state;
 
-            time_t thesis_timer = clock();
-            time_t thesis_initial_timer = clock();
+            const auto dynamic_timer = std::chrono::high_resolution_clock::now();
+            const auto initial_dynamic_timer = std::chrono::high_resolution_clock::now();
             old_dynamic_state.old_indices = dynamic_setup.old_indices_gblhack;
 
             
@@ -231,9 +232,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             //Maybe think about this. Now that we know that the algo works correctly, we can maybe remove this
             std::sort(applicable.begin(),applicable.end());
             
-            thesis_time += clock() - thesis_timer;
+            dynamic_time += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - dynamic_timer).count();
             if(sid.id()==0){
-                thesis_initial_succ += clock() - thesis_initial_timer;
+                thesis_initial_succ += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - initial_dynamic_timer).count();
             }
 
             if(this->thesis_enabled && !dynamic_setup.block_status() ){
@@ -397,7 +398,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         //std::cout << "exit1 \n";
     }
 
-    print_no_solution_found(timer_start, thesis_time, thesis_initial_succ);
+    search_timepoint = std::chrono::high_resolution_clock::now();
+    std::chrono::milliseconds::rep search_time = std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
+    print_no_solution_found(search_time, dynamic_time, thesis_initial_succ);
 
     return utils::ExitCode::SEARCH_UNSOLVABLE;
 }

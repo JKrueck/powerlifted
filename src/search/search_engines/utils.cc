@@ -16,9 +16,9 @@
 
 using namespace std;
 
-void print_no_solution_found(const clock_t& timer_start,double thesis_time_needed, double thesis_init) {
+void print_no_solution_found(std::chrono::milliseconds::rep& timer_start, std::chrono::milliseconds::rep& thesis_time_needed, std::chrono::milliseconds::rep& thesis_init) {
     cerr << "No solution found!" << endl;
-    cout << "Total time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << endl;
+    cout << "Total time: " << timer_start << endl;
     cout << "Time used for successor generation: " << thesis_time_needed / CLOCKS_PER_SEC << endl;
     cout << "Time used for initial state succ gen: " << thesis_init << endl;
 }
@@ -26,40 +26,40 @@ void print_no_solution_found(const clock_t& timer_start,double thesis_time_neede
 
 void print_goal_found(
     const SuccessorGenerator &generator,
-    const clock_t& timer_start,double thesis_time_needed, double thesis_init, DynamicState thes, double cleanup)
+    std::chrono::milliseconds::rep& timer_start,std::chrono::milliseconds::rep& thesis_time_needed, std::chrono::milliseconds::rep& thesis_init, DynamicState thes, std::chrono::milliseconds::rep& cleanup)
 {
-    cout << "Goal found at: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;
-    cout << "Total time: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;
-    cout << "Time used for successor generation: " << thesis_time_needed/CLOCKS_PER_SEC << endl;
-    cout << "Time used for initial state succ gen: " << thesis_init << endl;
-    cout << "Maximal time used for one dynamic Yannakakis iteration: " << thes.max_succ_time_me << endl;
-    cout << "Maximal time used for one normal Yannakakis iteration: " << thes.max_succ_time_normal << endl;
+    cout << "Goal found at: " << timer_start << " ms" << endl;
+    cout << "Total time: " << timer_start <<" ms" << endl;
+    cout << "Time used for successor generation: " << thesis_time_needed  << " ms" << endl;
+    cout << "Time used for initial state succ gen: " << thesis_init << " ms" << endl;
+    cout << "Maximal time used for one dynamic Yannakakis iteration: " << thes.max_succ_time_me << " ms" << endl;
+    cout << "Maximal time used for one normal Yannakakis iteration: " << thes.max_succ_time_normal << " ms" << endl;
     cout << "---" << endl;
 
     cout << "Count of calls to me: " << thes.counter_me << endl;
     cout << "Count of calls to normal: " << thes.counter_normal << endl;
-    cout << "Time used for my Full Reducer: " << thes.fullreducer_time_me << endl;
-    cout << "Time used for normal Full Reducer: " << thes.fullreducer_time_normal << endl;
-    if(thes.counter_me!=0) cout << "Average time used for Full Reducer in my stuff: " << (thes.fullreducer_time_me / thes.counter_me)  << endl;
-    if(thes.counter_normal!=0) cout << "Average time used for Full Reducer normally: " << (thes.fullreducer_time_normal / thes.counter_normal)  << endl;
-    if(thes.counter_me!=0) cout << "Percentage of time used on my full reducer in yannakakis: " << ((thes.fullreducer_time_me / thes.counter_me)/(thes.time_me/thes.counter_me)) << endl;
-    if(thes.counter_normal!=0) cout << "Percentage of time normally used on full reducer in yannakakis: " << ((thes.fullreducer_time_normal / thes.counter_normal)/(thes.time_normal/thes.counter_normal)) << endl;
-    cout << "Maximal time used on one iteration of my Full Reducer: " << thes.max_fullreducer_me << endl;
-    cout << "Maximal time used on one iteration of normal Full Reducer: " << thes.max_fullreducer_normal << endl;
-    cout << "Minimal time used on one iteration of my Full Reducer: " << thes.min_fullreducer_me << endl;
-    cout << "Minimal time used on one iteration of normal Full Reducer: " << thes.min_fullreducer_normal << endl;
+    cout << "Time used for my Full Reducer: " << thes.fullreducer_time_me << " ms" << endl;
+    cout << "Time used for normal Full Reducer: " << thes.fullreducer_time_normal << " ms" << endl;
+    if(thes.counter_me!=0) cout << "Average time used for Full Reducer in my stuff: " << (thes.fullreducer_time_me / thes.counter_me) << " ms" << endl;
+    if(thes.counter_normal!=0) cout << "Average time used for Full Reducer normally: " << (thes.fullreducer_time_normal / thes.counter_normal)  << " ms" << endl;
+    if(thes.counter_me!=0) cout << "Percentage of time used on my full reducer in yannakakis: " << ((thes.fullreducer_time_me / thes.counter_me)/(thes.time_me/thes.counter_me)) <<  endl;
+    if(thes.counter_normal!=0) cout << "Percentage of time normally used on full reducer in yannakakis: " << ((thes.fullreducer_time_normal / thes.counter_normal)/(thes.time_normal/thes.counter_normal)) <<  endl;
+    cout << "Maximal time used on one iteration of my Full Reducer: " << thes.max_fullreducer_me << " ms" << endl;
+    cout << "Maximal time used on one iteration of normal Full Reducer: " << thes.max_fullreducer_normal << " ms" << endl;
+    cout << "Minimal time used on one iteration of my Full Reducer: " << thes.min_fullreducer_me << " ms" << endl;
+    cout << "Minimal time used on one iteration of normal Full Reducer: " << thes.min_fullreducer_normal << " ms" << endl;
     
     cout << "---" << endl;
     
-    cout << "Time used for my Join Step: " << thes.joinstep_time_me << endl;
-    cout << "Time used for normal Join Step: " << thes.joinstep_time_normal << endl;
-    if(thes.counter_me!=0) cout << "Average time used for join step in my stuff: " << (thes.joinstep_time_me / thes.counter_me)  << endl;
-    if(thes.counter_normal!=0) cout << "Average time used for join step normally: " << (thes.joinstep_time_normal / thes.counter_normal)  << endl;
+    cout << "Time used for my Join Step: " << thes.joinstep_time_me << " ms" << endl;
+    cout << "Time used for normal Join Step: " << thes.joinstep_time_normal << " ms" << endl;
+    if(thes.counter_me!=0) cout << "Average time used for join step in my stuff: " << (thes.joinstep_time_me / thes.counter_me)  << " ms" << endl;
+    if(thes.counter_normal!=0) cout << "Average time used for join step normally: " << (thes.joinstep_time_normal / thes.counter_normal)  << " ms" << endl;
     if(thes.counter_me!=0) cout << "Percentage of time used on my join step in yannakakis: " << ((thes.joinstep_time_me / thes.counter_me)/(thes.time_me/thes.counter_me))<< endl;
     if(thes.counter_me!=0) cout << "Share of the crossproduct on the join step: " << thes.crossproduct_time / thes.joinstep_time_me << endl;
     if(thes.counter_normal!=0) cout << "Percentage of time normally used on join step in yannakakis: " << ((thes.joinstep_time_normal / thes.counter_normal)/(thes.time_normal/thes.counter_normal)) << endl;
-    cout << "Maximal time used on one iteration of my Join Step: " << thes.max_join_me << endl;
-    cout << "Maximal time used on one iteration of normal Join Step: " << thes.max_join_normal << endl;
+    cout << "Maximal time used on one iteration of my Join Step: " << thes.max_join_me << " ms" << endl;
+    cout << "Maximal time used on one iteration of normal Join Step: " << thes.max_join_normal <<  " ms" << endl;
 
     //cout << "Average time used for table generation in my stuff: " << (thes.time_tables_me / thes.counter_me) / CLOCKS_PER_SEC << endl;
     //cout << "Average time used for table generation normally: " << (thes.time_tables_normal / thes.counter_normal) / CLOCKS_PER_SEC << endl;
@@ -69,15 +69,15 @@ void print_goal_found(
 
     cout << "---" << endl;
 
-    if(thes.counter_normal!=0) cout << "Average normal time: " << (thes.time_normal/thes.counter_normal)  << endl;
-    if(thes.counter_me!=0) cout << "Average me time: " << (thes.time_me/thes.counter_me)  << endl;
+    if(thes.counter_normal!=0) cout << "Average normal time: " << (thes.time_normal/thes.counter_normal)  << " ms" << endl;
+    if(thes.counter_me!=0) cout << "Average me time: " << (thes.time_me/thes.counter_me)  <<  " ms" <<endl;
 
-    auto perc = (thesis_time_needed/CLOCKS_PER_SEC)/(double(clock()-timer_start)/CLOCKS_PER_SEC);
-    if(perc<0.0001) perc = 0;
-    cout << "Share of the successor generation on the overall runtime: " << perc << endl;
+    //auto perc = (thesis_time_needed/CLOCKS_PER_SEC)/(double(clock()-timer_start)/CLOCKS_PER_SEC);
+    //if(perc<0.0001) perc = 0;
+    //cout << "Share of the successor generation on the overall runtime: " << perc << endl;
 
-    cout << "Time used for cleaning up memory: " << (thes.cleanup_time) << endl;
-    cout << "Time used for delta computations: " << (thes.delta_time) / CLOCKS_PER_SEC << endl;
+    cout << "Time used for cleaning up memory: " << (thes.cleanup_time) << " ms" << endl;
+    cout << "Time used for delta computations: " << (thes.delta_time) << " ms" << endl;
 
     cout << "CLOCKS_PER_SEC: " << CLOCKS_PER_SEC << endl; 
     

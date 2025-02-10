@@ -669,7 +669,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
 {
     //cout << "used" << endl;
     thesis.counter_me++;
-    time_t full_time = clock();
+    const auto dynamic_timer  = std::chrono::high_resolution_clock::now();
     std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> predicate_to_add_diff = thesis.get_add_effect_map();
     std::unordered_map<int,bool>  diff_delete = thesis.get_del_eff();
 
@@ -729,7 +729,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
     bool extreme_hack_flag;
     if(std::strcmp(task.get_domain_name().c_str(),"chemical") == 0) extreme_hack_flag = false;
 
-    time_t full_reducer = clock();
+    const auto full_reducer = std::chrono::high_resolution_clock::now();
     long unsigned int counter = 0;
     for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {  
         table_predicates.first = action.get_precondition().at(sj.first).get_predicate_symbol_idx();
@@ -968,13 +968,13 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
     }
     affected_tables.clear();
 
-    double iteration_time = clock()-full_reducer;
+    double iteration_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - full_reducer).count();
     thesis.fullreducer_time_me+= iteration_time;
     if(iteration_time>thesis.max_fullreducer_me) thesis.max_fullreducer_me = iteration_time;
     if(iteration_time<thesis.min_fullreducer_me) thesis.min_fullreducer_me = iteration_time;
     
 
-    time_t join = clock();
+    const auto join = std::chrono::high_resolution_clock::now();
 
     std::unordered_map<int,std::unordered_set<GroundAtom, TupleHash>> added_to_table;
     std::unordered_map<int,std::unordered_set<GroundAtom, TupleHash>> deleted_from_table;
@@ -1637,15 +1637,15 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
         }
     }
     
-    iteration_time = clock()-join;
-    thesis.joinstep_time_me += clock()-join;
+    iteration_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - join).count();
+    thesis.joinstep_time_me += iteration_time;
     if(iteration_time>thesis.max_join_me) thesis.max_join_me = iteration_time;
 
     DynamicTables join_save;
     project(working_table, distinguished_variables[action.get_index()],join_save, INT_MAX);
 
-    iteration_time = clock()- full_time;
-    thesis.time_me+= clock()- full_time;
+    iteration_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - dynamic_timer).count();
+    thesis.time_me+= iteration_time;
     if(iteration_time>thesis.max_succ_time_me) thesis.max_succ_time_me = iteration_time;
 
     return working_table;
@@ -1686,23 +1686,23 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
         if(dynamic_join.size()!=0 && dynamic_join.at(action.get_index()).size()!=0) dynamic_join.at(action.get_index()).clear();
         
         thesis.counter_normal++;
-        time_t full_time = clock();
+        const auto static_timer = std::chrono::high_resolution_clock::now();
 
         const auto &actiondata = action_data[action.get_index()];
         
-        time_t tables_time = clock();
+        const auto tables_time  = std::chrono::high_resolution_clock::now();
         vector<Table> tables;
         auto res = parse_precond_into_join_program(actiondata, state, tables);
         if (!res){
             return Table::EMPTY_TABLE();
         }
-        thesis.time_tables_normal = clock()-tables_time;
+        thesis.time_tables_normal = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - tables_time).count();
 
         assert(!tables.empty());
         assert(tables.size() == actiondata.relevant_precondition_atoms.size());
 
         std::unordered_map<int,int> last_changed;
-        time_t full_red = clock();
+        const auto full_red = std::chrono::high_resolution_clock::now();
         int counter= 0;
         for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
             DynamicTables dynamic_semijoin_table;
@@ -1722,7 +1722,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             counter++;
         }
 
-        double iteration_time = clock() - full_red;
+        std::chrono::milliseconds::rep iteration_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - full_red).count();
         thesis.fullreducer_time_normal+= iteration_time;
         if(iteration_time>thesis.max_fullreducer_normal) thesis.max_fullreducer_normal = iteration_time;
         if(iteration_time<thesis.min_fullreducer_normal) thesis.min_fullreducer_normal = iteration_time;
@@ -1739,7 +1739,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
 
         std::vector<bool> consider_changed_size(tables.size(),false);
         counter = 0;
-        time_t join = clock();
+        const auto join = std::chrono::high_resolution_clock::now();
         for (const auto &j : jt.get_order()) {
             DynamicTables dynamic_join_table;
             if(consider_changed_size.at(j.first)){
@@ -1799,15 +1799,15 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             }
         }
 
-        iteration_time = clock()-join;
-        thesis.joinstep_time_normal += clock()-join;
+        iteration_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - full_red).count();
+        thesis.joinstep_time_normal += iteration_time;
         if(iteration_time>thesis.max_join_normal) thesis.max_join_normal = iteration_time;
 
         DynamicTables dummy;
         project(working_table, distinguished_variables[action.get_index()], dummy, INT_MAX);
 
-        iteration_time = clock()-full_time;
-        thesis.time_normal+= clock()- full_time;
+        iteration_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - static_timer).count();;
+        thesis.time_normal+= iteration_time;
         if(iteration_time>thesis.max_succ_time_normal) thesis.max_succ_time_normal = iteration_time;
         
         //cout << working_table.tuples.size() << endl;

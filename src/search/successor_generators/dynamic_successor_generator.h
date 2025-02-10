@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_set>
 #include <unordered_map>
+#include <chrono>
 
 #include "../states/state.h"
 #include "../database/table.h"
@@ -98,30 +99,30 @@ public:
     {}
 
     //Statistics
-    double fullreducer_time_me = 0.0;
-    double fullreducer_time_normal = 0.0;
-    double max_fullreducer_me = 0.0;
-    double max_fullreducer_normal = 0.0;
-    double min_fullreducer_me = 1000000.0;
-    double min_fullreducer_normal = 10000000.0;
-    double joinstep_time_me = 0.0;
-    double joinstep_time_normal = 0.0;
-    double crossproduct_time = 0.0;
-    double join_time = 0.0;
-    double max_join_me = 0.0;
-    double max_join_normal = 0.0;
-    double time_me = 0.0;
-    double time_normal = 0.0;
+    std::chrono::milliseconds::rep fullreducer_time_me = 0;
+    std::chrono::milliseconds::rep fullreducer_time_normal = 0;
+    std::chrono::milliseconds::rep max_fullreducer_me = 0;
+    std::chrono::milliseconds::rep max_fullreducer_normal = 0;
+    std::chrono::milliseconds::rep min_fullreducer_me = LONG_MAX;
+    std::chrono::milliseconds::rep min_fullreducer_normal = LONG_MAX;
+    std::chrono::milliseconds::rep joinstep_time_me = 0;
+    std::chrono::milliseconds::rep joinstep_time_normal = 0;
+    std::chrono::milliseconds::rep crossproduct_time = 0;
+    std::chrono::milliseconds::rep join_time = 0;
+    std::chrono::milliseconds::rep max_join_me = 0;
+    std::chrono::milliseconds::rep max_join_normal = 0;
+    std::chrono::milliseconds::rep time_me = 0;
+    std::chrono::milliseconds::rep time_normal = 0;
 
-    double time_tables_me = 0.0;
-    double time_tables_normal = 0.0;
+    std::chrono::milliseconds::rep time_tables_me = 0;
+    std::chrono::milliseconds::rep time_tables_normal = 0;
 
 
-    double max_succ_time_me = 0.0;
-    double max_succ_time_normal = 0.0;
+    std::chrono::milliseconds::rep max_succ_time_me = 0;
+    std::chrono::milliseconds::rep max_succ_time_normal = 0;
 
-    double delta_time = 0.0;
-    double cleanup_time = 0.0;
+    std::chrono::milliseconds::rep delta_time = 0;
+    std::chrono::milliseconds::rep cleanup_time = 0;
 
 
     int counter_me = 0;

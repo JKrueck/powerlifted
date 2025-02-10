@@ -82,12 +82,11 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                                                      SuccessorGenerator &generator,
                                                      Heuristic &heuristic) {
     
-    double thesis_time = 0.0;
-    double thesis_initial_succ = 0.0;
-    double cleanup_time = 0.0;
-
+    std::chrono::milliseconds::rep dynamic_time = 0;
+    std::chrono::milliseconds::rep thesis_initial_succ = 0;
+    std::chrono::milliseconds::rep cleanup_time = 0;
     cout << "Starting AlternatedBFWS" << endl;
-    clock_t timer_start = clock();
+    const auto timer_start = std::chrono::high_resolution_clock::now();
     StatePackerT packer(task);
 
     Goalcount gc;
@@ -132,7 +131,9 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
 
     map_state_to_evaluators.insert({root_node.state_id.id(), NodeNovelty(gc_h0, unachieved_atoms_s0)});
 
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space, thesis_time, thesis_initial_succ, dynamic_setup.dynamic_state_memory.at(0), cleanup_time)) return utils::ExitCode::SUCCESS;
+    auto search_timepoint = std::chrono::high_resolution_clock::now();
+    std::chrono::milliseconds::rep start_check = std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
+    if (check_goal(task, generator, start_check, task.initial_state, root_node, space, dynamic_time, thesis_initial_succ, dynamic_setup.dynamic_state_memory.at(0), cleanup_time)) return utils::ExitCode::SUCCESS;
 
     int heuristic_layer = initial_h;
     while (not open_list.empty()) {
@@ -155,6 +156,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
         int unsatisfied_goal_parent = map_state_to_evaluators.at(sid.id()).unsatisfied_goals;
         int unsatisfied_relevant_atoms_parent = map_state_to_evaluators.at(sid.id()).unsatisfied_relevant_atoms;
 
+        search_timepoint = std::chrono::high_resolution_clock::now();
         if (h < heuristic_layer) {
             heuristic_layer = h;
             open_list.boost_priority(1000);
@@ -162,7 +164,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                  << " [expansions: " << statistics.get_expanded()
                  << ", evaluations: " << statistics.get_evaluations()
                  << ", generations: " << statistics.get_generated()
-                 << ", time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << "]" << '\n';
+                 << ", time: " << std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count() << "ms" << "]" << '\n';
         }
 
         //Get the thesis object that belongs to the state from the queue
@@ -170,9 +172,9 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
         //remove the thesis object from memory
         dynamic_setup.dynamic_state_memory.erase(sid.id());
 
-        double time_clean = clock();
+        const auto clean_timer = std::chrono::high_resolution_clock::now();
         //dynamic_setup.clean_state_memory(h);
-        old_dynamic_state.cleanup_time += double(clock()-time_clean);
+        old_dynamic_state.cleanup_time += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - clean_timer).count();
 
         //if the parent state tables have been cleaned up
         if(dynamic_setup.join_table_memory.count(old_dynamic_state.get_parent_state_id()) == 0){
@@ -209,8 +211,8 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
 
             DBState old_state;
 
-            time_t thesis_timer = clock();
-            time_t thesis_initial_timer = clock();
+            const auto dynamic_timer = std::chrono::high_resolution_clock::now();
+            const auto initial_dynamic_timer = std::chrono::high_resolution_clock::now();
             old_dynamic_state.old_indices = dynamic_setup.old_indices_gblhack;
 
             
@@ -222,9 +224,9 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
             //Maybe think about this. Now that we know that the algo works correctly, we can maybe remove this
             std::sort(applicable.begin(),applicable.end());
             
-            thesis_time += clock() - thesis_timer;
+            dynamic_time += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - dynamic_timer).count();
             if(sid.id()==0){
-                thesis_initial_succ += clock() - thesis_initial_timer;
+                thesis_initial_succ += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - initial_dynamic_timer).count();
             }
 
             if(this->thesis_enabled && !dynamic_setup.block_status() ){
@@ -283,7 +285,9 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                 if (child_node.status==SearchNode::Status::NEW) {
                     // Inserted for the first time in the map
                     child_node.open(dist, h);
-                    if (check_goal(task, generator, timer_start, s, child_node, space, thesis_time, thesis_initial_succ, old_dynamic_state, cleanup_time))
+                    search_timepoint = std::chrono::high_resolution_clock::now();
+                    std::chrono::milliseconds::rep middle_point = std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
+                    if (check_goal(task, generator, middle_point, s, child_node, space, dynamic_time, thesis_initial_succ, old_dynamic_state, cleanup_time))
                         return utils::ExitCode::SUCCESS;
                     open_list.do_insertion(child_node.state_id,
                                            h,
@@ -348,7 +352,9 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
         dynamic_setup.disable_block();
     }
 
-    print_no_solution_found(timer_start, thesis_time, thesis_initial_succ);
+    search_timepoint = std::chrono::high_resolution_clock::now();
+    std::chrono::milliseconds::rep search_time =  std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
+    print_no_solution_found(search_time, dynamic_time , thesis_initial_succ);
 
     return utils::ExitCode::SEARCH_UNSOLVABLE;
 
