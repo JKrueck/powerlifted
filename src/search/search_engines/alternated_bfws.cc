@@ -173,7 +173,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
         dynamic_setup.dynamic_state_memory.erase(sid.id());
 
         const auto clean_timer = std::chrono::high_resolution_clock::now();
-        //dynamic_setup.clean_state_memory(h);
+        dynamic_setup.clean_state_memory(h);
         old_dynamic_state.cleanup_time += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - clean_timer).count();
 
         //if the parent state tables have been cleaned up

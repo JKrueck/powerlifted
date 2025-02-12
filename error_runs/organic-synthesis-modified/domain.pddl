@@ -26,6 +26,10 @@
     (unnessecary9 ?x - chemical_atom)
     (unnessecary10 ?x - chemical_atom)
     (unnessecary11 ?x - chemical_atom ?y - chemical_atom)
+    (unnessecary12 ?x - chemical_atom)
+    (unnessecary13 ?x - chemical_atom)
+    (unnessecary14 ?x - chemical_atom)
+    (unnessecary15 ?x - chemical_atom)
     (removedDoubleBond ?x - chemical_atom ?y  - chemical_atom)
 )
 (:action RemoveDoubleBond
@@ -34,7 +38,8 @@
                         (unnessecary1 ?h1)(unnessecary2 ?h1)(unnessecary3 ?h1)(unnessecary4 ?h1)(unnessecary5 ?h1)(unnessecary6 ?h1)(unnessecary7 ?h1)(unnessecary8 ?h1)(unnessecary9 ?h1)(unnessecary10 ?h1)
                         (unnessecary1 ?h2)(unnessecary2 ?h2)(unnessecary3 ?h2)(unnessecary4 ?h2)(unnessecary5 ?h2)(unnessecary6 ?h2)(unnessecary7 ?h2)(unnessecary8 ?h2)(unnessecary9 ?h2)(unnessecary10 ?h2)
                         (unnessecary11 ?h1 ?h2))
-	:effect (and (not(doublebond ?h1 ?h2)) (removedDoubleBond ?h1 ?h2))
+	:effect (and    (not(doublebond ?h1 ?h2)) (removedDoubleBond ?h1 ?h2)
+                    (unnessecary12 ?h1) (unnessecary12 ?h2) (unnessecary13 ?h1) (unnessecary13 ?h2) (unnessecary14 ?h1) (unnessecary14 ?h2) (unnessecary15 ?h1) (unnessecary15 ?h2))
 
 )
 (:action AddBond
@@ -43,7 +48,8 @@
                         (unnessecary1 ?h1)(unnessecary2 ?h1)(unnessecary3 ?h1)(unnessecary4 ?h1)(unnessecary5 ?h1)(unnessecary6 ?h1)(unnessecary7 ?h1)(unnessecary8 ?h1)(unnessecary9 ?h1)(unnessecary10 ?h1)
                         (unnessecary1 ?h2)(unnessecary2 ?h2)(unnessecary3 ?h2)(unnessecary4 ?h2)(unnessecary5 ?h2)(unnessecary6 ?h2)(unnessecary7 ?h2)(unnessecary8 ?h2)(unnessecary9 ?h2)(unnessecary10 ?h2)
                         (unnessecary11 ?h1 ?h2))
-	:effect (and (bond ?h1 ?h2))
+	:effect (and    (bond ?h1 ?h2)
+                    (unnessecary12 ?h1) (unnessecary12 ?h2) (unnessecary13 ?h1) (unnessecary13 ?h2) (unnessecary14 ?h1) (unnessecary14 ?h2) (unnessecary15 ?h1) (unnessecary15 ?h2))
 )
 )
 
