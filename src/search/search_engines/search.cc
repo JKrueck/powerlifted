@@ -35,14 +35,14 @@ bool SearchBase::is_useful_operator(const Task &task, const DBState &state,
 template<class PackedStateT>
 bool SearchBase::check_goal(const Task &task,
                        const SuccessorGenerator &generator,
-                       std::chrono::milliseconds::rep& timer_start,
+                       std::chrono::microseconds::rep& timer_start,
                        const DBState &state,
                        const SearchNode &node,
                        const SearchSpace<PackedStateT> &space,
-                       std::chrono::milliseconds::rep& thesis_time,
-                       std::chrono::milliseconds::rep& thesis_init,
+                       std::chrono::microseconds::rep& thesis_time,
+                       std::chrono::microseconds::rep& thesis_init,
                        DynamicState the,
-                       std::chrono::milliseconds::rep& cleanup) const {
+                       std::chrono::microseconds::rep& cleanup) const {
     if (!task.is_goal(state)) return false;
 
     print_goal_found(generator, timer_start, thesis_time, thesis_init, the, cleanup);
@@ -53,9 +53,9 @@ bool SearchBase::check_goal(const Task &task,
 
 // explicit instantiations
 template bool SearchBase::check_goal<SparsePackedState>(
-        const Task &task, const SuccessorGenerator &generator, std::chrono::milliseconds::rep& timer_start,
-        const DBState &state, const SearchNode &node, const SearchSpace<SparsePackedState> &space, std::chrono::milliseconds::rep& thesis_time, std::chrono::milliseconds::rep& thesis_init, DynamicState the, std::chrono::milliseconds::rep& cleanup) const;
+        const Task &task, const SuccessorGenerator &generator, std::chrono::microseconds::rep& timer_start,
+        const DBState &state, const SearchNode &node, const SearchSpace<SparsePackedState> &space, std::chrono::microseconds::rep& thesis_time, std::chrono::microseconds::rep& thesis_init, DynamicState the, std::chrono::microseconds::rep& cleanup) const;
 
 template bool SearchBase::check_goal<ExtensionalPackedState>(
-        const Task &task, const SuccessorGenerator &generator, std::chrono::milliseconds::rep& timer_start,
-        const DBState &state, const SearchNode &node, const SearchSpace<ExtensionalPackedState> &space, std::chrono::milliseconds::rep& thesis_time, std::chrono::milliseconds::rep& thesis_init, DynamicState the, std::chrono::milliseconds::rep& cleanup) const;
+        const Task &task, const SuccessorGenerator &generator, std::chrono::microseconds::rep& timer_start,
+        const DBState &state, const SearchNode &node, const SearchSpace<ExtensionalPackedState> &space, std::chrono::microseconds::rep& thesis_time, std::chrono::microseconds::rep& thesis_init, DynamicState the, std::chrono::microseconds::rep& cleanup) const;

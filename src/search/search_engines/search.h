@@ -38,14 +38,14 @@ public:
     template <class PackedStateT>
     bool check_goal(const Task &task,
                     const SuccessorGenerator &generator,
-                    std::chrono::milliseconds::rep& timer_start,
+                    std::chrono::microseconds::rep& timer_start,
                     const DBState &state,
                     const SearchNode &node,
                     const SearchSpace<PackedStateT> &space,
-                    std::chrono::milliseconds::rep& thesis_time,
-                    std::chrono::milliseconds::rep& thesis_initial,
+                    std::chrono::microseconds::rep& thesis_time,
+                    std::chrono::microseconds::rep& thesis_initial,
                     DynamicState the,
-                    std::chrono::milliseconds::rep& cleanup) const;
+                    std::chrono::microseconds::rep& cleanup) const;
 
 protected:
 

@@ -19,15 +19,15 @@ class Task;
 class ThesisClass;
 
 
-void print_no_solution_found(std::chrono::milliseconds::rep& timer_start, std::chrono::milliseconds::rep& thesis_time_needed, std::chrono::milliseconds::rep& thesis_init);
+void print_no_solution_found(std::chrono::microseconds::rep& timer_start, std::chrono::microseconds::rep& thesis_time_needed, std::chrono::microseconds::rep& thesis_init);
 
 void print_goal_found(
     const SuccessorGenerator& generator,
-    std::chrono::milliseconds::rep& timer_start,
-    std::chrono::milliseconds::rep& thesis_time_needed,
-    std::chrono::milliseconds::rep& thesis_init,
+    std::chrono::microseconds::rep& timer_start,
+    std::chrono::microseconds::rep& thesis_time_needed,
+    std::chrono::microseconds::rep& thesis_init,
     DynamicState the,
-    std::chrono::milliseconds::rep& cleanup);
+    std::chrono::microseconds::rep& cleanup);
 
 
 void extract_plan(

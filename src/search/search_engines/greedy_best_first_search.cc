@@ -23,9 +23,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                                                 SuccessorGenerator &generator,
                                                 Heuristic &heuristic)
 {   
-    std::chrono::milliseconds::rep dynamic_time = 0;
-    std::chrono::milliseconds::rep thesis_initial_succ = 0;
-    std::chrono::milliseconds::rep cleanup_time = 0;
+    std::chrono::microseconds::rep dynamic_time = 0;
+    std::chrono::microseconds::rep thesis_initial_succ = 0;
+    std::chrono::microseconds::rep cleanup_time = 0;
     cout << "Starting greedy best first search" << endl;
     const auto timer_start = std::chrono::high_resolution_clock::now();
     StatePackerT packer(task);
@@ -86,7 +86,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     std::unordered_map<int,std::vector<int>> test_map;
 
     auto search_timepoint = std::chrono::high_resolution_clock::now();
-    std::chrono::milliseconds::rep start_check = std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
+    std::chrono::microseconds::rep start_check = std::chrono::duration_cast<std::chrono::microseconds>(search_timepoint - timer_start).count();
     if (check_goal(task, generator, start_check, task.initial_state, root_node, space, dynamic_time, thesis_initial_succ, dynamic_setup.dynamic_state_memory.at(0), cleanup_time)) return utils::ExitCode::SUCCESS;
 
     while (not queue.empty()) {
@@ -126,7 +126,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                  << ", generations: " << statistics.get_generated()
                  << ", state " << sid.id()
                  << ", succ time: " << dynamic_time
-                 << ", time: " << std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count() << "]" << '\n';
+                 << ", time: " << std::chrono::duration_cast<std::chrono::microseconds>(search_timepoint - timer_start).count() << "]" << '\n';
             print = true;    
         }
         assert(sid.id() >= 0 && (unsigned) sid.id() < space.size());
@@ -170,7 +170,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
 
         search_timepoint = std::chrono::high_resolution_clock::now();
-        std::chrono::milliseconds::rep middle_point = std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
+        std::chrono::microseconds::rep middle_point = std::chrono::duration_cast<std::chrono::microseconds>(search_timepoint - timer_start).count();
         if (check_goal(task, generator,middle_point, state, node, space, dynamic_time, thesis_initial_succ, old_dynamic_state, cleanup_time)){
             cout << "Size of semijoin memory: " << dynamic_setup.semijoin_table_memory.size() << endl;
             return utils::ExitCode::SUCCESS;
@@ -232,9 +232,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             //Maybe think about this. Now that we know that the algo works correctly, we can maybe remove this
             std::sort(applicable.begin(),applicable.end());
             
-            dynamic_time += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - dynamic_timer).count();
+            dynamic_time += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - dynamic_timer).count();
             if(sid.id()==0){
-                thesis_initial_succ += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - initial_dynamic_timer).count();
+                thesis_initial_succ += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - initial_dynamic_timer).count();
             }
 
             if(this->thesis_enabled && !dynamic_setup.block_status() ){
@@ -399,7 +399,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     }
 
     search_timepoint = std::chrono::high_resolution_clock::now();
-    std::chrono::milliseconds::rep search_time = std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
+    std::chrono::microseconds::rep search_time = std::chrono::duration_cast<std::chrono::microseconds>(search_timepoint - timer_start).count();
     print_no_solution_found(search_time, dynamic_time, thesis_initial_succ);
 
     return utils::ExitCode::SEARCH_UNSOLVABLE;
