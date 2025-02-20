@@ -29,7 +29,7 @@ void print_goal_found(
     std::chrono::microseconds::rep& timer_start,std::chrono::microseconds::rep& thesis_time_needed, std::chrono::microseconds::rep& thesis_init, DynamicState thes, std::chrono::microseconds::rep& cleanup)
 {   
     cout << "Goal found at: " << timer_start  << endl;
-    cout << "Total time: " << timer_start <<" μs" << endl;
+    cout << "Total time: " << timer_start << endl;
     cout << "Time used for successor generation: " << thesis_time_needed   << endl;
     cout << "Time used for initial state succ gen: " << thesis_init  << endl;
     cout << "Maximal time used for one dynamic Yannakakis iteration: " << thes.max_succ_time_me  << endl;
