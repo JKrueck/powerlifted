@@ -62,6 +62,10 @@ void GenericJoinSuccessor::filter_static(const ActionSchema &action, Table &work
 {
     const auto& tup_idx = working_table.tuple_index;
 
+    if(action.get_index()==1){
+        int stiop = 1;
+    }
+
     for (const Atom& atom : action.get_static_precondition()) {
         const std::vector<Argument> &args = atom.get_arguments();
         bool is_equality = true;

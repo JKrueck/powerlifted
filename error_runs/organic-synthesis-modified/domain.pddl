@@ -1,55 +1,50 @@
 (define (domain ChemicalMod)
 (:requirements :strips :typing :equality)
 (:types chemical_atom - object
-        phosphorus calcium sulfur magnesium aluminium chromium iron manganese mercury boron copper palladium
-        r_group - chemical_atom
-        halogen alkalimetal hcno - r_group
-        hc nitrogen oxygen - hcno
-        hydrogen carbon - hc
-        chlorine fluorine bromine iodine astatine - halogen
-        lithium sodium potassium rubidium caesium francium - alkalimetal
+        hydrogen - chemical_atom
+        large - object
 )
 
 (:predicates
     (bond ?x - chemical_atom ?y - chemical_atom)
     (doublebond ?x - chemical_atom ?y - chemical_atom)
-    (triplebond ?x - chemical_atom ?y - chemical_atom)
-    (aromaticbond ?x - chemical_atom ?y - chemical_atom)
-    (unnessecary1 ?x - chemical_atom)
-    (unnessecary2 ?x - chemical_atom)
-    (unnessecary3 ?x - chemical_atom)
-    (unnessecary4 ?x - chemical_atom)
-    (unnessecary5 ?x - chemical_atom)
-    (unnessecary6 ?x - chemical_atom)
-    (unnessecary7 ?x - chemical_atom)
-    (unnessecary8 ?x - chemical_atom)
-    (unnessecary9 ?x - chemical_atom)
-    (unnessecary10 ?x - chemical_atom)
-    (unnessecary11 ?x - chemical_atom ?y - chemical_atom)
-    (unnessecary12 ?x - chemical_atom)
-    (unnessecary13 ?x - chemical_atom)
-    (unnessecary14 ?x - chemical_atom)
-    (unnessecary15 ?x - chemical_atom)
+    (unnessecary1 ?x - large ?y - large)
+    (unnessecary2 ?x - large ?y - large)
+    (unnessecary3 ?x - large ?y - large)
+    (unnessecary4 ?x - large ?y - large)
+    (unnessecary5 ?x - large ?y - large)
+    (unnessecary6 ?x - large ?y - large)
+    (unnessecary7 ?x - large ?y - large)
+    (unnessecary8 ?x - large ?y - large)
+    (unnessecary9 ?x - large ?y - large)
+    (unnessecary10 ?x - large ?y - large)
+    (unnessecary11 ?x - large ?y - large)
+    (unnessecary12 ?x - large ?y - large)
+    (unnessecary13 ?x - large ?y - large)
+    (unnessecary14 ?x - large ?y - large)
+    (unnessecary15 ?x - large ?y - large)
     (removedDoubleBond ?x - chemical_atom ?y  - chemical_atom)
 )
 (:action RemoveDoubleBond
-	:parameters (?h1 - hydrogen ?h2 - hydrogen)
+	:parameters (?h1 - hydrogen ?h2 - hydrogen
+                ?l1 - large ?l2 - large ?l3 - large ?l4 - large ?l5 - large ?l6 - large ?l7 - large ?l8 - large ?l9 - large ?l10 - large ?l11 - large ?l12 - large ?l13 - large ?l14 - large)
 	:precondition (and (not(= ?h1 ?h2)) (doublebond ?h1 ?h2)
-                        (unnessecary1 ?h1)(unnessecary2 ?h1)(unnessecary3 ?h1)(unnessecary4 ?h1)(unnessecary5 ?h1)(unnessecary6 ?h1)(unnessecary7 ?h1)(unnessecary8 ?h1)(unnessecary9 ?h1)(unnessecary10 ?h1)
-                        (unnessecary1 ?h2)(unnessecary2 ?h2)(unnessecary3 ?h2)(unnessecary4 ?h2)(unnessecary5 ?h2)(unnessecary6 ?h2)(unnessecary7 ?h2)(unnessecary8 ?h2)(unnessecary9 ?h2)(unnessecary10 ?h2)
-                        (unnessecary11 ?h1 ?h2))
+                        (unnessecary1 ?l1 ?l2)(unnessecary2 ?l2 ?l3)(unnessecary3 ?l3 ?l4)(unnessecary4 ?l4 ?l5)(unnessecary5 ?l5 ?l6)(unnessecary6 ?l6 ?l7)
+                        (unnessecary7 ?l7 ?l8)(unnessecary8 ?l8 ?l9)(unnessecary9 ?l9 ?l10)(unnessecary10 ?l10 ?l11)
+                        (unnessecary11 ?l11 ?l12))
 	:effect (and    (not(doublebond ?h1 ?h2)) (removedDoubleBond ?h1 ?h2)
-                    (unnessecary12 ?h1) (unnessecary12 ?h2) (unnessecary13 ?h1) (unnessecary13 ?h2) (unnessecary14 ?h1) (unnessecary14 ?h2) (unnessecary15 ?h1) (unnessecary15 ?h2))
+                    (unnessecary12 ?l12 ?l13)(unnessecary13 ?l13 ?l14))
 
 )
 (:action AddBond
-	:parameters(?h1 - hydrogen ?h2 - hydrogen)
+	:parameters(?h1 - hydrogen ?h2 - hydrogen
+                ?l1 - large ?l2 - large ?l3 - large ?l4 - large ?l5 - large ?l6 - large ?l7 - large ?l8 - large ?l9 - large ?l10 - large ?l11 - large ?l12 - large ?l13 - large ?l14 - large)
 	:precondition (and (not(= ?h1 ?h2))
-                        (unnessecary1 ?h1)(unnessecary2 ?h1)(unnessecary3 ?h1)(unnessecary4 ?h1)(unnessecary5 ?h1)(unnessecary6 ?h1)(unnessecary7 ?h1)(unnessecary8 ?h1)(unnessecary9 ?h1)(unnessecary10 ?h1)
-                        (unnessecary1 ?h2)(unnessecary2 ?h2)(unnessecary3 ?h2)(unnessecary4 ?h2)(unnessecary5 ?h2)(unnessecary6 ?h2)(unnessecary7 ?h2)(unnessecary8 ?h2)(unnessecary9 ?h2)(unnessecary10 ?h2)
-                        (unnessecary11 ?h1 ?h2))
+                        (unnessecary1 ?l1 ?l2)(unnessecary2 ?l2 ?l3)(unnessecary3 ?l3 ?l4)(unnessecary4 ?l4 ?l5)(unnessecary5 ?l5 ?l6)(unnessecary6 ?l6 ?l7)
+                        (unnessecary7 ?l7 ?l8)(unnessecary8 ?l8 ?l9)(unnessecary9 ?l9 ?l10)(unnessecary10 ?l10 ?l11)
+                        (unnessecary11 ?l11 ?l12))
 	:effect (and    (bond ?h1 ?h2)
-                    (unnessecary12 ?h1) (unnessecary12 ?h2) (unnessecary13 ?h1) (unnessecary13 ?h2) (unnessecary14 ?h1) (unnessecary14 ?h2) (unnessecary15 ?h1) (unnessecary15 ?h2))
+                    (unnessecary12 ?l12 ?l13) (unnessecary13 ?l13 ?l14))
 )
 )
 

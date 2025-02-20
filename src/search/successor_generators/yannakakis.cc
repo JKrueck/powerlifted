@@ -1006,7 +1006,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             
             //Do the Cross Product
             if(save_obj.matching_columns.size()==0){
-                time_t cross_product = clock();
+                const auto cross_product = std::chrono::high_resolution_clock::now();
                 auto remember = save_obj.result;
 
                 Table &working_table = tables[j.second];
@@ -1022,7 +1022,9 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 
                 affected_tables[j.second] = counter;
                 counter++;
-                thesis.crossproduct_time += clock()-cross_product;
+
+                iteration_time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - cross_product).count();
+                thesis.crossproduct_time += iteration_time;
                 continue;
             }
 

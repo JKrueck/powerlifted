@@ -27,7 +27,7 @@ void print_no_solution_found(std::chrono::microseconds::rep& timer_start, std::c
 void print_goal_found(
     const SuccessorGenerator &generator,
     std::chrono::microseconds::rep& timer_start,std::chrono::microseconds::rep& thesis_time_needed, std::chrono::microseconds::rep& thesis_init, DynamicState thes, std::chrono::microseconds::rep& cleanup)
-{
+{   
     cout << "Goal found at: " << timer_start  << endl;
     cout << "Total time: " << timer_start <<" μs" << endl;
     cout << "Time used for successor generation: " << thesis_time_needed   << endl;
@@ -56,10 +56,12 @@ void print_goal_found(
     if(thes.counter_me!=0) cout << "Average time used for join step in my stuff: " << (thes.joinstep_time_me / thes.counter_me)   << endl;
     if(thes.counter_normal!=0) cout << "Average time used for join step normally: " << (thes.joinstep_time_normal / thes.counter_normal)   << endl;
     if(thes.counter_me!=0) cout << "Percentage of time used on my join step in yannakakis: " << ((thes.joinstep_time_me / thes.counter_me)/(thes.time_me/thes.counter_me))<< endl;
-    if(thes.counter_me!=0) cout << "Share of the crossproduct on the join step: " << thes.crossproduct_time / thes.joinstep_time_me << endl;
+    double cross_percent = double(thes.crossproduct_time) / double(thes.joinstep_time_me);
+    if(cross_percent<0.0001) cross_percent = 0.0;
+    if(thes.counter_me!=0) cout << "Share of the crossproduct on the join step: " << cross_percent << endl;
     if(thes.counter_normal!=0) cout << "Percentage of time normally used on join step in yannakakis: " << ((thes.joinstep_time_normal / thes.counter_normal)/(thes.time_normal/thes.counter_normal)) << endl;
     cout << "Maximal time used on one iteration of my Join Step: " << thes.max_join_me  << endl;
-    cout << "Maximal time used on one iteration of normal Join Step: " << thes.max_join_normal <<  " μs" << endl;
+    cout << "Maximal time used on one iteration of normal Join Step: " << thes.max_join_normal  << endl;
 
     //cout << "Average time used for table generation in my stuff: " << (thes.time_tables_me / thes.counter_me) / CLOCKS_PER_SEC << endl;
     //cout << "Average time used for table generation normally: " << (thes.time_tables_normal / thes.counter_normal) / CLOCKS_PER_SEC << endl;
@@ -70,11 +72,14 @@ void print_goal_found(
     cout << "---" << endl;
 
     if(thes.counter_normal!=0) cout << "Average normal time: " << (thes.time_normal/thes.counter_normal)   << endl;
-    if(thes.counter_me!=0) cout << "Average me time: " << (thes.time_me/thes.counter_me)  <<  " μs" <<endl;
+    if(thes.counter_me!=0) cout << "Average me time: " << (thes.time_me/thes.counter_me)   <<endl;
 
-    //auto perc = (thesis_time_needed/CLOCKS_PER_SEC)/(double(clock()-timer_start)/CLOCKS_PER_SEC);
-    //if(perc<0.0001) perc = 0;
-    //cout << "Share of the successor generation on the overall runtime: " << perc << endl;
+    
+    double rep1 = double(timer_start);
+    double rep2 = double(thesis_time_needed);
+    double perc = rep2 / rep1;
+    if(perc<0.0001) perc = 0.0;
+    cout << "Share of the successor generation on the overall runtime: " << perc << endl;
 
     cout << "Time used for cleaning up memory: " << (thes.cleanup_time)  << endl;
     cout << "Time used for delta computations: " << (thes.delta_time)  << endl;

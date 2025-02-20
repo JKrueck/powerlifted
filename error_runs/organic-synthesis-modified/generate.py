@@ -8,8 +8,12 @@ def generate_pddl_problem(instance_name, num_hydrogens):
     pddl_problem += "(:objects\n"
     for i in range(1, num_hydrogens + 1):
         pddl_problem += f"h{i} - hydrogen\n"
-    pddl_problem += ")\n"
     
+
+    #generate unnessecary objects
+    for i in range (1,16):
+        pddl_problem += f"l{i} - large\n"
+    pddl_problem += ")\n"
     # Generate the initial double bonds (star pattern with h1 as the central atom)
     central_atom = f"h{num_hydrogens}"
     pddl_problem += "(:init\n"
@@ -19,17 +23,9 @@ def generate_pddl_problem(instance_name, num_hydrogens):
         pddl_problem += f"(doublebond h{i} {central_atom})\n"
         #pddl_problem += f"(doublebond {central_atom} h{i})\n"
         
-        # Add unnecessary preconditions for each hydrogen atom
-        for j in range(1, 11):
-            pddl_problem += f"(unnessecary{j} h{i})\n"
-            
-    for i in range(1,11):
-        pddl_problem += f"(unnessecary{i} {central_atom})\n"
-    # Add unnessecary11 for pairs of hydrogen atoms
-    for i in range(1, num_hydrogens):
-        pddl_problem += f"(unnessecary11 h{i} {central_atom})\n"
-        #pddl_problem += f"(unnessecary11 {central_atom} h{i})\n"
-
+    # Add unnecessary preconditions for each hydrogen atom
+    for i in range(1, 12):
+        pddl_problem += f"(unnessecary{i} l{i} l{i+1})\n"
     pddl_problem += ")\n"
     
     # Generate the goal (removing double bonds and adding single bonds)
@@ -56,7 +52,7 @@ def save_pddl_problem(instance_name, num_hydrogens):
 # Example usage
 if __name__ == "__main__":
     instance_name = "starbonds_"
-    amounts = [10, 50, 75, 100, 200, 300, 400, 500, 750, 1000, 2000, 4000, 8000]
+    amounts = [10, 20, 30, 40, 50, 75, 100]
     for num_hydrogens in amounts:
         instance_name = "starbonds_"
         instance_name += str(num_hydrogens)
