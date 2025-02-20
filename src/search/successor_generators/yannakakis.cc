@@ -1801,7 +1801,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
             }
         }
 
-        iteration_time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - full_red).count();
+        iteration_time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - join).count();
         thesis.joinstep_time_normal += iteration_time;
         if(iteration_time>thesis.max_join_normal) thesis.max_join_normal = iteration_time;
 
