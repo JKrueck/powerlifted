@@ -53,8 +53,7 @@ public:
      */
     virtual DBState generate_successor(const LiftedOperatorId &op,
                                const ActionSchema& action,
-                               const DBState &state,
-                                DynamicState *thes_class) = 0;
+                               const DBState &state) = 0;
 
     void add_to_added_atoms(int i, const std::vector<int> & atom) {
         added_atoms.emplace_back(i, atom);

@@ -53,7 +53,7 @@ def save_pddl_problem(instance_name, num_hydrogens):
 if __name__ == "__main__":
     instance_name = "starbonds_"
     amounts = [10, 20, 30, 40, 50, 75, 100]
-    for num_hydrogens in amounts:
+    for num_hydrogens in range(10,51):
         instance_name = "starbonds_"
         instance_name += str(num_hydrogens)
         save_pddl_problem(instance_name, num_hydrogens)
