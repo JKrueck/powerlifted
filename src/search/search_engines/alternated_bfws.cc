@@ -133,7 +133,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
 
     auto search_timepoint = std::chrono::high_resolution_clock::now();
     std::chrono::microseconds::rep start_check = std::chrono::duration_cast<std::chrono::microseconds>(search_timepoint - timer_start).count();
-    if (check_goal(task, generator, start_check, task.initial_state, root_node, space, dynamic_time, thesis_initial_succ, dynamic_setup.dynamic_state_memory.at(0), cleanup_time)) return utils::ExitCode::SUCCESS;
+    if (check_goal(task, generator, start_check, task.initial_state, root_node, space, dynamic_time, thesis_initial_succ, *dynamic_setup.dynamic_state_memory.at(0).second, cleanup_time)) return utils::ExitCode::SUCCESS;
 
     int heuristic_layer = initial_h;
     while (not open_list.empty()) {
@@ -168,7 +168,34 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
         }
 
         //Get the thesis object that belongs to the state from the queue
-        DynamicState old_dynamic_state = dynamic_setup.dynamic_state_memory.at(sid.id());
+        std::pair<LiftedOperatorId,DynamicState*> dynamic_pair = dynamic_setup.dynamic_state_memory.at(sid.id());
+
+        //Dummy-to be overridden
+        DynamicState old_dynamic_state(false,task.get_action_schema_by_index(0));
+        if(sid.id()==0){
+            //if we're in the initital state we do not need to generate a new state
+            old_dynamic_state = *dynamic_pair.second;
+        }else{
+            //Create one new Thesis object per state
+            DynamicState dynamic_successor(false, task.get_action_schema_by_index(dynamic_pair.first.get_index()));
+            
+            dynamic_successor.set_parent_state_id(dynamic_pair.second->get_sid());
+            dynamic_successor.action_id = dynamic_pair.first.get_index();
+            dynamic_successor.set_instantiation(dynamic_pair.first.get_instantiation());
+
+            dynamic_setup.time_tracking(dynamic_successor, *dynamic_pair.second);
+
+            dynamic_successor.old_indices = dynamic_pair.second->old_indices;
+
+            dynamic_successor.set_sid(sid.id());
+
+            dynamic_setup.dynamic_state_list.insert_or_assign(sid.id(), dynamic_successor);
+            
+            old_dynamic_state = dynamic_successor;
+        }
+
+       
+  
         //remove the thesis object from memory
         dynamic_setup.dynamic_state_memory.erase(sid.id());
 
@@ -219,6 +246,9 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
             auto applicable = generator.get_applicable_actions(action, state,task, old_dynamic_state,
                                 join_table_at_state,semijoin_table_at_state,old_state, !dynamic_setup.block_status());
             
+            //Update the tracked times in memory after every successor generation
+            dynamic_setup.dynamic_state_list.at(old_dynamic_state.get_sid()) = old_dynamic_state;
+            
             
             //Sort the instantiations by their hash
             //Maybe think about this. Now that we know that the algo works correctly, we can maybe remove this
@@ -242,19 +272,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
 
             for (const LiftedOperatorId& op_id:applicable) {
                 
-                //Create one new Thesis object per state
-                DynamicState dynamic_successor(false,action);
-                
-                dynamic_successor.set_parent_state_id(sid.id());
-                dynamic_successor.action_id = action.get_index();
-                dynamic_successor.set_instantiation(op_id.get_instantiation());
-
-                dynamic_setup.time_tracking(dynamic_successor, old_dynamic_state);
-
-                dynamic_successor.old_indices = old_dynamic_state.old_indices;
-                
-                
-                DBState s = generator.generate_successor(op_id, action, state, &dynamic_successor);
+                DBState s = generator.generate_successor(op_id, action, state);
 
                 bool is_preferred = is_useful_operator(task, s, delete_free_h->get_useful_atoms());
                 int dist = g + action.get_cost();
@@ -297,11 +315,8 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                                            is_preferred);
                     map_state_to_evaluators.insert({child_node.state_id.id(), NodeNovelty(unsatisfied_goals, unsatisfied_relevant_atoms)});
 
-                    dynamic_setup.dynamic_state_memory.insert({child_node.state_id.id(),dynamic_successor});
+                    dynamic_setup.dynamic_state_memory.insert_or_assign(child_node.state_id.id(), std::make_pair(op_id,&dynamic_setup.dynamic_state_list.at(sid.id())));
 
-                    //create a new empty join_table memory for the new state
-                    std::vector<std::vector<Table>> thesis_join_at_state;
-                    std::vector<std::vector<Table>> thesis_semijoin_at_state;
                     //remember that sid is the parent state of the current child node
                     dynamic_setup.dynamic_previous_state.insert_or_assign(child_node.state_id,sid);
                 
@@ -316,11 +331,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                                                novelty_value,
                                                is_preferred);
                     
-                    dynamic_setup.dynamic_state_memory.insert_or_assign(child_node.state_id.id(),dynamic_successor);
-
-                    //create a new empty join_table memory for the new state
-                    std::vector<std::vector<Table>> thesis_join_at_state;
-                    std::vector<std::vector<Table>> thesis_semijoin_at_state;
+                    dynamic_setup.dynamic_state_memory.insert_or_assign(child_node.state_id.id(), std::make_pair(op_id,&dynamic_setup.dynamic_state_list.at(sid.id())));
                     //remember that sid is the parent state of the current child node
                     dynamic_setup.dynamic_previous_state.insert_or_assign(child_node.state_id,sid);
                     

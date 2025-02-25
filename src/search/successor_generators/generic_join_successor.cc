@@ -346,8 +346,7 @@ void GenericJoinSuccessor::create_hypergraph(const ActionSchema &action,
 DBState GenericJoinSuccessor::generate_successor(
     const LiftedOperatorId &op,
     const ActionSchema& action,
-    const DBState &state,
-    DynamicState *thesis_class) {
+    const DBState &state) {
 
     added_atoms.clear();
     vector<bool> new_nullary_atoms(state.get_nullary_atoms());

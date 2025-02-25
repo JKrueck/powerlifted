@@ -69,6 +69,7 @@ void GenericDynamicSearchSetup::clean_state_memory(int current_heuristic){
                 }else{
                     this->join_table_memory.erase(it.first);
                 }
+                std::cout << "Deleted" << std::endl;
     
                 this->heuristic_map.at(current_heuristic+2).pop_back();
             }

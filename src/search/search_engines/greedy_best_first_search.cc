@@ -87,7 +87,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
     auto search_timepoint = std::chrono::high_resolution_clock::now();
     std::chrono::microseconds::rep start_check = std::chrono::duration_cast<std::chrono::microseconds>(search_timepoint - timer_start).count();
-    if (check_goal(task, generator, start_check, task.initial_state, root_node, space, dynamic_time, thesis_initial_succ, dynamic_setup.dynamic_state_memory.at(0), cleanup_time)) return utils::ExitCode::SUCCESS;
+    if (check_goal(task, generator, start_check, task.initial_state, root_node, space, dynamic_time, thesis_initial_succ, *dynamic_setup.dynamic_state_memory.at(0).second, cleanup_time)) return utils::ExitCode::SUCCESS;
 
     while (not queue.empty()) {
         StateID sid = queue.remove_min();
@@ -132,8 +132,32 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         assert(sid.id() >= 0 && (unsigned) sid.id() < space.size());
         DBState state = packer.unpack(space.get_state(sid));
 
-        //Get the thesis object that belongs to the state from the queue
-        DynamicState old_dynamic_state = dynamic_setup.dynamic_state_memory.at(sid.id());
+       //Get the thesis object that belongs to the state from the queue
+        std::pair<LiftedOperatorId,DynamicState*> dynamic_pair = dynamic_setup.dynamic_state_memory.at(sid.id());
+
+        //Dummy-to be overridden
+        DynamicState old_dynamic_state(false,task.get_action_schema_by_index(0));
+        if(sid.id()==0){
+            //if we're in the initital state we do not need to generate a new state
+            old_dynamic_state = *dynamic_pair.second;
+        }else{
+            //Create one new Thesis object per state
+            DynamicState dynamic_successor(false, task.get_action_schema_by_index(dynamic_pair.first.get_index()));
+            
+            dynamic_successor.set_parent_state_id(dynamic_pair.second->get_sid());
+            dynamic_successor.action_id = dynamic_pair.first.get_index();
+            dynamic_successor.set_instantiation(dynamic_pair.first.get_instantiation());
+
+            dynamic_setup.time_tracking(dynamic_successor, *dynamic_pair.second);
+
+            dynamic_successor.old_indices = dynamic_pair.second->old_indices;
+
+            dynamic_successor.set_sid(sid.id());
+            
+            dynamic_setup.dynamic_state_list.insert_or_assign(sid.id(), dynamic_successor);
+            
+            old_dynamic_state = dynamic_successor;
+        }
         //remove the thesis object from memory
         dynamic_setup.dynamic_state_memory.erase(sid.id());
 
@@ -262,42 +286,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             statistics.inc_generated(applicable.size());
             
             for (const LiftedOperatorId& op_id:applicable) {
-                //Create one new Thesis object per state
-                DynamicState dynamic_successor(false,action);
-                
-                
-                dynamic_successor.set_parent_state_id(sid.id());
-                dynamic_successor.action_id = action.get_index();
-                dynamic_successor.set_instantiation(op_id.get_instantiation());
 
-                dynamic_setup.time_tracking(dynamic_successor, old_dynamic_state);
-
-                //Time tracking
-                /*dynamic_successor.counter_me = old_dynamic_state.counter_me;
-                dynamic_successor.counter_normal = old_dynamic_state.counter_normal;
-                dynamic_successor.fullreducer_time_me = old_dynamic_state.fullreducer_time_me;
-                dynamic_successor.fullreducer_time_normal = old_dynamic_state.fullreducer_time_normal;
-                dynamic_successor.joinstep_time_me = old_dynamic_state.joinstep_time_me;
-                dynamic_successor.joinstep_time_normal = old_dynamic_state.joinstep_time_normal;
-                dynamic_successor.time_tables_me = old_dynamic_state.time_tables_me;
-                dynamic_successor.time_tables_normal = old_dynamic_state.time_tables_normal;
-                dynamic_successor.join_time = old_dynamic_state.join_time;
-                dynamic_successor.time_me = old_dynamic_state.time_me;
-                dynamic_successor.time_normal = old_dynamic_state.time_normal;
-                dynamic_successor.max_fullreducer_me = old_dynamic_state.max_fullreducer_me;
-                dynamic_successor.max_fullreducer_normal = old_dynamic_state.max_fullreducer_normal;
-                dynamic_successor.min_fullreducer_me = old_dynamic_state.min_fullreducer_me;
-                dynamic_successor.min_fullreducer_normal = old_dynamic_state.min_fullreducer_normal;
-                dynamic_successor.crossproduct_time = old_dynamic_state.crossproduct_time;
-                dynamic_successor.max_join_me = old_dynamic_state.max_join_me;
-                dynamic_successor.max_join_normal = old_dynamic_state.max_join_normal;
-
-                dynamic_successor.max_succ_time_me = old_dynamic_state.max_succ_time_me;
-                dynamic_successor.max_succ_time_normal = old_dynamic_state.max_succ_time_normal;*/
-
-                dynamic_successor.old_indices = old_dynamic_state.old_indices;
-
-                DBState s = generator.generate_successor(op_id, action, state, &dynamic_successor);
+                DBState s = generator.generate_successor(op_id, action, state);
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
 
                 if(child_node.state_id.id()==11){
@@ -335,7 +325,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                         statistics.inc_dead_ends();
                         statistics.inc_pruned_states();
 
-                        dynamic_setup.dynamic_state_memory.insert({child_node.state_id.id(),dynamic_successor});
+                        dynamic_setup.dynamic_state_memory.insert_or_assign(child_node.state_id.id(), std::make_pair(op_id,&dynamic_setup.dynamic_state_list.at(sid.id())));
                         //remember that sid is the parent state of the current child node
                         dynamic_setup.dynamic_previous_state.insert_or_assign(child_node.state_id,sid);
                     }
@@ -347,7 +337,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                     statistics.inc_evaluated_states();
                     queue.do_insertion(child_node.state_id, make_pair(new_h, dist));
 
-                    dynamic_setup.dynamic_state_memory.insert({child_node.state_id.id(),dynamic_successor});
+                    dynamic_setup.dynamic_state_memory.insert_or_assign(child_node.state_id.id(), std::make_pair(op_id,&dynamic_setup.dynamic_state_list.at(sid.id())));
 
                     //create a new empty join_table memory for the new state
                     std::vector<std::vector<Table>> thesis_join_at_state;
@@ -363,7 +353,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                         statistics.inc_reopened();
                         queue.do_insertion(child_node.state_id, make_pair(new_h, dist));
 
-                        dynamic_setup.dynamic_state_memory.insert_or_assign(child_node.state_id.id(),dynamic_successor);
+                        dynamic_setup.dynamic_state_memory.insert_or_assign(child_node.state_id.id(), std::make_pair(op_id,&dynamic_setup.dynamic_state_list.at(sid.id())));
 
                         //create a new empty join_table memory for the new state
                         std::vector<std::vector<Table>> thesis_join_at_state;

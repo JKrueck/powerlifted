@@ -11,6 +11,7 @@
 #include "../database/utils.h"
 #include "../structures.h"
 #include "../action_schema.h"
+#include "../action.h"
 
 #include "../search_engines/nodes.h"
 
@@ -87,6 +88,8 @@ private:
     bool dynamic_enabled;
     
     int parent_state_id;
+
+    int state_id;
     
     //added and deleted atoms in comparison to the parent state of this object
     std::unordered_map<int,std::unordered_set<GroundAtom,TupleHash>> add_effect_map;
@@ -181,6 +184,15 @@ public:
     std::vector<int> get_instantiation(){
         return instantiation;
     }
+
+    void set_sid(int sid){
+        this->state_id = sid;
+    }
+
+    int get_sid(){
+        return this->state_id;
+    }
+
             
 
 };
@@ -194,7 +206,8 @@ public:
     std::vector<std::vector<DynamicTables>> semijoin_table_first_state;
     std::vector<std::vector<DynamicTables>> join_table_first_state;
     memory_table semijoin_table_memory;
-    std::unordered_map<int,DynamicState> dynamic_state_memory;
+    std::unordered_map<int,std::pair<LiftedOperatorId,DynamicState*>> dynamic_state_memory;
+    std::unordered_map<int,DynamicState> dynamic_state_list;
     std::vector<std::unordered_map<int, GroundAtom>> old_indices_gblhack;
     std::unordered_map<StateID,StateID,ThesisStateIDHasher> dynamic_previous_state;
 
@@ -219,7 +232,14 @@ public:
         DynamicState initial = DynamicState(enable,task.get_action_schema_by_index(0));
         initial.set_parent_state_id(0);
         initial.old_indices.resize(task.get_action_schemas().size());
-        this->dynamic_state_memory.insert({0,initial});
+        initial.set_sid(0);
+        this->dynamic_state_list.insert_or_assign(0,initial);
+
+        //Only saving the minimum of what we need to generate a new dynamic state
+        //We only need the grounded action that generated a state and a link to its parent DynamicState.
+        //This should save a lot of memory
+        LiftedOperatorId placeholder = LiftedOperatorId(0,{0});
+        this->dynamic_state_memory.insert({0,std::make_pair(placeholder, &this->dynamic_state_list.at(0))});
 
         
         this->old_indices_gblhack.resize(task.get_action_schemas().size());
