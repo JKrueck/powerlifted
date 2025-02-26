@@ -252,6 +252,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             auto applicable = generator.get_applicable_actions(action, state,task, old_dynamic_state,
                                 join_table_at_state,semijoin_table_at_state,old_state, !dynamic_setup.block_status());
 
+            //Update the tracked times in memory after every successor generation
+            dynamic_setup.dynamic_state_list.at(old_dynamic_state.get_sid()) = old_dynamic_state;
+
             //Sort the instantiations by their hash
             //Maybe think about this. Now that we know that the algo works correctly, we can maybe remove this
             std::sort(applicable.begin(),applicable.end());
