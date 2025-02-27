@@ -33,7 +33,7 @@
                         (unnessecary7 ?l7 ?l8)(unnessecary8 ?l8 ?l9)(unnessecary9 ?l9 ?l10)(unnessecary10 ?l10 ?l11)
                         (unnessecary11 ?l11 ?l12))
 	:effect (and    (not(doublebond ?h1 ?h2)) (removedDoubleBond ?h1 ?h2)
-                    (unnessecary12 ?l12 ?l13)(unnessecary13 ?l13 ?l14))
+                    )
 
 )
 (:action AddBond
@@ -44,7 +44,7 @@
                         (unnessecary7 ?l7 ?l8)(unnessecary8 ?l8 ?l9)(unnessecary9 ?l9 ?l10)(unnessecary10 ?l10 ?l11)
                         (unnessecary11 ?l11 ?l12))
 	:effect (and    (bond ?h1 ?h2)
-                    (unnessecary12 ?l12 ?l13) (unnessecary13 ?l13 ?l14))
+                    )
 )
 )
 
