@@ -156,7 +156,9 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
         int unsatisfied_goal_parent = map_state_to_evaluators.at(sid.id()).unsatisfied_goals;
         int unsatisfied_relevant_atoms_parent = map_state_to_evaluators.at(sid.id()).unsatisfied_relevant_atoms;
 
+        
         search_timepoint = std::chrono::high_resolution_clock::now();
+        
         if (h < heuristic_layer) {
             heuristic_layer = h;
             open_list.boost_priority(1000);
@@ -164,7 +166,8 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                  << " [expansions: " << statistics.get_expanded()
                  << ", evaluations: " << statistics.get_evaluations()
                  << ", generations: " << statistics.get_generated()
-                 << ", time: " << std::chrono::duration_cast<std::chrono::microseconds>(search_timepoint - timer_start).count() << "μs" << "]" << '\n';
+                 << ", time: " << std::chrono::duration_cast<std::chrono::microseconds>(search_timepoint - timer_start).count() << "ms"
+                 << ", intermediateSuccessorTime: " << dynamic_time << "]" << '\n';
         }
 
         //Get the thesis object that belongs to the state from the queue
