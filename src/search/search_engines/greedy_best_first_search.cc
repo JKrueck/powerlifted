@@ -24,7 +24,10 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                                                 Heuristic &heuristic)
 {
     cout << "Starting greedy best first search" << endl;
-    clock_t timer_start = clock();
+
+    const auto timer_start = std::chrono::high_resolution_clock::now();
+    std::chrono::milliseconds::rep succgen_time = 0;
+
     StatePackerT packer(task);
 
     GreedyOpenList queue;
@@ -44,7 +47,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     statistics.report_f_value_progress(heuristic_layer);
     queue.do_insertion(root_node.state_id, make_pair(heuristic_layer, 0));
 
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
+    auto search_timepoint = std::chrono::high_resolution_clock::now();
+    std::chrono::milliseconds::rep start_check = std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
+    if (check_goal(task, generator, start_check,succgen_time, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
 
     while (not queue.empty()) {
         StateID sid = queue.remove_min();
@@ -64,17 +69,25 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                  << " [expansions: " << statistics.get_expanded()
                  << ", evaluations: " << statistics.get_evaluations()
                  << ", generations: " << statistics.get_generated()
-                 << ", time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << "]" << '\n';
+                 << ", time: " << std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count() << "ms"
+                 << "]" << '\n';
         }
         assert(sid.id() >= 0 && (unsigned) sid.id() < space.size());
 
         DBState state = packer.unpack(space.get_state(sid));
-        if (check_goal(task, generator, timer_start, state, node, space)) return utils::ExitCode::SUCCESS;
+
+        search_timepoint = std::chrono::high_resolution_clock::now();
+        std::chrono::milliseconds::rep middle_point = std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
+        if (check_goal(task, generator, middle_point, succgen_time, state, node, space)) return utils::ExitCode::SUCCESS;
 
         // Let's expand the state, one schema at a time. If necessary, i.e. if it really helps
         // performance, we could implement some form of std iterator
         for (const auto& action:task.get_action_schemas()) {
+            
+            const auto succgen_timer = std::chrono::high_resolution_clock::now();
             auto applicable = generator.get_applicable_actions(action, state);
+            succgen_time += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - succgen_timer).count();
+
             statistics.inc_generated(applicable.size());
 
             for (const LiftedOperatorId& op_id:applicable) {
@@ -110,7 +123,9 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         }
     }
 
-    print_no_solution_found(timer_start);
+    search_timepoint = std::chrono::high_resolution_clock::now();
+    std::chrono::milliseconds::rep search_time = std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
+    print_no_solution_found(search_time, succgen_time);
 
     return utils::ExitCode::SEARCH_UNSOLVABLE;
 }

@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 #include <map>
+#include <chrono>
 
 // Forward declarations
 class SuccessorGenerator;
@@ -32,7 +33,7 @@ public:
     template <class PackedStateT>
     bool check_goal(const Task &task,
                     const SuccessorGenerator &generator,
-                    clock_t timer_start,
+                    std::chrono::milliseconds::rep& timer_start, std::chrono::milliseconds::rep& succgen,
                     const DBState &state,
                     const SearchNode &node,
                     const SearchSpace<PackedStateT> &space) const;

@@ -16,18 +16,21 @@
 
 using namespace std;
 
-void print_no_solution_found(const clock_t& timer_start) {
+void print_no_solution_found(std::chrono::milliseconds::rep& timer_start, std::chrono::milliseconds::rep& succgen) {
     cerr << "No solution found!" << endl;
     cout << "Total time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << endl;
+    cout << "Time used for successor generation: " <<  succgen << endl;
 }
 
 
 void print_goal_found(
     const SuccessorGenerator &generator,
-    const clock_t& timer_start)
+    std::chrono::milliseconds::rep& timer_start,
+    std::chrono::milliseconds::rep& succgen)
 {
-    cout << "Goal found at: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;
-    cout << "Total time: " << double(clock() - timer_start)/CLOCKS_PER_SEC << endl;
+    cout << "Goal found at: " << timer_start << endl;
+    cout << "Total time: " << timer_start << endl;
+    cout << "Time used for successor generation: " << succgen  << endl;
 }
 
 //template<class PackedStateT>

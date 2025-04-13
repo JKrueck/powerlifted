@@ -35,13 +35,13 @@ bool SearchBase::is_useful_operator(const Task &task, const DBState &state,
 template<class PackedStateT>
 bool SearchBase::check_goal(const Task &task,
                        const SuccessorGenerator &generator,
-                       clock_t timer_start,
+                       std::chrono::milliseconds::rep& timer_start, std::chrono::milliseconds::rep& succgen,
                        const DBState &state,
                        const SearchNode &node,
                        const SearchSpace<PackedStateT> &space) const {
     if (!task.is_goal(state)) return false;
 
-    print_goal_found(generator, timer_start);
+    print_goal_found(generator, timer_start, succgen);
     auto plan = space.extract_plan(node);
     print_plan(plan, task);
     return true;
@@ -49,9 +49,9 @@ bool SearchBase::check_goal(const Task &task,
 
 // explicit instantiations
 template bool SearchBase::check_goal<SparsePackedState>(
-        const Task &task, const SuccessorGenerator &generator, clock_t timer_start,
+        const Task &task, const SuccessorGenerator &generator, std::chrono::milliseconds::rep& timer_start, std::chrono::milliseconds::rep& succgen,
         const DBState &state, const SearchNode &node, const SearchSpace<SparsePackedState> &space) const;
 
 template bool SearchBase::check_goal<ExtensionalPackedState>(
-        const Task &task, const SuccessorGenerator &generator, clock_t timer_start,
+        const Task &task, const SuccessorGenerator &generator, std::chrono::milliseconds::rep& timer_start, std::chrono::milliseconds::rep& succgen,
         const DBState &state, const SearchNode &node, const SearchSpace<ExtensionalPackedState> &space) const;

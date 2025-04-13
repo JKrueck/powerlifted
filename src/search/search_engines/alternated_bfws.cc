@@ -82,7 +82,10 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                                                      SuccessorGenerator &generator,
                                                      Heuristic &heuristic) {
     cout << "Starting AlternatedBFWS" << endl;
-    clock_t timer_start = clock();
+    const auto timer_start = std::chrono::high_resolution_clock::now();
+
+    std::chrono::milliseconds::rep succgen_time = 0;
+
     StatePackerT packer(task);
 
     Goalcount gc;
@@ -125,7 +128,10 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
 
     map_state_to_evaluators.insert({root_node.state_id.id(), NodeNovelty(gc_h0, unachieved_atoms_s0)});
 
-    if (check_goal(task, generator, timer_start, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
+
+    auto search_timepoint = std::chrono::high_resolution_clock::now();
+    std::chrono::milliseconds::rep start_check = std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
+    if (check_goal(task, generator, start_check, succgen_time, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
 
     int heuristic_layer = initial_h;
     while (not open_list.empty()) {
@@ -148,6 +154,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
         int unsatisfied_goal_parent = map_state_to_evaluators.at(sid.id()).unsatisfied_goals;
         int unsatisfied_relevant_atoms_parent = map_state_to_evaluators.at(sid.id()).unsatisfied_relevant_atoms;
 
+        search_timepoint = std::chrono::high_resolution_clock::now();
         if (h < heuristic_layer) {
             heuristic_layer = h;
             open_list.boost_priority(1000);
@@ -155,11 +162,17 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                  << " [expansions: " << statistics.get_expanded()
                  << ", evaluations: " << statistics.get_evaluations()
                  << ", generations: " << statistics.get_generated()
-                 << ", time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << "]" << '\n';
+                 << ", time: " <<  std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count() << "ms"
+                 << "]" << '\n';
         }
 
         for (const auto& action:task.get_action_schemas()) {
+
+            const auto succgen_timer = std::chrono::high_resolution_clock::now();
+
             auto applicable = generator.get_applicable_actions(action, state);
+            succgen_time += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - succgen_timer).count();
+
             statistics.inc_generated(applicable.size());
 
             for (const LiftedOperatorId& op_id:applicable) {
@@ -194,7 +207,9 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                 if (child_node.status==SearchNode::Status::NEW) {
                     // Inserted for the first time in the map
                     child_node.open(dist, h);
-                    if (check_goal(task, generator, timer_start, s, child_node, space))
+                    search_timepoint = std::chrono::high_resolution_clock::now();
+                    std::chrono::milliseconds::rep middle_point = std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
+                    if (check_goal(task, generator, middle_point, succgen_time, s, child_node, space))
                         return utils::ExitCode::SUCCESS;
                     open_list.do_insertion(child_node.state_id,
                                            h,
@@ -218,8 +233,9 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
             }
         }
     }
-
-    print_no_solution_found(timer_start);
+    search_timepoint = std::chrono::high_resolution_clock::now();
+    std::chrono::milliseconds::rep search_time =  std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
+    print_no_solution_found(search_time, succgen_time);
 
     return utils::ExitCode::SEARCH_UNSOLVABLE;
 

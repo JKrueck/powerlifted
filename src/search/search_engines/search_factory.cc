@@ -20,13 +20,13 @@ SearchFactory::create(const Options &opt, const std::string& method, const std::
     std::cout << "Creating search factory for method " << method << "..." << std::endl;
     bool using_ext_state = boost::iequals(state_type, "extensional");
 
-    if (boost::iequals(method, "astar")) {
+    /*if (boost::iequals(method, "astar")) {
         if (using_ext_state) return new AStarSearch<ExtensionalPackedState>();
         else return new AStarSearch<SparsePackedState>();
     }
-    else if (boost::iequals(method, "bfs")) {
-        if (using_ext_state) return new BreadthFirstSearch<ExtensionalPackedState>();
-        else return new BreadthFirstSearch<SparsePackedState>();
+    if (boost::iequals(method, "bfs")) {
+        if (using_ext_state) return new BreadthFirstSearch<ExtensionalPackedState>(opt.get_thesis_state());
+        else return new BreadthFirstSearch<SparsePackedState>(opt.get_thesis_state());
     }
     else if (boost::iequals(method, "bfws1")) {
         if (using_ext_state) return new BreadthFirstWidthSearch<ExtensionalPackedState>(1, opt, StandardNovelty::R_0);
@@ -67,19 +67,19 @@ SearchFactory::create(const Options &opt, const std::string& method, const std::
     else if (boost::iequals(method, "dq-bfws2-rx")) {
         if (using_ext_state) return new DualQueueBFWS<ExtensionalPackedState>(2, opt);
         else return new DualQueueBFWS<SparsePackedState>(2, opt);
-    }
-    else if (boost::iequals(method, "alt-bfws1")) {
+    }*/
+    if (boost::iequals(method, "alt-bfws1")) {
         if (using_ext_state) return new AlternatedBFWS<ExtensionalPackedState>(1, opt);
         else return new AlternatedBFWS<SparsePackedState>(1, opt);
-    }
+    }/*
     else if (boost::iequals(method, "alt-bfws2")) {
         if (using_ext_state) return new AlternatedBFWS<ExtensionalPackedState>(2, opt);
         else return new AlternatedBFWS<SparsePackedState>(2, opt);
-    }
+    }*/
     else if (boost::iequals(method, "gbfs")) {
         if (using_ext_state) return new GreedyBestFirstSearch<ExtensionalPackedState>();
         else return new GreedyBestFirstSearch<SparsePackedState>();
-    }
+    }/*
     else if (boost::iequals(method, "lazy")) {
         if (using_ext_state) return new LazySearch<ExtensionalPackedState>(true, false);
         else return new LazySearch<SparsePackedState>(true, false);
@@ -91,7 +91,7 @@ SearchFactory::create(const Options &opt, const std::string& method, const std::
     else if (boost::iequals(method, "lazy-prune")) {
         if (using_ext_state) return new LazySearch<ExtensionalPackedState>(false, true);
         else return new LazySearch<SparsePackedState>(false, true);
-    }
+    }*/
     else {
         std::cerr << "Invalid search method \"" << method << "\"" << std::endl;
         exit(-1);
