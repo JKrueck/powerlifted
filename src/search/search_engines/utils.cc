@@ -16,7 +16,7 @@
 
 using namespace std;
 
-void print_no_solution_found(std::chrono::microseconds::rep& timer_start, std::chrono::microseconds::rep& thesis_time_needed, std::chrono::microseconds::rep& thesis_init) {
+void print_no_solution_found(std::chrono::milliseconds::rep& timer_start, std::chrono::milliseconds::rep& thesis_time_needed, std::chrono::milliseconds::rep& thesis_init) {
     cerr << "No solution found!" << endl;
     cout << "Total time: " << timer_start << endl;
     cout << "Time used for successor generation: " << thesis_time_needed / CLOCKS_PER_SEC << endl;
@@ -26,7 +26,7 @@ void print_no_solution_found(std::chrono::microseconds::rep& timer_start, std::c
 
 void print_goal_found(
     const SuccessorGenerator &generator,
-    std::chrono::microseconds::rep& timer_start,std::chrono::microseconds::rep& thesis_time_needed, std::chrono::microseconds::rep& thesis_init, DynamicState thes, std::chrono::microseconds::rep& cleanup)
+    std::chrono::milliseconds::rep& timer_start,std::chrono::milliseconds::rep& thesis_time_needed, std::chrono::milliseconds::rep& thesis_init, DynamicState thes, std::chrono::milliseconds::rep& cleanup)
 {   
     cout << "Goal found at: " << timer_start  << endl;
     cout << "Total time: " << timer_start << endl;
