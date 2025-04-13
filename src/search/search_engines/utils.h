@@ -7,6 +7,7 @@
 #include <utility>
 #include <unordered_map>
 #include <vector>
+#include <chrono>
 
 class LiftedOperatorId;
 class PackedStateHash;
@@ -16,11 +17,12 @@ class SparseStatePacker;
 class Task;
 
 
-void print_no_solution_found(const clock_t& timer_start);
+void print_no_solution_found(std::chrono::milliseconds::rep& timer_start, std::chrono::milliseconds::rep& succgen);
 
 void print_goal_found(
     const SuccessorGenerator& generator,
-    const clock_t& timer_start);
+    std::chrono::milliseconds::rep& timer_start,
+    std::chrono::milliseconds::rep& succgen);
 
 
 void extract_plan(
