@@ -5,7 +5,7 @@
 
 #include <unordered_map>
 #include <vector>
-
+#include <algorithm>
 namespace datalog {
 
 class VariableSource {
