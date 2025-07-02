@@ -249,6 +249,8 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
             auto applicable = generator.get_applicable_actions(action, state,task, old_dynamic_state,
                                 join_table_at_state,semijoin_table_at_state,old_state, !dynamic_setup.block_status());
             
+            dynamic_time += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - dynamic_timer).count();
+            
             //Update the tracked times in memory after every successor generation
             dynamic_setup.dynamic_state_list.at(old_dynamic_state.get_sid()) = old_dynamic_state;
             
@@ -256,8 +258,6 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
             //Sort the instantiations by their hash
             //Maybe think about this. Now that we know that the algo works correctly, we can maybe remove this
             std::sort(applicable.begin(),applicable.end());
-            
-            dynamic_time += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - dynamic_timer).count();
             if(sid.id()==0){
                 thesis_initial_succ += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - initial_dynamic_timer).count();
             }
