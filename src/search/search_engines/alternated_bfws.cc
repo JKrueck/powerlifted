@@ -175,7 +175,9 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
             std::chrono::milliseconds::rep succ_gen_iteration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - succgen_timer).count();
             succgen_time += succ_gen_iteration;
             if(succ_gen_iteration>max_succgen_time) max_succgen_time = succ_gen_iteration;
-
+            
+            //add this to make expansions line up between versions
+            std::sort(applicable.begin(),applicable.end());
 
             statistics.inc_generated(applicable.size());
 

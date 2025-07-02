@@ -92,6 +92,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             if(succ_gen_iteration>max_succgen_time) max_succgen_time = succ_gen_iteration;
             statistics.inc_generated(applicable.size());
 
+            std::sort(applicable.begin(),applicable.end());
+
             for (const LiftedOperatorId& op_id:applicable) {
                 DBState s = generator.generate_successor(op_id, action, state);
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
