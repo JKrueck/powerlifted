@@ -166,7 +166,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             dynamic_setup.enable_block();
         }
 
-        if(sid.id() != 0) {//sid.id() != 0 && sid.id()<130
+        if(false) {//sid.id() != 0 && sid.id()<130
             cout << "parent state: " << old_dynamic_state.get_parent_state_id() << endl;
             cout << "action used to get here: " << old_dynamic_state.get_action_id() << "->" << task.get_action_schema_by_index(old_dynamic_state.get_action_id()).get_name()<< endl;
             cout << "with instantiation: ";
