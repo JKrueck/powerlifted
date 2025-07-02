@@ -85,6 +85,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
     const auto timer_start = std::chrono::high_resolution_clock::now();
 
     std::chrono::milliseconds::rep succgen_time = 0;
+    std::chrono::milliseconds::rep max_succgen_time = 0;
 
     StatePackerT packer(task);
 
@@ -131,7 +132,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
 
     auto search_timepoint = std::chrono::high_resolution_clock::now();
     std::chrono::milliseconds::rep start_check = std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
-    if (check_goal(task, generator, start_check, succgen_time, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
+    if (check_goal(task, generator, start_check, succgen_time, max_succgen_time, task.initial_state, root_node, space)) return utils::ExitCode::SUCCESS;
 
     int heuristic_layer = initial_h;
     while (not open_list.empty()) {
@@ -171,7 +172,10 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
             const auto succgen_timer = std::chrono::high_resolution_clock::now();
 
             auto applicable = generator.get_applicable_actions(action, state);
-            succgen_time += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - succgen_timer).count();
+            std::chrono::milliseconds::rep succ_gen_iteration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - succgen_timer).count();
+            succgen_time += succ_gen_iteration;
+            if(succ_gen_iteration>max_succgen_time) max_succgen_time = succ_gen_iteration;
+
 
             statistics.inc_generated(applicable.size());
 
@@ -209,7 +213,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                     child_node.open(dist, h);
                     search_timepoint = std::chrono::high_resolution_clock::now();
                     std::chrono::milliseconds::rep middle_point = std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
-                    if (check_goal(task, generator, middle_point, succgen_time, s, child_node, space))
+                    if (check_goal(task, generator, middle_point, succgen_time, max_succgen_time, s, child_node, space))
                         return utils::ExitCode::SUCCESS;
                     open_list.do_insertion(child_node.state_id,
                                            h,
@@ -235,7 +239,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
     }
     search_timepoint = std::chrono::high_resolution_clock::now();
     std::chrono::milliseconds::rep search_time =  std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
-    print_no_solution_found(search_time, succgen_time);
+    print_no_solution_found(search_time, succgen_time, max_succgen_time);
 
     return utils::ExitCode::SEARCH_UNSOLVABLE;
 

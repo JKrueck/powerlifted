@@ -16,21 +16,31 @@
 
 using namespace std;
 
-void print_no_solution_found(std::chrono::milliseconds::rep& timer_start, std::chrono::milliseconds::rep& succgen) {
+void print_no_solution_found(std::chrono::milliseconds::rep& timer_start, std::chrono::milliseconds::rep& succgen, std::chrono::milliseconds::rep& succgen_max) {
     cerr << "No solution found!" << endl;
-    cout << "Total time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << endl;
+    cout << "Total time: " << timer_start << endl;
     cout << "Time used for successor generation: " <<  succgen << endl;
+    cout << "Maximal time used for one normal Yannakakis iteration: " << succgen_max << endl;
+    
+    auto perc = double(succgen) / double(timer_start);
+    if(perc<0.0001) perc=0.0;
+    cout << "Share of the successor generation on the overall runtime: " << perc << endl;
 }
 
 
 void print_goal_found(
     const SuccessorGenerator &generator,
     std::chrono::milliseconds::rep& timer_start,
-    std::chrono::milliseconds::rep& succgen)
+    std::chrono::milliseconds::rep& succgen,
+    std::chrono::milliseconds::rep& succgen_max)
 {
-    cout << "Goal found at: " << timer_start << endl;
     cout << "Total time: " << timer_start << endl;
-    cout << "Time used for successor generation: " << succgen  << endl;
+    cout << "Time used for successor generation: " <<  succgen << endl;
+    cout << "Maximal time used for one normal Yannakakis iteration: " << succgen_max << endl;
+    
+    auto perc = double(succgen) / double(timer_start);
+    if(perc<0.0001) perc=0.0;
+    cout << "Share of the successor generation on the overall runtime: " << perc << endl;
 }
 
 //template<class PackedStateT>

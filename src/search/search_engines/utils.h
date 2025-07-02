@@ -17,12 +17,13 @@ class SparseStatePacker;
 class Task;
 
 
-void print_no_solution_found(std::chrono::milliseconds::rep& timer_start, std::chrono::milliseconds::rep& succgen);
+void print_no_solution_found(std::chrono::milliseconds::rep& timer_start, std::chrono::milliseconds::rep& succgen, std::chrono::milliseconds::rep& succgen_max);
 
 void print_goal_found(
     const SuccessorGenerator& generator,
     std::chrono::milliseconds::rep& timer_start,
-    std::chrono::milliseconds::rep& succgen);
+    std::chrono::milliseconds::rep& succgen,
+    std::chrono::milliseconds::rep& succgen_max);
 
 
 void extract_plan(

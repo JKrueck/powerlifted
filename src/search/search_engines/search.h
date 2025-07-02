@@ -33,7 +33,7 @@ public:
     template <class PackedStateT>
     bool check_goal(const Task &task,
                     const SuccessorGenerator &generator,
-                    std::chrono::milliseconds::rep& timer_start, std::chrono::milliseconds::rep& succgen,
+                    std::chrono::milliseconds::rep& timer_start, std::chrono::milliseconds::rep& succgen, std::chrono::milliseconds::rep& succgen_max,
                     const DBState &state,
                     const SearchNode &node,
                     const SearchSpace<PackedStateT> &space) const;
