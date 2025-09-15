@@ -1051,6 +1051,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             //If the size of the first table has NOT changed in comparison to the SemiJoin Results
             //-> we can use the normal semijoin keys here
             if(!save_obj.join_changed_size_first){
+                cout << "No changed table size" << endl;
                 //Check all facts that were deleted from table 1
                 for(auto del:save_obj.pos1_deleted){
                     //Generate the SemiJoin key for the deleted fact
@@ -1108,25 +1109,37 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 }
             }
 
+
+            /*
+                --------First Table--------
+            */
             //If the size of the first table HAS changed in comparison to the SemiJoin Results
             //->need to use the JoinStep keys ??? or not????
             if(save_obj.join_changed_size_first){
+                cout << "HIII" << endl;
                 //Go through all previously deleted elements 
                 for(auto del:deleted_from_table[j.second]){
                     GroundAtom copy;
+                    //If the deleted element is in the result
                     if(save_obj.result_table.count(del)!=0){
+                        //Compute regular key
                         std::vector<int> key(save_obj.matching_columns.size());
                         for(size_t pos = 0; pos < save_obj.matching_columns.size(); pos++) {
                             key[pos] = save_obj.result_table[del].begin()->at(save_obj.matching_columns[pos].first);
                         }
+                        //If the deleted element is in table 1
                         if(save_obj.pos1_hashtable.count(key)!=0){
                             save_obj.pos1_hashtable.erase(key);
+                            //Remember we deleted all results associated with the deleted atom
                             save_obj.result_deleted.insert(del);
+                            //Remember the exact entries from the result we deleted
                             save_obj.result_deleted_single.insert(save_obj.result_table[del].begin(),save_obj.result_table[del].end());
                             save_obj.result_table.erase(del);
+                            //Remember we deleted this atom
                             deleted_from_table[j.second].insert(del);
                         }
                     }
+                    //Same as above, but inverted
                     if(extreme_hack_flag){
                         std::reverse(copy.begin(),copy.end());
                         if(save_obj.result_table.count(copy)!=0){
@@ -1147,15 +1160,18 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
 
                 //If the first table has been affected by the state transition
                 if(affected_tables.count(j.second)!=0){
-                    //Check all facts we deleted in this join in the parent state
+                    //The result table of the join in which table 1 previously appeared is the current table 1
+                    //Delete everything we deleted in that previous join here as well
                     for(auto del:old_pos1.result_deleted_single){
                         GroundAtom copy;
+                        //Join Key
                         //If the join result gets bigger, we need to compute the element we want to remove
                         std::vector<int> key(save_obj.matching_columns.size());
                         std::vector<int> key_hack(save_obj.matching_columns.size());
                         for(size_t pos = 0; pos < save_obj.matching_columns.size(); pos++) {
                             key[pos] = del[save_obj.matching_columns[pos].first];
                         }
+                        //Inverted join key
                         if(extreme_hack_flag){
                             copy = del;
                             std::reverse(copy.begin(),copy.end());
@@ -1163,6 +1179,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                                 key_hack[pos] = copy[save_obj.matching_columns[pos].first];
                             }
                         }
+                        //If a result that was deleted from this table in the parent state is in table 1
                         if(save_obj.pos1_hashtable.count(key)!=0){
                             auto pos = save_obj.pos1_hashtable[key].find(del);
                             if(pos!=save_obj.pos1_hashtable[key].end()){
@@ -1177,8 +1194,9 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                             if(save_obj.pos1_hashtable[key_hack].size()==0) save_obj.pos1_hashtable.erase(key_hack);
                         }
 
-                        //???What does this mean??Here we seem to start with a element that could have the wrong size and compute the needed join to find the element that should be deleted
-                        //If the deleted fact also shows up in Table 2
+                        //If the deleted fact also shows up in Table 2 there is a possible match between the tables and a result would have been calculated
+                        //To find this result we compute it directly
+                        //!!!!IS THIS NECESSARY????
                         if(save_obj.pos2_hashtable.count(key)!=0){
                             std::unordered_set<GroundAtom, TupleHash> to_change = save_obj.pos2_hashtable[key];
                             std::vector<bool> to_remove_me(tables[j.first].tuple_index.size(), false);
@@ -1218,6 +1236,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
 
             //If the second table does not change its attribute size  with the current join
             if(!save_obj.join_changed_size_second){
+                cout << "No changed table size" << endl;
                 //For all facts deleted from table 2
                 for(auto del:save_obj.pos2_deleted){
                     //Generate the key for the deleted fact
@@ -1366,8 +1385,13 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 }
             }
             
+            /*
+                --------Second Table--------
+            */
+
             //If the AttributeSize of Table2 has changed
             if(save_obj.join_changed_size_second){
+                cout << "HIII" << endl;
                 for(auto del:deleted_from_table[j.first]){
                     std::vector<int> join_step_key(thesis.old_indices.at(action.get_index()).at(j.first).size());
                     for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.first).size(); pos++){
@@ -1432,6 +1456,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             }
             
             if(!save_obj.join_changed_size_second){
+                cout << "No changed table size" << endl;
                 for(auto add:save_obj.pos2_added){
                     std::vector<int> key(save_obj.matching_columns.size());
                     for(size_t pos = 0; pos < save_obj.matching_columns.size(); pos++) {
@@ -1471,6 +1496,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
 
             //If we have already dealt with the add effect to this table previously, we can add the resulting join in here
             if(save_obj.join_changed_size_second){
+                cout << "HIII" << endl;
                 std::unordered_set<GroundAtom, TupleHash> added_result = added_to_table[j.first];
                 int access_counter = 0;
                 for(auto add:added_result){
@@ -1506,6 +1532,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 }
             }
             if(save_obj.join_changed_size_first){
+                cout << "HIII" << endl;
                 std::unordered_set<GroundAtom, TupleHash> added_result = added_to_table[j.second];
                 int access_counter = 0;
                 for(auto add:added_result){
@@ -1549,6 +1576,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                     access_counter++;
                 }
             }else{
+                cout << "No changed table size" << endl;
                 for(auto add:save_obj.pos1_added){
                     //We need to compute the Join 
                     std::vector<bool> to_remove_me(tables[j.first].tuple_index.size(), false);

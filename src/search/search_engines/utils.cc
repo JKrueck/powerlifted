@@ -51,9 +51,9 @@ void print_goal_found(
     
     cout << "---" << endl;
     
-    //cout << "Time used for my Join Step: " << thes.joinstep_time_me  << endl;
+    cout << "Time used for my Join Step: " << thes.joinstep_time_me  << endl;
     //cout << "Time used for normal Join Step: " << thes.joinstep_time_normal  << endl;
-    //if(thes.counter_me!=0) cout << "Average time used for join step in my stuff: " << (thes.joinstep_time_me / thes.counter_me)   << endl;
+    if(thes.counter_me!=0) cout << "Average time used for join step in my stuff: " << (thes.joinstep_time_me / thes.counter_me)   << endl;
     //if(thes.counter_normal!=0) cout << "Average time used for join step normally: " << (thes.joinstep_time_normal / thes.counter_normal)   << endl;
     //if(thes.counter_me!=0) cout << "Percentage of time used on my join step in yannakakis: " << ((thes.joinstep_time_me / thes.counter_me)/(thes.time_me/thes.counter_me))<< endl;
     //double cross_percent = double(thes.crossproduct_time) / double(thes.joinstep_time_me);
