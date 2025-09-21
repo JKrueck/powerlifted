@@ -141,9 +141,22 @@ void hash_join(Table &t1, const Table &t2, DynamicTables &save, std::vector<int>
                 vector<int> aux(tuple_t1);
                 aux.insert(aux.end(), tuple_t2.begin(), tuple_t2.end());
                 new_tuples_me.push_back(std::move(aux));
+
+                if(save.crossproduct_pos1.find(tuple_t1)!= save.crossproduct_pos1.end()){
+                    save.crossproduct_pos1.at(tuple_t1).push_back(std::make_shared<std::vector<int>>(new_tuples_me.back()));
+                }else{
+                    std::vector<std::shared_ptr<std::vector<int>>> tmp{std::make_shared<std::vector<int>>(new_tuples_me.back())};
+                    save.crossproduct_pos1.insert_or_assign(tuple_t1,tmp);
+                }
+
+                if(save.crossproduct_pos2.find(tuple_t2)!= save.crossproduct_pos2.end()){
+                    save.crossproduct_pos2.at(tuple_t2).push_back(std::make_shared<std::vector<int>>(new_tuples_me.back()));
+                }else{
+                    std::vector<std::shared_ptr<std::vector<int>>> tmp{std::make_shared<std::vector<int>>(new_tuples_me.back())};
+                    save.crossproduct_pos2.insert_or_assign(tuple_t2,tmp);
+                }
             }
         }
-        save.result.tuples = new_tuples_me;
         save.result.tuple_index = t1.tuple_index;
         save.result_index = t1.tuple_index;
     }

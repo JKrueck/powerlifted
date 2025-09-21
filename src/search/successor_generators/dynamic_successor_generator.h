@@ -52,6 +52,10 @@ struct DynamicTables{
     std::vector<Atom> static_pre_deletes;
     bool check_static = false;
 
+    //Maps the initial entries of both tables to the result they created
+    std::unordered_map<std::vector<int>, std::vector<std::shared_ptr<std::vector<int>>>, TupleHash> crossproduct_pos1;
+    std::unordered_map<std::vector<int>, std::vector<std::shared_ptr<std::vector<int>>>, TupleHash> crossproduct_pos2;
+
 
     DynamicTables() = default;
 
@@ -126,6 +130,9 @@ public:
 
     std::chrono::milliseconds::rep delta_time = 0;
     std::chrono::milliseconds::rep cleanup_time = 0;
+
+    std::chrono::milliseconds::rep join_same_size = 0;
+    std::chrono::milliseconds::rep join_different_size = 0;
 
 
     int counter_me = 0;

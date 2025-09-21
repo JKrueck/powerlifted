@@ -1005,7 +1005,9 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             
             
             //Do the Cross Product
+            auto crossproduct= std::chrono::high_resolution_clock::now();
             if(save_obj.matching_columns.size()==0){
+                cout << "CROSSPRODUCT" << endl;
                 const auto cross_product = std::chrono::high_resolution_clock::now();
                 auto remember = save_obj.result;
 
@@ -1027,6 +1029,9 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 thesis.crossproduct_time += iteration_time;
                 continue;
             }
+
+            double check_crossproduct = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - crossproduct).count();
+            thesis.crossproduct_time += check_crossproduct;
 
             //If filter_static removes some elements
             for(auto del:save_obj.result_deleted_static){
@@ -1050,8 +1055,8 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
 
             //If the size of the first table has NOT changed in comparison to the SemiJoin Results
             //-> we can use the normal semijoin keys here
+            auto join_noChange = std::chrono::high_resolution_clock::now();
             if(!save_obj.join_changed_size_first){
-                cout << "No changed table size" << endl;
                 //Check all facts that were deleted from table 1
                 for(auto del:save_obj.pos1_deleted){
                     //Generate the SemiJoin key for the deleted fact
@@ -1109,14 +1114,16 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 }
             }
 
+            double check_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - join_noChange).count();
+            thesis.join_same_size += check_time;
 
             /*
                 --------First Table--------
             */
             //If the size of the first table HAS changed in comparison to the SemiJoin Results
             //->need to use the JoinStep keys ??? or not????
+            auto join_Change = std::chrono::high_resolution_clock::now();
             if(save_obj.join_changed_size_first){
-                cout << "HIII" << endl;
                 //Go through all previously deleted elements 
                 for(auto del:deleted_from_table[j.second]){
                     GroundAtom copy;
@@ -1234,9 +1241,12 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 
             }
 
+            check_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - join_Change).count();
+            thesis.join_different_size += check_time;
+
             //If the second table does not change its attribute size  with the current join
+            join_noChange = std::chrono::high_resolution_clock::now();
             if(!save_obj.join_changed_size_second){
-                cout << "No changed table size" << endl;
                 //For all facts deleted from table 2
                 for(auto del:save_obj.pos2_deleted){
                     //Generate the key for the deleted fact
@@ -1385,13 +1395,15 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 }
             }
             
+            check_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - join_noChange).count();
+            thesis.join_same_size += check_time;
             /*
                 --------Second Table--------
             */
 
             //If the AttributeSize of Table2 has changed
+            join_Change = std::chrono::high_resolution_clock::now();
             if(save_obj.join_changed_size_second){
-                cout << "HIII" << endl;
                 for(auto del:deleted_from_table[j.first]){
                     std::vector<int> join_step_key(thesis.old_indices.at(action.get_index()).at(j.first).size());
                     for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.first).size(); pos++){
@@ -1455,8 +1467,11 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 }
             }
             
+            check_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - join_Change).count();
+            thesis.join_different_size += check_time;
+
+            join_noChange = std::chrono::high_resolution_clock::now();
             if(!save_obj.join_changed_size_second){
-                cout << "No changed table size" << endl;
                 for(auto add:save_obj.pos2_added){
                     std::vector<int> key(save_obj.matching_columns.size());
                     for(size_t pos = 0; pos < save_obj.matching_columns.size(); pos++) {
@@ -1494,9 +1509,12 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 }
             }
 
+            check_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - join_noChange).count();
+            thesis.join_same_size += check_time;
+
             //If we have already dealt with the add effect to this table previously, we can add the resulting join in here
+            join_Change = std::chrono::high_resolution_clock::now();
             if(save_obj.join_changed_size_second){
-                cout << "HIII" << endl;
                 std::unordered_set<GroundAtom, TupleHash> added_result = added_to_table[j.first];
                 int access_counter = 0;
                 for(auto add:added_result){
@@ -1531,8 +1549,52 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                     access_counter++;
                 }
             }
+            
+            check_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - join_Change).count();
+            thesis.join_different_size += check_time;
+
+            join_noChange = std::chrono::high_resolution_clock::now();
+            if(!save_obj.join_changed_size_first){
+                for(auto add:save_obj.pos1_added){
+                    //We need to compute the Join 
+                    std::vector<bool> to_remove_me(tables[j.first].tuple_index.size(), false);
+                    for (const auto &m : save_obj.matching_columns) {
+                        to_remove_me[m.second] = true;
+                    }
+                    std::vector<int> key(save_obj.matching_columns.size());
+                    for(size_t pos = 0; pos < save_obj.matching_columns.size(); pos++) {
+                        key[pos] = add[save_obj.matching_columns[pos].first];
+                    }
+                    auto actually_added = save_obj.pos1_hashtable[key].insert(add);
+                    if(save_obj.pos2_hashtable.count(key)!=0 && actually_added.second){
+                        std::unordered_set<GroundAtom, TupleHash> second_part = save_obj.pos2_hashtable[key];
+                        for(auto tup:second_part){
+                            GroundAtom new_elem = add;
+                            for (unsigned pos = 0; pos < to_remove_me.size(); ++pos) {
+                                if (!to_remove_me[pos]) new_elem.push_back(tup[pos]);
+                            }
+                            if(save_obj.check_static) thesis_filter_static(action, new_elem, save_obj);
+                            if(new_elem.size()!=0){
+                                save_obj.result_table[add].insert(new_elem);
+                                std::unordered_set<GroundAtom, TupleHash>::iterator old = added_to_table[j.second].begin();
+                                for(;old!=added_to_table[j.second].end();){
+                                    if(old->size()<new_elem.size()){
+                                        old = added_to_table[j.second].erase(old);
+                                    }else{
+                                        old++;
+                                    }
+                                }
+                                added_to_table[j.second].insert(new_elem);
+                            }
+                        }
+                    }
+                }
+            }
+            check_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - join_noChange).count();
+            thesis.join_same_size += check_time;
+
+            join_Change = std::chrono::high_resolution_clock::now();
             if(save_obj.join_changed_size_first){
-                cout << "HIII" << endl;
                 std::unordered_set<GroundAtom, TupleHash> added_result = added_to_table[j.second];
                 int access_counter = 0;
                 for(auto add:added_result){
@@ -1575,46 +1637,13 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                     }
                     access_counter++;
                 }
-            }else{
-                cout << "No changed table size" << endl;
-                for(auto add:save_obj.pos1_added){
-                    //We need to compute the Join 
-                    std::vector<bool> to_remove_me(tables[j.first].tuple_index.size(), false);
-                    for (const auto &m : save_obj.matching_columns) {
-                        to_remove_me[m.second] = true;
-                    }
-                    std::vector<int> key(save_obj.matching_columns.size());
-                    for(size_t pos = 0; pos < save_obj.matching_columns.size(); pos++) {
-                        key[pos] = add[save_obj.matching_columns[pos].first];
-                    }
-                    auto actually_added = save_obj.pos1_hashtable[key].insert(add);
-                    if(save_obj.pos2_hashtable.count(key)!=0 && actually_added.second){
-                        std::unordered_set<GroundAtom, TupleHash> second_part = save_obj.pos2_hashtable[key];
-                        for(auto tup:second_part){
-                            GroundAtom new_elem = add;
-                            for (unsigned pos = 0; pos < to_remove_me.size(); ++pos) {
-                                if (!to_remove_me[pos]) new_elem.push_back(tup[pos]);
-                            }
-                            if(save_obj.check_static) thesis_filter_static(action, new_elem, save_obj);
-                            if(new_elem.size()!=0){
-                                save_obj.result_table[add].insert(new_elem);
-                                std::unordered_set<GroundAtom, TupleHash>::iterator old = added_to_table[j.second].begin();
-                                for(;old!=added_to_table[j.second].end();){
-                                    if(old->size()<new_elem.size()){
-                                        old = added_to_table[j.second].erase(old);
-                                    }else{
-                                        old++;
-                                    }
-                                }
-                                added_to_table[j.second].insert(new_elem);
-                            }
-                        }
-                    }
-                }
             }
+            
             affected_tables[j.second] = counter;
             
-            
+            check_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - join_Change).count();
+            thesis.join_different_size += check_time;
+
             if(iteration_add_storage.size()!=0){
                 std::unordered_set<GroundAtom, TupleHash>::iterator old = added_to_table[j.second].begin();
                 size_t example_size = iteration_add_storage.begin()->size();

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-DOMAIN="error_runs/childsnack-contents/domain.pddl"
-
 total_files=0
-hiii_occurrences=0
-nochange_occurrences=0
+total_nochange=0
+total_change=0
+total_cross=0
+total_join_time=0
 
 # Colors
 GREEN="\e[32m"
@@ -22,17 +22,46 @@ for X in error_runs/childsnack-contents/*; do
                 ((total_files++))
                 echo -e "${CYAN}▶ Executing:${RESET} $Y"
 
-                OUTPUT=$(./powerlifted.py -d "$DOMAIN" -i "$Y" -g yannakakis -s alt-bfws1 -e ff --th 2>&1)
+                OUTPUT=$(./powerlifted.py -d "$X/domain.pddl" -i "$Y" -g yannakakis -s alt-bfws1 -e ff --th 2>&1)
 
-                # Count occurrences of "HIII"
-                hiii_count=$(echo "$OUTPUT" | grep -o "HIII" | wc -l)
-                ((hiii_occurrences+=hiii_count))
+                # Extract number after "Join No Change:"
+                nochange_val=$(echo "$OUTPUT" | grep -oP "Join No Change:\s*\K[0-9]+" | head -n1)
+                if [ -n "$nochange_val" ]; then
+                    ((total_nochange+=nochange_val))
+                fi
 
-                # Count occurrences of "No changed table size"
-                nochange_count=$(echo "$OUTPUT" | grep -o "No changed table size" | wc -l)
-                ((nochange_occurrences+=nochange_count))
+                # Extract number after "Join Change:"
+                change_val=$(echo "$OUTPUT" | grep -oP "Join Change:\s*\K[0-9]+" | head -n1)
+                if [ -n "$change_val" ]; then
+                    ((total_change+=change_val))
+                fi
 
-                echo -e "   ${YELLOW}Progress → Files: $total_files | HIII: $hiii_occurrences | No changed table size: $nochange_occurrences${RESET}"
+                # Extract number after "Cross Product:"
+                cross_val=$(echo "$OUTPUT" | grep -oP "Cross Product:\s*\K[0-9]+" | head -n1)
+                if [ -n "$cross_val" ]; then
+                    ((total_cross+=cross_val))
+                fi
+
+                # Extract "Time used for my Join Step:"
+                join_time=$(echo "$OUTPUT" | grep -oP "Time used for my Join Step:\s*\K[0-9]+(\.[0-9]+)?" | head -n1)
+                if [ -n "$join_time" ]; then
+                    total_join_time=$(echo "$total_join_time + $join_time" | bc)
+                fi
+
+                # Normalized values
+                if [ "$total_files" -gt 0 ]; then
+                    avg_nochange=$(echo "scale=4; $total_nochange / $total_files" | bc)
+                    avg_change=$(echo "scale=4; $total_change / $total_files" | bc)
+                    avg_cross=$(echo "scale=4; $total_cross / $total_files" | bc)
+                    avg_join_time=$(echo "scale=4; $total_join_time / $total_files" | bc)
+                else
+                    avg_nochange=0
+                    avg_change=0
+                    avg_cross=0
+                    avg_join_time=0
+                fi
+
+                echo -e "   ${YELLOW}Progress → Files: $total_files | No Change: $total_nochange (avg: $avg_nochange) | Change: $total_change (avg: $avg_change) | Cross: $total_cross (avg: $avg_cross) | Avg Join Step Time: $avg_join_time${RESET}"
                 echo "------------------------------------------------------"
             fi
         done
@@ -41,7 +70,9 @@ done
 
 echo
 echo -e "${CYAN}========== FINAL SUMMARY ==========${RESET}"
-echo -e "${YELLOW}Total files processed:${RESET}        $total_files"
-echo -e "${GREEN}Total HIII occurrences:${RESET}       $hiii_occurrences(avg per file: $(echo "scale=4; $hiii_occurrences / $total_files" | bc))"
-echo -e "${RED}Total 'No changed table size':${RESET} $nochange_occurrences $nochange_occurrences (avg per file: $(echo "scale=4; $nochange_occurrences / $total_files" | bc))"
+echo -e "${YELLOW}Total files processed:${RESET}   $total_files"
+echo -e "${GREEN}Total Join No Change:${RESET}   $total_nochange (avg per file: $(echo "scale=4; $total_nochange / $total_files" | bc))"
+echo -e "${RED}Total Join Change:${RESET}      $total_change (avg per file: $(echo "scale=4; $total_change / $total_files" | bc))"
+echo -e "${CYAN}Total Cross Product:${RESET}    $total_cross (avg per file: $(echo "scale=4; $total_cross / $total_files" | bc))"
+echo -e "${YELLOW}Average Join Step Time:${RESET} $(echo "scale=4; $total_join_time / $total_files" | bc)"
 echo -e "${CYAN}=====================================${RESET}"

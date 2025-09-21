@@ -3,6 +3,7 @@
 total_files=0
 hiii_occurrences=0
 nochange_occurrences=0
+total_join_time=0
 
 # Colors
 GREEN="\e[32m"
@@ -30,16 +31,24 @@ for X in error_runs/visitall/*; do
                 nochange_count=$(echo "$OUTPUT" | grep -o "No changed table size" | wc -l)
                 ((nochange_occurrences+=nochange_count))
 
+                # Extract "Time used for my Join Step: <value>"
+                join_time=$(echo "$OUTPUT" | grep -oP "Time used for my Join Step:\s*\K[0-9]+(\.[0-9]+)?" | head -n1)
+                if [ -n "$join_time" ]; then
+                    total_join_time=$(echo "$total_join_time + $join_time" | bc)
+                fi
+
                 # Normalized values (avoid division by zero)
                 if [ "$total_files" -gt 0 ]; then
                     avg_hiii=$(echo "scale=4; $hiii_occurrences / $total_files" | bc)
                     avg_nochange=$(echo "scale=4; $nochange_occurrences / $total_files" | bc)
+                    avg_join_time=$(echo "scale=4; $total_join_time / $total_files" | bc)
                 else
                     avg_hiii=0
                     avg_nochange=0
+                    avg_join_time=0
                 fi
 
-                echo -e "   ${YELLOW}Progress → Files: $total_files | HIII: $hiii_occurrences (avg: $avg_hiii) | No changed table size: $nochange_occurrences (avg: $avg_nochange)${RESET}"
+                echo -e "   ${YELLOW}Progress → Files: $total_files | HIII: $hiii_occurrences (avg: $avg_hiii) | No changed table size: $nochange_occurrences (avg: $avg_nochange) | Avg Join Step Time: $avg_join_time${RESET}"
                 echo "------------------------------------------------------"
             fi
         done
@@ -51,4 +60,5 @@ echo -e "${CYAN}========== FINAL SUMMARY ==========${RESET}"
 echo -e "${YELLOW}Total files processed:${RESET}        $total_files"
 echo -e "${GREEN}Total HIII occurrences:${RESET}       $hiii_occurrences (avg per file: $(echo "scale=4; $hiii_occurrences / $total_files" | bc))"
 echo -e "${RED}Total 'No changed table size':${RESET} $nochange_occurrences (avg per file: $(echo "scale=4; $nochange_occurrences / $total_files" | bc))"
+echo -e "${CYAN}Average Join Step Time:${RESET}       $(echo "scale=4; $total_join_time / $total_files" | bc)"
 echo -e "${CYAN}=====================================${RESET}"

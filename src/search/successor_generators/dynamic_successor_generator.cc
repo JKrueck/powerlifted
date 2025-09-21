@@ -56,6 +56,9 @@ void GenericDynamicSearchSetup::time_tracking(DynamicState& dynamic_successor, D
 
     dynamic_successor.delta_time = old_dynamic_state.delta_time;
     dynamic_successor.cleanup_time = old_dynamic_state.cleanup_time;
+
+    dynamic_successor.join_different_size = old_dynamic_state.join_different_size;
+    dynamic_successor.join_same_size = old_dynamic_state.join_same_size;
 };
 
 void GenericDynamicSearchSetup::clean_state_memory(int current_heuristic){
