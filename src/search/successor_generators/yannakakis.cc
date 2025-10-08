@@ -664,6 +664,29 @@ void YannakakisSuccessorGenerator::thesis_filter_static(const ActionSchema &acti
     }
 }
 
+void YannakakisSuccessorGenerator::deal_with_del_hashjoin(DynamicTables& save, std::vector<int>& del)
+{
+    if (save.crossproduct_pos1.find(del) != save.crossproduct_pos1.end()) {
+        for (auto it:save.crossproduct_pos1.at(del)) {
+            if (save.hashjoin_result_table.find(it) != save.hashjoin_result_table.end()) {
+                if (it == save.biggest_elem) save.biggest_elem --;
+                save.result_deleted_single.insert(save.hashjoin_result_table.at(it));
+                save.hashjoin_result_table.erase(it);
+            }
+        }
+    }
+    if (save.crossproduct_pos2.find(del) != save.crossproduct_pos2.end()) {
+        for (auto it:save.crossproduct_pos2.at(del)) {
+            if (save.hashjoin_result_table.find(it) != save.hashjoin_result_table.end()) {
+                if (it == save.biggest_elem) save.biggest_elem --;
+                save.result_deleted_single.insert(save.hashjoin_result_table.at(it));
+                save.hashjoin_result_table.erase(it);
+            }
+        }
+    }
+}
+
+
 Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &action,const DBState &state,const Task &task, DynamicState &thesis,
                             std::vector<std::vector<DynamicTables>> &thesis_tables, std::vector<std::vector<DynamicTables>> &dynamic_semijoin, DBState &old_state)
 {
@@ -842,6 +865,11 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
 
                 semi_join(tables[sj.second],tables[sj.first],save_obj);
 
+                save_obj.pos1_added = old_save.pos1_added;
+                save_obj.pos1_deleted = old_save.pos1_deleted;
+                thesis_tables.at(action.get_index()).at(join_elem).pos1_added = old_save.pos1_added;
+                thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted = old_save.pos1_deleted;
+
             }else{
                 
                 deal_with_add_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save.pos1_added, false, sj.first, false, extreme_hack_flag);
@@ -872,7 +900,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             }
             
             affected_tables.insert_or_assign(sj.second,counter);
-        }else if(affected_tables.count(sj.second)!=0 && affected_tables.count(sj.first) == 0){
+        }else if(affected_tables.count(sj.first)==0 && affected_tables.count(sj.second) != 0){
             /*
             What if both tables have changed????
             For now do a full semi-join between them
@@ -897,6 +925,8 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 semi_join(tables[sj.second],tables[sj.first],save_obj);
                 save_obj.pos1_added = old_save.pos1_added;
                 save_obj.pos1_deleted = old_save.pos1_deleted;
+                thesis_tables.at(action.get_index()).at(join_elem).pos1_added = old_save.pos1_added;
+                thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted = old_save.pos1_deleted;
             }else{
 
                 deal_with_add_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save.pos1_added, true, sj.second, false, extreme_hack_flag);
@@ -934,6 +964,10 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 semi_join(tables[sj.second],tables[sj.first],save_obj);
                 save_obj.pos1_added = old_save_pos1.pos1_added;
                 save_obj.pos1_deleted = old_save_pos1.pos1_deleted;
+                thesis_tables.at(action.get_index()).at(join_elem).pos1_added = old_save_pos1.pos1_added;
+                thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted = old_save_pos1.pos1_deleted;
+                thesis_tables.at(action.get_index()).at(join_elem).pos2_added = old_save_pos2.pos1_added;
+                thesis_tables.at(action.get_index()).at(join_elem).pos2_deleted = old_save_pos2.pos1_deleted;
             }else{
                 
                 //Order tab2 before tab1 important
@@ -1007,8 +1041,36 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             //Do the Cross Product
             auto crossproduct= std::chrono::high_resolution_clock::now();
             if(save_obj.matching_columns.size()==0){
+
+                for(auto del:save_obj.pos1_deleted) {
+                    deal_with_del_hashjoin(save_obj,del);
+                }
+                for(auto del:save_obj.pos2_deleted) {
+                    deal_with_del_hashjoin(save_obj,del);
+                }
+
+                for (auto add:save_obj.pos1_added) {
+                    int test = 5;
+                    int size_count = save_obj.biggest_elem+1;
+                    if (save_obj.pos1_deleted.find(add) == save_obj.pos1_deleted.end()) {
+                        for (const vector<int> &tuple2:tables.at(j.second).tuples) {
+                            vector<int> aux(add);
+                            aux.insert(aux.end(), tuple2.begin(), tuple2.end());
+
+                            save_obj.crossproduct_pos1[add].push_back(size_count);
+                            save_obj.crossproduct_pos2[tuple2].push_back(size_count);
+                            save_obj.hashjoin_result_table[size_count] = aux;
+                            save_obj.biggest_elem = size_count;
+                            size_count++;
+                        }
+                    }
+
+                    vector<int> aux(add);
+                    cout << "ADD" << endl;
+                }
+
                 cout << "CROSSPRODUCT" << endl;
-                const auto cross_product = std::chrono::high_resolution_clock::now();
+                /*const auto cross_product = std::chrono::high_resolution_clock::now();
                 auto remember = save_obj.result;
 
                 Table &working_table = tables[j.second];
@@ -1021,13 +1083,13 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 determine_changes_crossProduct(save_obj, remember, save_obj.result);
                 added_to_table[j.second].insert(save_obj.pos1_added.begin(),save_obj.pos1_added.end());
                 save_obj.pos1_added.clear();
-                
+
                 affected_tables[j.second] = counter;
                 counter++;
 
                 iteration_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cross_product).count();
                 thesis.crossproduct_time += iteration_time;
-                continue;
+                continue;*/
             }
 
             double check_crossproduct = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - crossproduct).count();
@@ -1839,7 +1901,7 @@ Table YannakakisSuccessorGenerator::instantiate(const ActionSchema &action, cons
                 return working_table;
             }
             if(thesis.is_enabled()){
- 
+
                 dynamic_join.at(action.get_index()).push_back(dynamic_join_table);
 
             }

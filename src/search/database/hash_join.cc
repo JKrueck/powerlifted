@@ -135,26 +135,20 @@ void hash_join(Table &t1, const Table &t2, DynamicTables &save, std::vector<int>
          * If no attribute matches, then we apply a cartesian product
          * TODO this code is duplicate from join.cc, make it an auxiliary function
          */
+        int result_counter = 0;
         t1.tuple_index.insert(t1.tuple_index.end(), t2.tuple_index.begin(), t2.tuple_index.end());
         for (const vector<int> &tuple_t1 : t1.tuples) {
             for (const vector<int> &tuple_t2 : t2.tuples) {
                 vector<int> aux(tuple_t1);
                 aux.insert(aux.end(), tuple_t2.begin(), tuple_t2.end());
+
+                //Associate which tuples were created through joining with which element
+                save.crossproduct_pos1[tuple_t1].push_back(result_counter);
+                save.crossproduct_pos2[tuple_t2].push_back(result_counter);
+                save.hashjoin_result_table[result_counter] = aux;
+                if (result_counter > save.biggest_elem) save.biggest_elem = result_counter;
+                result_counter++;
                 new_tuples_me.push_back(std::move(aux));
-
-                if(save.crossproduct_pos1.find(tuple_t1)!= save.crossproduct_pos1.end()){
-                    save.crossproduct_pos1.at(tuple_t1).push_back(std::make_shared<std::vector<int>>(new_tuples_me.back()));
-                }else{
-                    std::vector<std::shared_ptr<std::vector<int>>> tmp{std::make_shared<std::vector<int>>(new_tuples_me.back())};
-                    save.crossproduct_pos1.insert_or_assign(tuple_t1,tmp);
-                }
-
-                if(save.crossproduct_pos2.find(tuple_t2)!= save.crossproduct_pos2.end()){
-                    save.crossproduct_pos2.at(tuple_t2).push_back(std::make_shared<std::vector<int>>(new_tuples_me.back()));
-                }else{
-                    std::vector<std::shared_ptr<std::vector<int>>> tmp{std::make_shared<std::vector<int>>(new_tuples_me.back())};
-                    save.crossproduct_pos2.insert_or_assign(tuple_t2,tmp);
-                }
             }
         }
         save.result.tuple_index = t1.tuple_index;
@@ -214,8 +208,6 @@ void hash_join(Table &t1, const Table &t2, DynamicTables &save, std::vector<int>
             }
         }
     }
-    //Remember if the Join result is larger then the two initial tables
-    //if(remember<t1.tuple_index.size()) save.join_changed_sized = true;
     save.result.tuples = new_tuples_me;
     save.result_index = t1.tuple_index;
     t1.tuples = std::move(new_tuples_me);

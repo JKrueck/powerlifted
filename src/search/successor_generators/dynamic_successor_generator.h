@@ -21,6 +21,8 @@ struct DynamicTables{
     std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash> pos2_hashtable;
     
     std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash> result_table;
+    std::unordered_map<int,std::vector<int>> hashjoin_result_table;
+    int biggest_elem = 0;
     Table result;
     std::vector<int> result_index;
 
@@ -53,9 +55,10 @@ struct DynamicTables{
     bool check_static = false;
 
     //Maps the initial entries of both tables to the result they created
-    std::unordered_map<std::vector<int>, std::vector<std::shared_ptr<std::vector<int>>>, TupleHash> crossproduct_pos1;
-    std::unordered_map<std::vector<int>, std::vector<std::shared_ptr<std::vector<int>>>, TupleHash> crossproduct_pos2;
-
+    //std::unordered_map<std::vector<int>, std::vector<std::shared_ptr<std::vector<int>>>, TupleHash> crossproduct_pos1;
+    //std::unordered_map<std::vector<int>, std::vector<std::shared_ptr<std::vector<int>>>, TupleHash> crossproduct_pos2;
+    std::unordered_map<std::vector<int>, std::vector<int>,TupleHash> crossproduct_pos1;
+    std::unordered_map<std::vector<int>, std::vector<int>,TupleHash> crossproduct_pos2;
 
     DynamicTables() = default;
 
