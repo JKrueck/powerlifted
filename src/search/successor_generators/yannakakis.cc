@@ -664,23 +664,61 @@ void YannakakisSuccessorGenerator::thesis_filter_static(const ActionSchema &acti
     }
 }
 
-void YannakakisSuccessorGenerator::deal_with_del_hashjoin(DynamicTables& save, std::vector<int>& del)
+void YannakakisSuccessorGenerator::deal_with_del_crossjoin(DynamicTables& save, std::vector<int>& del)
 {
     if (save.crossproduct_pos1.find(del) != save.crossproduct_pos1.end()) {
         for (auto it:save.crossproduct_pos1.at(del)) {
-            if (save.hashjoin_result_table.find(it) != save.hashjoin_result_table.end()) {
+            if (save.crossproduct_result_table.find(it) != save.crossproduct_result_table.end()) {
                 if (it == save.biggest_elem) save.biggest_elem --;
-                save.result_deleted_single.insert(save.hashjoin_result_table.at(it));
-                save.hashjoin_result_table.erase(it);
+                save.result_deleted_single.insert(save.crossproduct_result_table.at(it));
+                save.crossproduct_result_table.erase(it);
             }
         }
+        save.crossproduct_pos1.erase(del);
     }
     if (save.crossproduct_pos2.find(del) != save.crossproduct_pos2.end()) {
         for (auto it:save.crossproduct_pos2.at(del)) {
-            if (save.hashjoin_result_table.find(it) != save.hashjoin_result_table.end()) {
+            if (save.crossproduct_result_table.find(it) != save.crossproduct_result_table.end()) {
                 if (it == save.biggest_elem) save.biggest_elem --;
-                save.result_deleted_single.insert(save.hashjoin_result_table.at(it));
-                save.hashjoin_result_table.erase(it);
+                save.result_deleted_single.insert(save.crossproduct_result_table.at(it));
+                save.crossproduct_result_table.erase(it);
+
+            }
+        }
+        save.crossproduct_pos2.erase(del);
+    }
+}
+void YannakakisSuccessorGenerator::deal_with_add_crossjoin(DynamicTables &save, std::vector<int> &add, int& size_counter, Table& first_table, Table& second_table, bool first )
+{
+    if (first) {
+        //Something has been added to table 1
+        if (save.pos1_deleted.find(add) == save.pos1_deleted.end()) {
+            //Join the newly added element with all elements of the other table
+            for (const vector<int> &tuple:second_table.tuples) {
+                vector<int> aux(add);
+                aux.insert(aux.end(), tuple.begin(), tuple.end());
+
+                save.crossproduct_pos1[add].push_back(size_counter);
+                save.crossproduct_pos2[tuple].push_back(size_counter);
+                save.crossproduct_result_table[size_counter] = aux;
+                save.biggest_elem = size_counter;
+                save.result_added.insert(aux);
+                size_counter++;
+            }
+        }
+    }else {
+        if (save.pos2_deleted.find(add) == save.pos2_deleted.end()) {
+            //Join the newly added element with all elements of the other table
+            for (const vector<int> &tuple:first_table.tuples) {
+                vector<int> aux(tuple);
+                aux.insert(aux.end(), add.begin(), add.end());
+
+                save.crossproduct_pos1[add].push_back(size_counter);
+                save.crossproduct_pos2[tuple].push_back(size_counter);
+                save.crossproduct_result_table[size_counter] = aux;
+                save.biggest_elem = size_counter;
+                save.result_added.insert(aux);
+                size_counter++;
             }
         }
     }
@@ -966,8 +1004,8 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 save_obj.pos1_deleted = old_save_pos1.pos1_deleted;
                 thesis_tables.at(action.get_index()).at(join_elem).pos1_added = old_save_pos1.pos1_added;
                 thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted = old_save_pos1.pos1_deleted;
-                thesis_tables.at(action.get_index()).at(join_elem).pos2_added = old_save_pos2.pos1_added;
-                thesis_tables.at(action.get_index()).at(join_elem).pos2_deleted = old_save_pos2.pos1_deleted;
+                //thesis_tables.at(action.get_index()).at(join_elem).pos2_added = old_save_pos2.pos1_added;
+                //thesis_tables.at(action.get_index()).at(join_elem).pos2_deleted = old_save_pos2.pos1_deleted;
             }else{
                 
                 //Order tab2 before tab1 important
@@ -1043,57 +1081,81 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             if(save_obj.matching_columns.size()==0){
 
                 for(auto del:save_obj.pos1_deleted) {
-                    deal_with_del_hashjoin(save_obj,del);
+                    deal_with_del_crossjoin(save_obj,del);
+                }
+
+                if (affected_tables.count(j.second)!=0) {
+                    for (auto it:old_pos1.result_deleted_single) {
+                        deal_with_del_crossjoin(save_obj,it);
+                    }
                 }
                 for(auto del:save_obj.pos2_deleted) {
-                    deal_with_del_hashjoin(save_obj,del);
+                    deal_with_del_crossjoin(save_obj,del);
+                }
+
+                if (affected_tables.count(j.first)!=0) {
+                    for (auto it:old_pos2.result_deleted_single) {
+                        deal_with_del_crossjoin(save_obj,it);
+                    }
                 }
 
                 for (auto add:save_obj.pos1_added) {
-                    int test = 5;
                     int size_count = save_obj.biggest_elem+1;
-                    if (save_obj.pos1_deleted.find(add) == save_obj.pos1_deleted.end()) {
-                        for (const vector<int> &tuple2:tables.at(j.second).tuples) {
-                            vector<int> aux(add);
-                            aux.insert(aux.end(), tuple2.begin(), tuple2.end());
-
-                            save_obj.crossproduct_pos1[add].push_back(size_count);
-                            save_obj.crossproduct_pos2[tuple2].push_back(size_count);
-                            save_obj.hashjoin_result_table[size_count] = aux;
-                            save_obj.biggest_elem = size_count;
-                            size_count++;
-                        }
-                    }
-
-                    vector<int> aux(add);
-                    cout << "ADD" << endl;
+                    deal_with_add_crossjoin(save_obj,add,size_count,tables.at(j.second), tables.at(j.first), true); //positional encoding prob not needed
+                    added_to_table[j.second].insert(save_obj.crossproduct_result_table[save_obj.biggest_elem]);
                 }
 
-                cout << "CROSSPRODUCT" << endl;
-                /*const auto cross_product = std::chrono::high_resolution_clock::now();
-                auto remember = save_obj.result;
+                if (added_to_table.count(j.second)!=0) {
+                    for (auto it:added_to_table[j.second]) {
+                        int size_count = save_obj.biggest_elem+1;
+                        deal_with_add_crossjoin(save_obj,it,size_count,tables.at(j.second), tables.at(j.first),true);
+                    }
+                }
 
-                Table &working_table = tables[j.second];
-                hash_join(working_table, tables[j.first]);
-                filter_static(action, working_table, save_obj);
-                project(working_table, project_over, save_obj, thesis.old_indices.at(action.get_index()).at(j.second).size());
+                for (auto add:save_obj.pos2_added) {
+                    int size_count = save_obj.biggest_elem+1;
+                    deal_with_add_crossjoin(save_obj,add,size_count,tables.at(j.second), tables.at(j.first), false);
+                    added_to_table[j.first].insert(save_obj.crossproduct_result_table[save_obj.biggest_elem]);
+                }
 
-                save_obj.result = working_table;
-
-                determine_changes_crossProduct(save_obj, remember, save_obj.result);
-                added_to_table[j.second].insert(save_obj.pos1_added.begin(),save_obj.pos1_added.end());
-                save_obj.pos1_added.clear();
+                if (added_to_table.count(j.first)!=0) {
+                    for (auto it:added_to_table[j.first]) {
+                        int size_count = save_obj.biggest_elem+1;
+                        deal_with_add_crossjoin(save_obj,it,size_count,tables.at(j.second), tables.at(j.first),false);
+                    }
+                }
+                tables[j.second] = save_obj.generate_crossproduct_table();
+                double check_crossproduct = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - crossproduct).count();
+                thesis.crossproduct_time += check_crossproduct;
 
                 affected_tables[j.second] = counter;
+
+                project(tables[j.second],project_over,save_obj, thesis.old_indices.at(action.get_index()).at(j.second).size());
+
+                if(iteration_add_storage.size()!=0){
+                    std::unordered_set<GroundAtom, TupleHash>::iterator old = added_to_table[j.second].begin();
+                    size_t example_size = iteration_add_storage.begin()->size();
+                    for(;old!=added_to_table[j.second].end();){
+                        if(old->size()<example_size){
+                            old = added_to_table[j.second].erase(old);
+                        }else{
+                            old++;
+                        }
+                    }
+                    added_to_table[j.second].insert(iteration_add_storage.begin(), iteration_add_storage.end());
+                }
+
+                if(tables[j.second].tuples.size()==0){
+                    //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
+                    //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
+                    std::vector<DynamicTables> thesis_empty_joins;
+                    thesis_tables.at(action.get_index()) = std::move(thesis_empty_joins);
+                    return Table::EMPTY_TABLE();
+                }
+
                 counter++;
-
-                iteration_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - cross_product).count();
-                thesis.crossproduct_time += iteration_time;
-                continue;*/
+                continue;
             }
-
-            double check_crossproduct = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - crossproduct).count();
-            thesis.crossproduct_time += check_crossproduct;
 
             //If filter_static removes some elements
             for(auto del:save_obj.result_deleted_static){
@@ -1726,8 +1788,8 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             if(tables[j.second].tuples.size()==0){
                 //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
                 //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
-                std::vector<DynamicTables> thesis_empty_semijoins;
-                dynamic_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
+                std::vector<DynamicTables> thesis_empty_joins;
+                thesis_tables.at(action.get_index()) = std::move(thesis_empty_joins);
                 return Table::EMPTY_TABLE();
             }
 

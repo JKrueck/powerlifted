@@ -145,7 +145,7 @@ void hash_join(Table &t1, const Table &t2, DynamicTables &save, std::vector<int>
                 //Associate which tuples were created through joining with which element
                 save.crossproduct_pos1[tuple_t1].push_back(result_counter);
                 save.crossproduct_pos2[tuple_t2].push_back(result_counter);
-                save.hashjoin_result_table[result_counter] = aux;
+                save.crossproduct_result_table[result_counter] = aux;
                 if (result_counter > save.biggest_elem) save.biggest_elem = result_counter;
                 result_counter++;
                 new_tuples_me.push_back(std::move(aux));

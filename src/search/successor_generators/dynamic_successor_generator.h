@@ -21,7 +21,7 @@ struct DynamicTables{
     std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash> pos2_hashtable;
     
     std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash> result_table;
-    std::unordered_map<int,std::vector<int>> hashjoin_result_table;
+    std::unordered_map<int,std::vector<int>> crossproduct_result_table;
     int biggest_elem = 0;
     Table result;
     std::vector<int> result_index;
@@ -68,6 +68,16 @@ struct DynamicTables{
             for(auto it:set.second){
                 this->result.tuples.push_back(it);
             }
+        }
+        result.tuple_index = this->result_index;
+        return this->result;
+    }
+
+    Table generate_crossproduct_table()
+    {
+        this->result.tuples.clear();
+        for (auto it:this->crossproduct_result_table) {
+            this->result.tuples.push_back(it.second);
         }
         result.tuple_index = this->result_index;
         return this->result;

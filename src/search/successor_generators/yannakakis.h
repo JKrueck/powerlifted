@@ -29,7 +29,8 @@ class YannakakisSuccessorGenerator : public GenericJoinSuccessor {
     std::unordered_set<GroundAtom,TupleHash> determine_changes(DynamicTables& save, std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash>& old_result);
     void determine_changes_crossProduct(DynamicTables& save, Table& old_tab, Table& new_tab);
     void thesis_filter_static(const ActionSchema &action, GroundAtom &check, DynamicTables &save);
-    void deal_with_del_hashjoin(DynamicTables& save, std::vector<int>& del);
+    void deal_with_del_crossjoin(DynamicTables& save, std::vector<int>& del);
+    void deal_with_add_crossjoin(DynamicTables& save, std::vector<int>& add, int &size_counter, Table& first_table, Table& second_table, bool first);
 
     bool thesis_called = false;
  private:

@@ -64,15 +64,16 @@ void GenericDynamicSearchSetup::time_tracking(DynamicState& dynamic_successor, D
 void GenericDynamicSearchSetup::clean_state_memory(int current_heuristic){
     //std::cout << "enter3 \n";
     if(this->heuristic_map.count(current_heuristic+2)!=0 && this->heuristic_map.size()!=1){
-        if(this->heuristic_map.at(current_heuristic+2).size()!=0){
-            while(this->heuristic_map.at(current_heuristic+2).size()!=0){
-                auto it = this->heuristic_map.at(current_heuristic+2).back();
+        auto& entries = this->heuristic_map[current_heuristic+2];
+        if(entries.size()!=0){
+            while(entries.size()!=0){
+                auto it = entries.back();
                 if(it.second==0){
                     this->semijoin_table_memory.erase(it.first);
                 }else{
                     this->join_table_memory.erase(it.first);
                 }    
-                this->heuristic_map.at(current_heuristic+2).pop_back();
+                entries.pop_back();
             }
         }
     }
