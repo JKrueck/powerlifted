@@ -231,7 +231,8 @@ public:
     std::vector<std::unordered_map<int, GroundAtom>> old_indices_gblhack;
     std::unordered_map<StateID,StateID,ThesisStateIDHasher> dynamic_previous_state;
 
-    std::unordered_map<int, std::vector<std::pair<GenericDynamicSearchSetup::memory_table::iterator, int>>> heuristic_map;
+    //<heuristic value,<key, semi- or nomral join>>
+    std::unordered_map<int, std::vector<std::pair<int, int>>> heuristic_map;
 
     bool temp_disable;
 

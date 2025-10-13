@@ -377,17 +377,15 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
             if(dynamic_setup.heuristic_map.count(h) == 0){
                 //std::cout << "enter1 \n";
 
-                std::vector<std::pair<GenericDynamicSearchSetup::memory_table::iterator, int>> dummy;
-                GenericDynamicSearchSetup::memory_table::iterator it1 = dynamic_setup.semijoin_table_memory.find(sid.id());
-                GenericDynamicSearchSetup::memory_table::iterator it2 = dynamic_setup.join_table_memory.find(sid.id());
-                dummy.push_back(std::make_pair(it1,0));
-                dummy.push_back(std::make_pair(it2,1));
+                std::vector<std::pair<int, int>> dummy;
+                dummy.push_back(std::make_pair(sid.id(),0));
+                dummy.push_back(std::make_pair(sid.id(),1));
 
                 dynamic_setup.heuristic_map.insert_or_assign(h, dummy);
             }else{
                 //std::cout << "enter2 \n";
-                dynamic_setup.heuristic_map.at(h).push_back(std::make_pair(dynamic_setup.semijoin_table_memory.find(sid.id()),0));
-                dynamic_setup.heuristic_map.at(h).push_back(std::make_pair(dynamic_setup.join_table_memory.find(sid.id()),1));
+                dynamic_setup.heuristic_map.at(h).push_back(std::make_pair(sid.id(),0));
+                dynamic_setup.heuristic_map.at(h).push_back(std::make_pair(sid.id(),1));
             }
         }
         old_dynamic_state.cleanup_time += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - clean_timer2).count();
