@@ -664,6 +664,7 @@ void YannakakisSuccessorGenerator::thesis_filter_static(const ActionSchema &acti
     }
 }
 
+
 void YannakakisSuccessorGenerator::deal_with_del_crossjoin(DynamicTables& save, std::vector<int>& del)
 {
     if (save.crossproduct_pos1.find(del) != save.crossproduct_pos1.end()) {
@@ -792,7 +793,10 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
 
     const auto full_reducer = std::chrono::high_resolution_clock::now();
     long unsigned int counter = 0;
-    for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {  
+    for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
+        if (counter ==47) {
+            int stopaaaa = 0;
+        }
         table_predicates.first = action.get_precondition().at(sj.first).get_predicate_symbol_idx();
         table_predicates.second = action.get_precondition().at(sj.second).get_predicate_symbol_idx();
 
@@ -903,10 +907,14 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
 
                 semi_join(tables[sj.second],tables[sj.first],save_obj);
 
-                save_obj.pos1_added = old_save.pos1_added;
-                save_obj.pos1_deleted = old_save.pos1_deleted;
-                thesis_tables.at(action.get_index()).at(join_elem).pos1_added = old_save.pos1_added;
-                thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted = old_save.pos1_deleted;
+                //if we are in the second half of the SemiJoin Step, the join order of the tables is flipped
+                if (!revert_join) {
+                    thesis_tables.at(action.get_index()).at(join_elem).pos2_added = old_save.pos1_added;
+                    thesis_tables.at(action.get_index()).at(join_elem).pos2_deleted = old_save.pos1_deleted;
+                }else {
+                    thesis_tables.at(action.get_index()).at(join_elem).pos1_added = old_save.pos1_added;
+                    thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted = old_save.pos1_deleted;
+                }
 
             }else{
                 
@@ -963,8 +971,16 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 semi_join(tables[sj.second],tables[sj.first],save_obj);
                 save_obj.pos1_added = old_save.pos1_added;
                 save_obj.pos1_deleted = old_save.pos1_deleted;
-                thesis_tables.at(action.get_index()).at(join_elem).pos1_added = old_save.pos1_added;
-                thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted = old_save.pos1_deleted;
+
+                //if we are in the second half of the SemiJoin Step, the join order of the tables is flipped
+                if (!revert_join) {
+                    thesis_tables.at(action.get_index()).at(join_elem).pos1_added = old_save.pos1_added;
+                    thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted = old_save.pos1_deleted;
+                }else {
+                    thesis_tables.at(action.get_index()).at(join_elem).pos2_added = old_save.pos1_added;
+                    thesis_tables.at(action.get_index()).at(join_elem).pos2_deleted = old_save.pos1_deleted;
+                }
+
             }else{
 
                 deal_with_add_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save.pos1_added, true, sj.second, false, extreme_hack_flag);
@@ -1002,10 +1018,20 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 semi_join(tables[sj.second],tables[sj.first],save_obj);
                 save_obj.pos1_added = old_save_pos1.pos1_added;
                 save_obj.pos1_deleted = old_save_pos1.pos1_deleted;
-                thesis_tables.at(action.get_index()).at(join_elem).pos1_added = old_save_pos1.pos1_added;
-                thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted = old_save_pos1.pos1_deleted;
-                //thesis_tables.at(action.get_index()).at(join_elem).pos2_added = old_save_pos2.pos1_added;
-                //thesis_tables.at(action.get_index()).at(join_elem).pos2_deleted = old_save_pos2.pos1_deleted;
+
+                //if we are in the second half of the SemiJoin Step, the join order of the tables is flipped
+                if (!revert_join) {
+                    thesis_tables.at(action.get_index()).at(join_elem).pos1_added = old_save_pos1.pos1_added;
+                    thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted = old_save_pos1.pos1_deleted;
+                    thesis_tables.at(action.get_index()).at(join_elem).pos2_added = old_save_pos2.pos1_added;
+                    thesis_tables.at(action.get_index()).at(join_elem).pos2_deleted = old_save_pos2.pos1_deleted;
+                }else {
+                    thesis_tables.at(action.get_index()).at(join_elem).pos2_added = old_save_pos1.pos1_added;
+                    thesis_tables.at(action.get_index()).at(join_elem).pos2_deleted = old_save_pos1.pos1_deleted;
+                    thesis_tables.at(action.get_index()).at(join_elem).pos1_added = old_save_pos2.pos1_added;
+                    thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted = old_save_pos2.pos1_deleted;
+                }
+
             }else{
                 
                 //Order tab2 before tab1 important
@@ -1099,10 +1125,13 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                     }
                 }
 
-                for (auto add:save_obj.pos1_added) {
-                    int size_count = save_obj.biggest_elem+1;
-                    deal_with_add_crossjoin(save_obj,add,size_count,tables.at(j.second), tables.at(j.first), true); //positional encoding prob not needed
-                    added_to_table[j.second].insert(save_obj.crossproduct_result_table[save_obj.biggest_elem]);
+                if (!save_obj.join_changed_size_first) {
+                    for (auto add:save_obj.pos1_added) {
+                        int size_count = save_obj.biggest_elem+1;
+                        deal_with_add_crossjoin(save_obj,add,size_count,tables.at(j.second), tables.at(j.first), true); //positional encoding prob not needed
+                        //added_to_table[j.second].insert(save_obj.crossproduct_result_table[save_obj.biggest_elem]);
+                    }
+                    added_to_table[j.second] = save_obj.result_added;
                 }
 
                 if (added_to_table.count(j.second)!=0) {
@@ -1110,12 +1139,16 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                         int size_count = save_obj.biggest_elem+1;
                         deal_with_add_crossjoin(save_obj,it,size_count,tables.at(j.second), tables.at(j.first),true);
                     }
+                    added_to_table[j.second] = save_obj.result_added;
                 }
 
-                for (auto add:save_obj.pos2_added) {
-                    int size_count = save_obj.biggest_elem+1;
-                    deal_with_add_crossjoin(save_obj,add,size_count,tables.at(j.second), tables.at(j.first), false);
-                    added_to_table[j.first].insert(save_obj.crossproduct_result_table[save_obj.biggest_elem]);
+                if (!save_obj.join_changed_size_second) {
+                    for (auto add:save_obj.pos2_added) {
+                        int size_count = save_obj.biggest_elem+1;
+                        deal_with_add_crossjoin(save_obj,add,size_count,tables.at(j.second), tables.at(j.first), false);
+                        //added_to_table[j.second].insert(save_obj.crossproduct_result_table[save_obj.biggest_elem]);
+                    }
+                    added_to_table[j.second] = save_obj.result_added;
                 }
 
                 if (added_to_table.count(j.first)!=0) {
@@ -1123,6 +1156,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                         int size_count = save_obj.biggest_elem+1;
                         deal_with_add_crossjoin(save_obj,it,size_count,tables.at(j.second), tables.at(j.first),false);
                     }
+                    added_to_table[j.second] = save_obj.result_added;
                 }
                 tables[j.second] = save_obj.generate_crossproduct_table();
                 double check_crossproduct = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - crossproduct).count();

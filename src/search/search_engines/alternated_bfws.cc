@@ -148,7 +148,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
         node.close();
         statistics.inc_expanded();
 
-        cout << "Expanding state " << sid.id()  << "; child of " << child_to_parent[sid.id()]<< endl;
+        //cout << "Expanding state " << sid.id()  << "; child of " << child_to_parent[sid.id()]<< endl;
 
         assert(sid.id() >= 0 && (unsigned) sid.id() < space.size());
         DBState state = packer.unpack(space.get_state(sid));
@@ -252,7 +252,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
             const auto initial_dynamic_timer = std::chrono::high_resolution_clock::now();
             old_dynamic_state.old_indices = dynamic_setup.old_indices_gblhack;
 
-            if (sid.id()==32 & action.get_index()==1) {
+            if (sid.id()==7 & action.get_index()==9) {
                 int aaaaaaaaaaaa = 5;
             }
 
@@ -272,7 +272,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                 thesis_initial_succ += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - initial_dynamic_timer).count();
             }
 
-            if (sid.id()==32) {//sid.id()==68
+            if (false) {//sid.id()==580
                 cout << "Generated " << applicable.size() << " instatiations for " << action.get_name() << endl;
                 for (auto it:applicable) {
                     cout << "\t" << it.get_instantiation() << endl;
@@ -330,8 +330,11 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                     child_node.open(dist, h);
                     search_timepoint = std::chrono::high_resolution_clock::now();
                     std::chrono::milliseconds::rep middle_point = std::chrono::duration_cast<std::chrono::milliseconds>(search_timepoint - timer_start).count();
-                    if (check_goal(task, generator, middle_point, s, child_node, space, dynamic_time, thesis_initial_succ, old_dynamic_state, cleanup_time))
+                    if (check_goal(task, generator, middle_point, s, child_node, space, dynamic_time, thesis_initial_succ, old_dynamic_state, cleanup_time)) {
+                        cout << "Goal at state: " << child_node.state_id.id() << endl;
                         return utils::ExitCode::SUCCESS;
+                    }
+
                     open_list.do_insertion(child_node.state_id,
                                            h,
                                            dist,
