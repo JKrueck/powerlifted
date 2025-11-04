@@ -1076,7 +1076,9 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
 
     std::unordered_map<int,std::unordered_set<GroundAtom, TupleHash>> added_to_table;
     std::unordered_map<int,std::unordered_set<GroundAtom, TupleHash>> deleted_from_table;
-    
+
+    //table 40 iteration 36
+
     counter = 0;
     for (const auto &j : jt.get_order()) {
         //Get the new structure
@@ -1106,6 +1108,35 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             auto crossproduct= std::chrono::high_resolution_clock::now();
             if(save_obj.matching_columns.size()==0){
 
+                for (auto big_del:save_obj.result_deleted_static) {
+                    //Get the first half of the deleted result -- corresponds to the part from table1
+                    std::vector<int> half1(big_del.begin(),big_del.begin()+tables[j.second].tuple_index.size());
+                    //Get the second half of the deleted result -- corresponds to the part from table2
+                    std::vector<int> half2(big_del.begin()+tables[j.second].tuple_index.size(),big_del.end());
+                    if (save_obj.crossproduct_pos1.count(half1)!=0) {
+                        //Now check all entries that were generated through a join with half1
+                        auto& pos_list = save_obj.crossproduct_pos1.at(half1);
+                        for (auto it = pos_list.begin(); it != pos_list.end(); ) {
+                            int potential = *it;
+                            //Grab the second half of the statically deleted element
+                            if (save_obj.crossproduct_result_table.count(potential)!=0) {
+                                std::vector<int> del_compare(save_obj.crossproduct_result_table.at(potential).begin()+tables[j.second].tuple_index.size(),save_obj.crossproduct_result_table.at(potential).end());
+                                //Check if the two second halves are the same
+                                if (boost::hash_range(half2.begin(), half2.end()) == boost::hash_range(del_compare.begin(), del_compare.end())) {
+                                    if (potential == save_obj.biggest_elem) save_obj.biggest_elem--;
+                                    save_obj.result_deleted_single.insert(save_obj.crossproduct_result_table.at(potential));
+                                    save_obj.crossproduct_result_table.erase(potential);
+                                    // erase safely and continue
+                                    it = pos_list.erase(it);
+                                    continue;
+                                }
+                            }
+
+                            ++it; // only increment if we didn't erase
+                        }
+                    }
+                }
+
                 for(auto del:save_obj.pos1_deleted) {
                     deal_with_del_crossjoin(save_obj,del);
                 }
@@ -1131,7 +1162,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                         deal_with_add_crossjoin(save_obj,add,size_count,tables.at(j.second), tables.at(j.first), true); //positional encoding prob not needed
                         //added_to_table[j.second].insert(save_obj.crossproduct_result_table[save_obj.biggest_elem]);
                     }
-                    added_to_table[j.second] = save_obj.result_added;
+                    added_to_table[j.second].insert(save_obj.result_added.begin(), save_obj.result_added.end());
                 }
 
                 if (added_to_table.count(j.second)!=0) {
@@ -1139,7 +1170,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                         int size_count = save_obj.biggest_elem+1;
                         deal_with_add_crossjoin(save_obj,it,size_count,tables.at(j.second), tables.at(j.first),true);
                     }
-                    added_to_table[j.second] = save_obj.result_added;
+                    added_to_table[j.second].insert(save_obj.result_added.begin(), save_obj.result_added.end());
                 }
 
                 if (!save_obj.join_changed_size_second) {
@@ -1148,7 +1179,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                         deal_with_add_crossjoin(save_obj,add,size_count,tables.at(j.second), tables.at(j.first), false);
                         //added_to_table[j.second].insert(save_obj.crossproduct_result_table[save_obj.biggest_elem]);
                     }
-                    added_to_table[j.second] = save_obj.result_added;
+                    added_to_table[j.second].insert(save_obj.result_added.begin(), save_obj.result_added.end());
                 }
 
                 if (added_to_table.count(j.first)!=0) {
@@ -1156,7 +1187,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                         int size_count = save_obj.biggest_elem+1;
                         deal_with_add_crossjoin(save_obj,it,size_count,tables.at(j.second), tables.at(j.first),false);
                     }
-                    added_to_table[j.second] = save_obj.result_added;
+                    added_to_table[j.second].insert(save_obj.result_added.begin(), save_obj.result_added.end());
                 }
                 tables[j.second] = save_obj.generate_crossproduct_table();
                 double check_crossproduct = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - crossproduct).count();

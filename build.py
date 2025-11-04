@@ -4,7 +4,6 @@ import argparse
 import os
 import subprocess
 
-from distutils.dir_util import copy_tree
 from shutil import copytree
 
 PROJECT_ROOT = os.path.dirname(os.path.realpath(__file__))
@@ -19,8 +18,6 @@ def parse_options():
                         action="store_true", help="Build in debug mode.")
     parser.add_argument('--cxx-compiler',
                         default='default', help="Path to CXX compiler used by CMake.")
-    parser.add_argument('--hacky-server-flag',
-                        action='store_true', help="Activate local boost build on lemmy.")
     return parser.parse_args()
 
 def get_build_dir(debug):
@@ -43,14 +40,11 @@ def build(debug_flag, compiler):
         BUILD_TYPE = 'Release'
     create_dir(BUILD_DIR)
     create_dir(BUILD_SEARCH_DIR)
-    copy_tree(TRANSLATOR_DIR, BUILD_DIR + '/translator')
+    copytree(TRANSLATOR_DIR, BUILD_DIR + '/translator', dirs_exist_ok=True)
 
     extra_options = []
     if compiler != 'default':
         extra_options = ['-DCMAKE_CXX_COMPILER='+compiler]
-
-#    if options.hacky_server_flag:
-#        extra_options += ["-DBoost_NO_SYSTEM_PATHS=TRUE", "-DBOOST_ROOT=/mnt/data_server/eisenhut/opt"]
 
     subprocess.check_call(['cmake', SEARCH_DIR,
                            '-DCMAKE_BUILD_TYPE='+BUILD_TYPE] + extra_options,
