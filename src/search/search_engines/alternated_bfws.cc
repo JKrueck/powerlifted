@@ -148,7 +148,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
         node.close();
         statistics.inc_expanded();
 
-        cout << "Expanding state " << sid.id()  << "; child of " << child_to_parent[sid.id()]<< endl;
+        //cout << "Expanding state " << sid.id()  << "; child of " << child_to_parent[sid.id()]<< endl;
 
         assert(sid.id() >= 0 && (unsigned) sid.id() < space.size());
         DBState state = packer.unpack(space.get_state(sid));
@@ -272,7 +272,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                 thesis_initial_succ += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - initial_dynamic_timer).count();
             }
 
-            if (sid.id()==4) {//sid.id()==580
+            if (false {//sid.id()==580
                 cout << "Generated " << applicable.size() << " instatiations for " << action.get_name() << endl;
                 for (auto it:applicable) {
                     cout << "\t" << it.get_instantiation() << endl;
