@@ -761,20 +761,20 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
     if (!res){
         //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
         //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
-        std::vector<DynamicTables> thesis_empty_joins;
-        dynamic_semijoin.at(action.get_index()) = std::move(thesis_empty_joins);
+        std::vector<DynamicTables> empty_joins;
+        dynamic_semijoin.at(action.get_index()) = std::move(empty_joins);
         return Table::EMPTY_TABLE();
     }
 
     assert(!tables.empty());
     assert(tables.size() == actiondata.relevant_precondition_atoms.size());
     
-    std::unordered_map<int,int> thesis_affected_by_del;
+    std::unordered_map<int,int> tables_affected_by_del;
     int idiot_counter = 0;
     for(auto it:action.get_precondition()){
         auto pos = diff_delete.find(it.get_predicate_symbol_idx());
         if(pos != diff_delete.end()){
-            thesis_affected_by_del.insert_or_assign(idiot_counter,pos->first);
+            tables_affected_by_del.insert_or_assign(idiot_counter,pos->first);
         }
         idiot_counter++;
     }
@@ -794,18 +794,23 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
     const auto full_reducer = std::chrono::high_resolution_clock::now();
     long unsigned int counter = 0;
     for (const pair<int, int> &sj : full_reducer_order[action.get_index()]) {
-        if (counter ==47) {
+        if (counter == 6) {
             int stopaaaa = 0;
         }
         table_predicates.first = action.get_precondition().at(sj.first).get_predicate_symbol_idx();
         table_predicates.second = action.get_precondition().at(sj.second).get_predicate_symbol_idx();
 
+        //Get the new structure
+        DynamicTables &save_obj = dynamic_semijoin.at(action.get_index()).at(counter);
         //If there is a change in the computation of this semi-join   
         if((compute_semi_join.at(sj.first) || compute_semi_join.at(sj.second)) && (affected_tables.count(sj.first)==0 && affected_tables.count(sj.second)==0)){
-            //If that change is(are) only a newly added atom(s) 
-            if((thesis_affected_by_del.count(sj.second) == 0 && thesis_affected_by_del.count(sj.first) == 0) || thesis_affected_by_del.size() ==0){
-                //Get the new structure
-                DynamicTables &save_obj = dynamic_semijoin.at(action.get_index()).at(counter);
+
+            if (save_obj.matching_columns.empty()) {
+                cout << "This actually happens huh" << endl;
+            }
+
+            //If that change is(are) only a newly added atom(s)
+            if((tables_affected_by_del.count(sj.second) == 0 && tables_affected_by_del.count(sj.first) == 0) || tables_affected_by_del.size() ==0){
                 auto remember = save_obj.pos1_hashtable;
                 int join_elem;
                 bool revert_join = false;
@@ -833,8 +838,6 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 affected_tables.insert_or_assign(sj.second,counter);
             }else{
                 //If that change was a delete effect (and maybe also add effect)
-                //Get the new structure
-                DynamicTables &save_obj = dynamic_semijoin.at(action.get_index()).at(counter);
                 auto remember = save_obj.pos1_hashtable;
                 std::unordered_set<GroundAtom, TupleHash> save;
                 int join_elem;
@@ -851,40 +854,53 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 bool delete_condition1 = false;
                 bool delete_condition2 = false;
 
-                if(thesis_affected_by_del.count(sj.first)!=0){
-                    deleted_first = thesis.deleted_facts.at(thesis_affected_by_del.at(sj.first));
+                if(tables_affected_by_del.count(sj.first)!=0){
+                    deleted_first = thesis.deleted_facts.at(tables_affected_by_del.at(sj.first));
                     delete_condition1 = true;
-                    affected_tables.insert_or_assign(sj.second,counter);
                 }
-                if(thesis_affected_by_del.count(sj.second)!=0){
-                    deleted_second = thesis.deleted_facts.at(thesis_affected_by_del.at(sj.second));
+                if(tables_affected_by_del.count(sj.second)!=0){
+                    deleted_second = thesis.deleted_facts.at(tables_affected_by_del.at(sj.second));
                     delete_condition2 = true;
-                    affected_tables.insert_or_assign(sj.second,counter);
                 }else{
-                    //Remember that the table at the second position was affected by a del effecy
-                    affected_tables.insert_or_assign(sj.second,counter);
+                    //Remember that the table at the second position was affected by a del effect
+                    //affected_tables.insert_or_assign(sj.second,counter);
                 }
                     
 
-
+                bool affected_flag = false;
                 //Firstly deal with any possible add-effects
-                if(predicate_to_add_diff.count(table_predicates.first)!=0) deal_with_add_semi(table_predicates,save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, predicate_to_add_diff.at(table_predicates.first),false, sj.first, true,extreme_hack_flag);
-                if(predicate_to_add_diff.count(table_predicates.second)!=0) deal_with_add_semi(table_predicates,save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, predicate_to_add_diff.at(table_predicates.second),true, sj.second, true, extreme_hack_flag);
+                if(predicate_to_add_diff.count(table_predicates.first)!=0) {
+                    deal_with_add_semi(table_predicates,save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, predicate_to_add_diff.at(table_predicates.first),false, sj.first, true,extreme_hack_flag);
+                    affected_flag = true;
+                }
+                if(predicate_to_add_diff.count(table_predicates.second)!=0) {
+                    deal_with_add_semi(table_predicates,save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, predicate_to_add_diff.at(table_predicates.second),true, sj.second, true, extreme_hack_flag);
+                    affected_flag = true;
+                }
                 //Now deal with deletes
-                if(delete_condition1) deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, deleted_first,false, sj.first, extreme_hack_flag);
-                if(delete_condition2) deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, deleted_second, true, sj.second, extreme_hack_flag);
-
+                if(delete_condition1) {
+                    deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, deleted_first,false, sj.first, extreme_hack_flag);
+                    affected_flag = true;
+                }
+                if(delete_condition2) {
+                    deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, deleted_second, true, sj.second, extreme_hack_flag);
+                    affected_flag = true;
+                }
                 
                 //Generate the WHOLE complete new_table
                 //Unnessescary probably
                 tables[sj.second] = save_obj.generate_table();
+
+                if (affected_flag) {
+                    affected_tables.insert_or_assign(sj.second,counter);
+                }
                 
                 //If the resulting semi-join was empty
                 if(tables[sj.second].tuples.size()==0){
                     //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
                     //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
-                    std::vector<DynamicTables> thesis_empty_semijoins;
-                    dynamic_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
+                    std::vector<DynamicTables> empty_semijoins;
+                    dynamic_semijoin.at(action.get_index()) = std::move(empty_semijoins);
                     return Table::EMPTY_TABLE();
                 }
             }
@@ -892,7 +908,6 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             //This is very similar to just computing a new semi-join --- talk about this
             //For this direction its probably easier to just compute the semi-join ?
             //Get the new structure
-            DynamicTables &save_obj = dynamic_semijoin.at(action.get_index()).at(counter);
             DynamicTables &old_save = dynamic_semijoin.at(action.get_index()).at(affected_tables[sj.first]);
             std::unordered_set<GroundAtom, TupleHash> save;
             int join_elem;
@@ -909,24 +924,24 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
 
                 //if we are in the second half of the SemiJoin Step, the join order of the tables is flipped
                 if (!revert_join) {
-                    thesis_tables.at(action.get_index()).at(join_elem).pos2_added = old_save.pos1_added;
-                    thesis_tables.at(action.get_index()).at(join_elem).pos2_deleted = old_save.pos1_deleted;
+                    thesis_tables.at(action.get_index()).at(join_elem).pos2_added.insert(old_save.pos1_added.begin(), old_save.pos1_added.end());
+                    thesis_tables.at(action.get_index()).at(join_elem).pos2_deleted.insert(old_save.pos1_deleted.begin(), old_save.pos1_deleted.end());
                 }else {
-                    thesis_tables.at(action.get_index()).at(join_elem).pos1_added = old_save.pos1_added;
-                    thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted = old_save.pos1_deleted;
+                    thesis_tables.at(action.get_index()).at(join_elem).pos1_added.insert(old_save.pos1_added.begin(), old_save.pos1_added.end());
+                    thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted.insert(old_save.pos1_deleted.begin(), old_save.pos1_deleted.end());
                 }
 
             }else{
                 
                 deal_with_add_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save.pos1_added, false, sj.first, false, extreme_hack_flag);
                 deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save.pos1_deleted,false, sj.first,extreme_hack_flag);
-                
+
                 //It can happen that there are still changes that need to be made to the second table
                 if(compute_semi_join[sj.second]){
                     std::unordered_set<GroundAtom, TupleHash> deleted_second;
                     bool delete_condition2 = false;
-                    if(thesis_affected_by_del.count(sj.second)!=0){
-                        deleted_second = thesis.deleted_facts.at(thesis_affected_by_del.at(sj.second));
+                    if(tables_affected_by_del.count(sj.second)!=0){
+                        deleted_second = thesis.deleted_facts.at(tables_affected_by_del.at(sj.second));
                         delete_condition2 = true;
                         affected_tables.insert_or_assign(sj.second,counter);
                     }
@@ -935,24 +950,21 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 }
 
                 tables[sj.second] = save_obj.generate_table();
+
+                //If there are no matching columns, the semijoin does nothing
+                //Only add the table to the affected tables if something actually changed
+                if(old_save.pos1_added.size()!=0 || old_save.pos1_deleted.size()!=0) affected_tables.insert_or_assign(sj.second,counter);
             }
             //If the resulting semi-join was empty
             if(tables[sj.second].tuples.size()==0){
                 //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
                 //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
-                std::vector<DynamicTables> thesis_empty_semijoins;
-                dynamic_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
+                std::vector<DynamicTables> empty_semijoins;
+                dynamic_semijoin.at(action.get_index()) = std::move(empty_semijoins);
                 return Table::EMPTY_TABLE();
             }
-            
-            affected_tables.insert_or_assign(sj.second,counter);
         }else if(affected_tables.count(sj.first)==0 && affected_tables.count(sj.second) != 0){
-            /*
-            What if both tables have changed????
-            For now do a full semi-join between them
-            */
             //Get the new structure
-            DynamicTables &save_obj = dynamic_semijoin.at(action.get_index()).at(counter);
             DynamicTables &old_save = dynamic_semijoin.at(action.get_index()).at(affected_tables[sj.second]);
             auto remember = save_obj.pos1_hashtable;
             std::unordered_set<GroundAtom, TupleHash> save;
@@ -969,16 +981,14 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             //See comments above
             if(save_obj.matching_columns.size()==0){
                 semi_join(tables[sj.second],tables[sj.first],save_obj);
-                save_obj.pos1_added = old_save.pos1_added;
-                save_obj.pos1_deleted = old_save.pos1_deleted;
 
                 //if we are in the second half of the SemiJoin Step, the join order of the tables is flipped
                 if (!revert_join) {
-                    thesis_tables.at(action.get_index()).at(join_elem).pos1_added = old_save.pos1_added;
-                    thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted = old_save.pos1_deleted;
+                    thesis_tables.at(action.get_index()).at(join_elem).pos1_added.insert(old_save.pos1_added.begin(),old_save.pos1_added.end());
+                    thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted.insert(old_save.pos1_deleted.begin(),old_save.pos1_deleted.end());
                 }else {
-                    thesis_tables.at(action.get_index()).at(join_elem).pos2_added = old_save.pos1_added;
-                    thesis_tables.at(action.get_index()).at(join_elem).pos2_deleted = old_save.pos1_deleted;
+                    thesis_tables.at(action.get_index()).at(join_elem).pos2_added.insert(old_save.pos1_added.begin(),old_save.pos1_added.end());
+                    thesis_tables.at(action.get_index()).at(join_elem).pos2_deleted.insert(old_save.pos1_deleted.begin(),old_save.pos1_deleted.end());
                 }
 
             }else{
@@ -987,20 +997,19 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save.pos1_deleted, true, sj.second,extreme_hack_flag);
 
                 tables[sj.second] = save_obj.generate_table();
+                //If there are no matching columns, the semijoin does nothing
+                //Only add the table to the affected tables if something actually changed
+                if(save_obj.pos1_added.size()!=0 || save_obj.pos1_deleted.size()!=0) affected_tables.insert_or_assign(sj.second,counter);
             }
             //If the resulting semi-join was empty
             if(tables[sj.second].tuples.size()==0){
                 //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
                 //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
-                std::vector<DynamicTables> thesis_empty_semijoins;
-                //cout << "err2" << endl;
-                dynamic_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
+                std::vector<DynamicTables> empty_semijoins;
+                dynamic_semijoin.at(action.get_index()) = std::move(empty_semijoins);
                 return Table::EMPTY_TABLE();
             }
-            if(save_obj.pos1_added.size()!=0 || save_obj.pos1_deleted.size()!=0) affected_tables.insert_or_assign(sj.second,counter);
         }else if(affected_tables.count(sj.first)!=0 && affected_tables.count(sj.second)!=0){
-            //Get the new structure
-            DynamicTables &save_obj = dynamic_semijoin.at(action.get_index()).at(counter);
             //Get the old structures
             DynamicTables &old_save_pos1 = dynamic_semijoin.at(action.get_index()).at(affected_tables[sj.second]);
             DynamicTables &old_save_pos2 = dynamic_semijoin.at(action.get_index()).at(affected_tables[sj.first]);
@@ -1016,20 +1025,18 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             auto remember = save_obj.pos1_hashtable;
             if(save_obj.matching_columns.size()==0){
                 semi_join(tables[sj.second],tables[sj.first],save_obj);
-                save_obj.pos1_added = old_save_pos1.pos1_added;
-                save_obj.pos1_deleted = old_save_pos1.pos1_deleted;
 
                 //if we are in the second half of the SemiJoin Step, the join order of the tables is flipped
                 if (!revert_join) {
-                    thesis_tables.at(action.get_index()).at(join_elem).pos1_added = old_save_pos1.pos1_added;
-                    thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted = old_save_pos1.pos1_deleted;
-                    thesis_tables.at(action.get_index()).at(join_elem).pos2_added = old_save_pos2.pos1_added;
-                    thesis_tables.at(action.get_index()).at(join_elem).pos2_deleted = old_save_pos2.pos1_deleted;
+                    thesis_tables.at(action.get_index()).at(join_elem).pos1_added.insert(old_save_pos1.pos1_added.begin(),old_save_pos1.pos1_added.end());
+                    thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted.insert(old_save_pos1.pos1_deleted.begin(),old_save_pos1.pos1_deleted.end());
+                    thesis_tables.at(action.get_index()).at(join_elem).pos2_added.insert(old_save_pos2.pos1_added.begin(),old_save_pos2.pos1_added.end());
+                    thesis_tables.at(action.get_index()).at(join_elem).pos2_deleted.insert(old_save_pos2.pos1_deleted.begin(),old_save_pos2.pos1_deleted.end());
                 }else {
-                    thesis_tables.at(action.get_index()).at(join_elem).pos2_added = old_save_pos1.pos1_added;
-                    thesis_tables.at(action.get_index()).at(join_elem).pos2_deleted = old_save_pos1.pos1_deleted;
-                    thesis_tables.at(action.get_index()).at(join_elem).pos1_added = old_save_pos2.pos1_added;
-                    thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted = old_save_pos2.pos1_deleted;
+                    thesis_tables.at(action.get_index()).at(join_elem).pos2_added.insert(old_save_pos1.pos1_added.begin(),old_save_pos1.pos1_added.end());
+                    thesis_tables.at(action.get_index()).at(join_elem).pos2_deleted.insert(old_save_pos1.pos1_deleted.begin(),old_save_pos1.pos1_deleted.end());
+                    thesis_tables.at(action.get_index()).at(join_elem).pos1_added.insert(old_save_pos2.pos1_added.begin(),old_save_pos2.pos1_added.end());
+                    thesis_tables.at(action.get_index()).at(join_elem).pos1_deleted.insert(old_save_pos2.pos1_deleted.begin(),old_save_pos2.pos1_deleted.end());
                 }
 
             }else{
@@ -1043,15 +1050,17 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save_pos2.pos1_deleted,false, sj.first,extreme_hack_flag);
 
                 tables[sj.second] = save_obj.generate_table();
+                //If there are no matching columns, the semijoin does nothing
+                //Only add the table to the affected tables if something actually changed
+                affected_tables.insert_or_assign(sj.second,counter);
             }
             if(tables[sj.second].tuples.size()==0){
                 //if we get an empty result while doing the semi joins, delete the intermediate tables of the previous state
                 //they would carry over to the next state, but are not directly connected: n-1 -> n -> n+1
-                std::vector<DynamicTables> thesis_empty_semijoins;
-                dynamic_semijoin.at(action.get_index()) = std::move(thesis_empty_semijoins);
+                std::vector<DynamicTables> empty_semijoins;
+                dynamic_semijoin.at(action.get_index()) = std::move(empty_semijoins);
                 return Table::EMPTY_TABLE();
             }
-            affected_tables.insert_or_assign(sj.second,counter);
         }else{
             tables[sj.second] = dynamic_semijoin.at(action.get_index()).at(counter).result;
             tables[sj.second].tuple_index = dynamic_semijoin.at(action.get_index()).at(counter).result_index;
