@@ -1099,7 +1099,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
     std::unordered_map<int,std::unordered_set<GroundAtom, TupleHash>> added_to_table;
     std::unordered_map<int,std::unordered_set<GroundAtom, TupleHash>> deleted_from_table;
 
-    //table 40 iteration 36
+
 
     counter = 0;
     for (const auto &j : jt.get_order()) {

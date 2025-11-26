@@ -76,9 +76,11 @@ struct DynamicTables{
     Table generate_crossproduct_table()
     {
         this->result.tuples.clear();
-        for (auto it:this->crossproduct_result_table) {
+        for (auto it : this->crossproduct_result_table){
             this->result.tuples.push_back(it.second);
         }
+        //Very ugly solution that will eat computation time. Keep for now
+        std::reverse(this->result.tuples.begin(), this->result.tuples.end());
         result.tuple_index = this->result_index;
         return this->result;
     }

@@ -79,7 +79,7 @@ void GenericDynamicSearchSetup::clean_state_memory(int current_heuristic){
         }
     }
 
-    if (this->heuristic_map.count(std::numeric_limits<int>::max()!=0)) std::cout << "Number of unsolvable states remembered" <<this->heuristic_map[std::numeric_limits<int>::max()].size() << std::endl;
+    //if (this->heuristic_map.count(std::numeric_limits<int>::max()!=0)) std::cout << "Number of unsolvable states remembered" <<this->heuristic_map[std::numeric_limits<int>::max()].size() << std::endl;
     //std::cout << "exit3\n";
    
 }
