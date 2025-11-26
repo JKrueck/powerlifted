@@ -252,7 +252,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
             const auto initial_dynamic_timer = std::chrono::high_resolution_clock::now();
             old_dynamic_state.old_indices = dynamic_setup.old_indices_gblhack;
 
-            if (sid.id()==4 & action.get_index()==9) {
+            if (sid.id()==492 & action.get_index()==23) {
                 int aaaaaaaaaaaa = 5;
             }
 
@@ -272,7 +272,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                 thesis_initial_succ += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - initial_dynamic_timer).count();
             }
 
-            if (false) {//sid.id()==580
+            if (false) {//sid.id()==190
                 cout << "Generated " << applicable.size() << " instatiations for " << action.get_name() << endl;
                 for (auto it:applicable) {
                     cout << "\t" << it.get_instantiation() << endl;

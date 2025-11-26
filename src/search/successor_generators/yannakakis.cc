@@ -805,8 +805,18 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
         //If there is a change in the computation of this semi-join   
         if((compute_semi_join.at(sj.first) || compute_semi_join.at(sj.second)) && (affected_tables.count(sj.first)==0 && affected_tables.count(sj.second)==0)){
 
+            //If there are no matching columns in a semi-join, nothing happens
+            //We still need to track changes made to the tables in comparison to the parent state
             if (save_obj.matching_columns.empty()) {
-                cout << "This actually happens huh" << endl;
+                //cout << "----This actually happens huh----" << endl;
+                if (tables_affected_by_del.count(sj.second)!=0) {
+                    save_obj.pos1_deleted.insert(thesis.deleted_facts.at(tables_affected_by_del.at(sj.second)).begin(), thesis.deleted_facts.at(tables_affected_by_del.at(sj.second)).end());
+                }
+                if (predicate_to_add_diff.count(table_predicates.second)!=0) {
+                    save_obj.pos1_added.insert(predicate_to_add_diff.at(table_predicates.second).begin(), predicate_to_add_diff.at(table_predicates.second).end());
+                }
+                save_obj.result = tables[sj.second];
+                continue;
             }
 
             //If that change is(are) only a newly added atom(s)
@@ -921,6 +931,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             if(save_obj.matching_columns.size()==0){
 
                 semi_join(tables[sj.second],tables[sj.first],save_obj);
+                save_obj.result = tables[sj.second];
 
                 //if we are in the second half of the SemiJoin Step, the join order of the tables is flipped
                 if (!revert_join) {
@@ -981,6 +992,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             //See comments above
             if(save_obj.matching_columns.size()==0){
                 semi_join(tables[sj.second],tables[sj.first],save_obj);
+                save_obj.result = tables[sj.second];
 
                 //if we are in the second half of the SemiJoin Step, the join order of the tables is flipped
                 if (!revert_join) {
@@ -1025,6 +1037,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             auto remember = save_obj.pos1_hashtable;
             if(save_obj.matching_columns.size()==0){
                 semi_join(tables[sj.second],tables[sj.first],save_obj);
+                save_obj.result = tables[sj.second];
 
                 //if we are in the second half of the SemiJoin Step, the join order of the tables is flipped
                 if (!revert_join) {
@@ -1099,7 +1112,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             if (affected_tables.count(j.first)!=0)   old_pos2 = thesis_tables.at(action.get_index()).at(affected_tables[j.first]);
 
             //If we add stuff to the added table during the iteration, then the other add thing will grab that
-            //This will treat an atom that was just added this iteration as a old result and the resulting join will be very wrong  
+            //This will treat an atom that was just added this iteration as an old result and the resulting join will be very wrong
             std::unordered_set<GroundAtom, TupleHash> iteration_add_storage;
 
             unordered_set<int> project_over;
@@ -1116,35 +1129,6 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             //Do the Cross Product
             auto crossproduct= std::chrono::high_resolution_clock::now();
             if(save_obj.matching_columns.size()==0){
-
-                /*for (auto big_del:save_obj.result_deleted_static) {
-                    //Get the first half of the deleted result -- corresponds to the part from table1
-                    std::vector<int> half1(big_del.begin(),big_del.begin()+tables[j.second].tuple_index.size());
-                    //Get the second half of the deleted result -- corresponds to the part from table2
-                    std::vector<int> half2(big_del.begin()+tables[j.second].tuple_index.size(),big_del.end());
-                    if (save_obj.crossproduct_pos1.count(half1)!=0) {
-                        //Now check all entries that were generated through a join with half1
-                        auto& pos_list = save_obj.crossproduct_pos1.at(half1);
-                        for (auto it = pos_list.begin(); it != pos_list.end(); ) {
-                            int potential = *it;
-                            //Grab the second half of the statically deleted element
-                            if (save_obj.crossproduct_result_table.count(potential)!=0) {
-                                std::vector<int> del_compare(save_obj.crossproduct_result_table.at(potential).begin()+tables[j.second].tuple_index.size(),save_obj.crossproduct_result_table.at(potential).end());
-                                //Check if the two second halves are the same
-                                if (boost::hash_range(half2.begin(), half2.end()) == boost::hash_range(del_compare.begin(), del_compare.end())) {
-                                    if (potential == save_obj.biggest_elem) save_obj.biggest_elem--;
-                                    save_obj.result_deleted_single.insert(save_obj.crossproduct_result_table.at(potential));
-                                    save_obj.crossproduct_result_table.erase(potential);
-                                    // erase safely and continue
-                                    it = pos_list.erase(it);
-                                    continue;
-                                }
-                            }
-
-                            ++it; // only increment if we didn't erase
-                        }
-                    }
-                }*/
 
                 for(auto del:save_obj.pos1_deleted) {
                     deal_with_del_crossjoin(save_obj,del);
@@ -1173,9 +1157,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                     }
                     added_to_table[j.second].insert(save_obj.result_added.begin(), save_obj.result_added.end());
                     //added_to_table[j.second] = save_obj.result_added;
-                }
-
-                if (added_to_table.count(j.second)!=0) {
+                }else if (added_to_table.count(j.second)!=0) {
                     for (auto it:added_to_table[j.second]) {
                         int size_count = save_obj.biggest_elem+1;
                         deal_with_add_crossjoin(save_obj,it,size_count,tables.at(j.second), tables.at(j.first),true);
@@ -1183,6 +1165,8 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                     added_to_table[j.second].insert(save_obj.result_added.begin(), save_obj.result_added.end());
                     //added_to_table[j.second] = save_obj.result_added;
                 }
+
+
 
                 if (!save_obj.join_changed_size_second) {
                     for (auto add:save_obj.pos2_added) {
@@ -1192,9 +1176,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                     }
                     //added_to_table[j.second] = save_obj.result_added;
                     added_to_table[j.second].insert(save_obj.result_added.begin(), save_obj.result_added.end());
-                }
-
-                if (added_to_table.count(j.first)!=0) {
+                }else if (added_to_table.count(j.first)!=0) {
                     for (auto it:added_to_table[j.first]) {
                         int size_count = save_obj.biggest_elem+1;
                         deal_with_add_crossjoin(save_obj,it,size_count,tables.at(j.second), tables.at(j.first),false);
@@ -1202,6 +1184,29 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                     //added_to_table[j.second] = save_obj.result_added;
                     added_to_table[j.second].insert(save_obj.result_added.begin(), save_obj.result_added.end());
                 }
+
+                //Delete previous additions to the tables that are smaller
+                if (!save_obj.result_added.empty()) {
+                    long unsigned int comp = save_obj.result_added.begin()->size();
+                    std::unordered_set<GroundAtom, TupleHash>::iterator old1 = added_to_table[j.second].begin();
+                    std::unordered_set<GroundAtom, TupleHash>::iterator old2 = added_to_table[j.first].begin();
+                    for(;old1!=added_to_table[j.first].end();){
+                        if(old1->size()<comp){
+                            old1 = added_to_table[j.second].erase(old1);
+                        }else{
+                            old1++;
+                        }
+                    }
+                    for(;old2!=added_to_table[j.first].end();){
+                        if(old2->size()<comp){
+                            old2 = added_to_table[j.first].erase(old2);
+                        }else{
+                            old2++;
+                        }
+                    }
+                }
+
+
                 tables[j.second] = save_obj.generate_crossproduct_table();
                 double check_crossproduct = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - crossproduct).count();
                 thesis.crossproduct_time += check_crossproduct;
@@ -1600,6 +1605,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             
             check_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - join_noChange).count();
             thesis.join_same_size += check_time;
+
             /*
                 --------Second Table--------
             */
@@ -1719,7 +1725,6 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             join_Change = std::chrono::high_resolution_clock::now();
             if(save_obj.join_changed_size_second){
                 std::unordered_set<GroundAtom, TupleHash> added_result = added_to_table[j.first];
-                int access_counter = 0;
                 for(auto add:added_result){
                     if(add.size()<=save_obj.result_index.size()){
                         std::vector<int> key(save_obj.matching_columns.size());
@@ -1749,7 +1754,6 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                             }
                         }
                     }
-                    access_counter++;
                 }
             }
             
@@ -1799,15 +1803,12 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             join_Change = std::chrono::high_resolution_clock::now();
             if(save_obj.join_changed_size_first){
                 std::unordered_set<GroundAtom, TupleHash> added_result = added_to_table[j.second];
-                int access_counter = 0;
-                for(auto add:added_result){
-                    bool pass = false;
-                    if(!save_obj.pos1_hashtable.empty() && !save_obj.pos1_hashtable.begin()->second.empty()){
-                        if(add.size()==save_obj.pos1_hashtable.begin()->second.begin()->size()) pass = true;
-                    }else{
-                        if(add.size()<=save_obj.result.tuple_index.size()) pass = true;
-                    }
-                    if(pass){
+
+                //If the previous result came from a crossjoin there can be a mysterious issue that some entries of that table are missing
+                //Work with the crossjoin result, instead of only the added atoms
+                if (false) {//affected_tables.count(j.second)!=0 && !thesis_tables[action.get_index()][affected_tables[j.second]].crossproduct_result_table.empty()
+                    for (auto cross:old_pos1.crossproduct_result_table) {
+                        auto add = cross.second;
                         std::vector<int> key(save_obj.matching_columns.size());
                         for(size_t pos = 0; pos < save_obj.matching_columns.size(); pos++) {
                             key[pos] = add[save_obj.matching_columns[pos].first];
@@ -1835,10 +1836,48 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                                 }
                             }
                         }
-                    }else{
-                        added_to_table[j.second].erase(add);
                     }
-                    access_counter++;
+                }else {
+                    for(auto add:added_result){
+                        bool pass = false;
+                        if(!save_obj.pos1_hashtable.empty() && !save_obj.pos1_hashtable.begin()->second.empty()){
+                            if(add.size()==save_obj.pos1_hashtable.begin()->second.begin()->size()) pass = true;
+                        }else{
+                            if(add.size()<=save_obj.result.tuple_index.size()) pass = true;
+                        }
+                        if(pass){
+                            std::vector<int> key(save_obj.matching_columns.size());
+                            for(size_t pos = 0; pos < save_obj.matching_columns.size(); pos++) {
+                                key[pos] = add[save_obj.matching_columns[pos].first];
+                            }
+                            save_obj.pos1_hashtable[key].insert(add);
+                            if(save_obj.pos2_hashtable.count(key)!=0){
+                                std::vector<bool> to_remove_me(tables[j.first].tuple_index.size(), false);
+                                for (const auto &m : save_obj.matching_columns) {
+                                    to_remove_me[m.second] = true;
+                                }
+                                std::unordered_set<GroundAtom, TupleHash> to_change = save_obj.pos2_hashtable[key];
+                                for(auto tup:to_change){
+                                    auto copy = add;
+                                    for (unsigned pos = 0; pos < to_remove_me.size(); ++pos) {
+                                        if (!to_remove_me[pos]) copy.push_back(tup[pos]);
+                                    }
+                                    if(save_obj.check_static) thesis_filter_static(action, copy, save_obj);
+                                    if(copy.size()!=0){
+                                        std::vector<int> join_step_key(thesis.old_indices.at(action.get_index()).at(j.second).size());
+                                        for(size_t pos = 0; pos < thesis.old_indices.at(action.get_index()).at(j.second).size(); pos++){
+                                            join_step_key[pos] = copy[pos];
+                                        }
+                                        save_obj.result_table[join_step_key].insert(copy);
+                                        iteration_add_storage.insert(copy);
+                                        //added_to_table[j.second].insert(copy);
+                                    }
+                                }
+                            }
+                        }else{
+                            added_to_table[j.second].erase(add);
+                        }
+                    }
                 }
             }
             
@@ -1871,8 +1910,6 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 thesis_tables.at(action.get_index()) = std::move(thesis_empty_joins);
                 return Table::EMPTY_TABLE();
             }
-
-
         }else{
             tables[j.second] = thesis_tables.at(action.get_index()).at(counter).result;
             tables[j.second].tuple_index = thesis_tables.at(action.get_index()).at(counter).result_index;
