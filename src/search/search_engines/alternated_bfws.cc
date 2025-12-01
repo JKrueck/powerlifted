@@ -272,7 +272,7 @@ utils::ExitCode AlternatedBFWS<PackedStateT>::search(const Task &task,
                 thesis_initial_succ += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - initial_dynamic_timer).count();
             }
 
-            if (false {//sid.id()==190
+            if (false){//sid.id()==190
                 cout << "Generated " << applicable.size() << " instatiations for " << action.get_name() << endl;
                 for (auto it:applicable) {
                     cout << "\t" << it.get_instantiation() << endl;
