@@ -31,6 +31,14 @@ struct DynamicTables{
     //Facts deleted through the semi-join process
     std::unordered_set<std::vector<int>,TupleHash> pos1_deleted;
     std::unordered_set<std::vector<int>,TupleHash> pos1_added;
+    /*
+     *It can happen that an atom is added to a table, but there is no match in the other table
+     * The atom is not removed from the actual table, but doesn't show up in the semi-joins anymore
+     * If this atom isn't tracked and the other table gains a match in the future, the atom is lost
+     * Unlike the others, this table is not reset and we need to actively maintain it. If the atom is targeted by an ACTUAL delete (not semi-join induced) remove it
+     * So this treatment is only applied for direct semi-join calculations and not the affected_tables
+     */
+    std::unordered_map<std::vector<int>, std::unordered_set<std::vector<int>,TupleHash>, TupleHash> pos1_added_no_match;
     
     //Only needed for Join Step Computation
     std::unordered_set<std::vector<int>,TupleHash> pos2_deleted;
@@ -69,6 +77,7 @@ struct DynamicTables{
                 this->result.tuples.push_back(it);
             }
         }
+        std::reverse(this->result.tuples.begin(), this->result.tuples.end());
         result.tuple_index = this->result_index;
         return this->result;
     }
