@@ -230,8 +230,8 @@ void YannakakisSuccessorGenerator::deal_with_add_semi(std::pair<int,int> &table_
                 //This case can implicitely remove old adds without keeping track of it
                 //Propably also matches cases where we want to add for the first time, but there is no match
                 //Condition prevents this
-                //save.pos1_deleted.insert(add);
-                save.pos1_added.insert(add);
+                save.pos1_deleted.insert(add);
+                //save.pos1_added.insert(add);
                 save.pos1_added_no_match[key].insert(add);
                 //save.pos1_hashtable[key].insert(add);
                 if(!revert_join){
@@ -274,7 +274,7 @@ void YannakakisSuccessorGenerator::deal_with_add_semi(std::pair<int,int> &table_
                     } 
                 }
                 //If that key also exists in pos1 and not in the result yet, then the semi-join now is able to retain that key from pos1
-                if(save.pos1_hashtable.count(key)!=0 && save.result_table.count(key)==0){
+                if(save.pos1_hashtable.count(key) && save.result_table.count(key)==0){
                     for(auto pos1:save.pos1_hashtable[key]){
                         save.result_table[key].insert(pos1);
                         //Remember that we added this here
@@ -301,7 +301,7 @@ void YannakakisSuccessorGenerator::deal_with_add_semi(std::pair<int,int> &table_
         chem_counter++;
     }   
 }
-void YannakakisSuccessorGenerator:: deal_with_del_semi(std::pair<int,int> &table_predicates, DynamicTables &save, DynamicTables &join_save,  bool revert_join, std::unordered_set<GroundAtom,TupleHash>& del_diff, bool first, int tab_id, bool check_no_match){
+void YannakakisSuccessorGenerator:: deal_with_del_semi(std::pair<int,int> &table_predicates, DynamicTables &save, DynamicTables &join_save,  bool revert_join, std::unordered_set<GroundAtom,TupleHash>& del_diff, bool first, int tab_id,bool hack, bool check_no_match){
     int chem_counter = 0;
     GroundAtom last_insert;
     for(auto del:del_diff){
@@ -316,10 +316,10 @@ void YannakakisSuccessorGenerator:: deal_with_del_semi(std::pair<int,int> &table
         }
         if(first){
             //Delete the TableEntry from the pos1 hashtable
-            /*bool skip = false;
-            if(ugly_hack && del.size() == 2 && chem_counter % 2 !=0 && last_insert.size()!=0){
+            bool skip = false;
+            if(hack && del.size() == 2 && chem_counter % 2 !=0 && last_insert.size()!=0){
                 if(del.at(0) == last_insert.at(1) && del.at(1) == last_insert.at(0)) skip = true;
-            }*/
+            }
             
             //Remember that del has been deleted from this table
             save.pos1_deleted.insert(del);
@@ -327,14 +327,16 @@ void YannakakisSuccessorGenerator:: deal_with_del_semi(std::pair<int,int> &table
 
 
                 //Remember about this fact for the JoinStep
-                if(!revert_join){
-                    join_save.pos1_deleted.insert(del);
-                    join_save.pos1_added.erase(del);
-                    last_insert = del;
-                }else{
-                    join_save.pos2_deleted.insert(del);
-                    join_save.pos2_added.erase(del);
-                    last_insert = del;
+                if(!skip){
+                    if(!revert_join){
+                        join_save.pos1_deleted.insert(del);
+                        join_save.pos1_added.erase(del);
+                        last_insert = del;
+                    }else{
+                        join_save.pos2_deleted.insert(del);
+                        join_save.pos2_added.erase(del);
+                        last_insert = del;
+                    }
                 }
 
 
@@ -365,6 +367,7 @@ void YannakakisSuccessorGenerator:: deal_with_del_semi(std::pair<int,int> &table
                 if (save.pos1_added_no_match.count(key)!=0) {
                     if (auto pos = save.pos1_added_no_match.at(key).find(del); pos!=save.pos1_added_no_match.at(key).end()) {
                         save.pos1_added_no_match.at(key).erase(pos);
+                        save.pos1_deleted.insert(del);
 
                         if (save.pos1_added_no_match.at(key).size()==0) {
                             save.pos1_added_no_match.erase(key);
@@ -373,19 +376,20 @@ void YannakakisSuccessorGenerator:: deal_with_del_semi(std::pair<int,int> &table
                 }
             }
         }else{
-            /*bool skip = false;
-            if(ugly_hack && del.size() == 2 && chem_counter % 2 !=0 && last_insert.size()!=0){
+            bool skip = false;
+            if(hack && del.size() == 2 && chem_counter % 2 !=0 && last_insert.size()!=0){
                 if(del.at(0) == last_insert.at(1) && del.at(1) == last_insert.at(0)) skip = true;
-            }*/
-
-            if(!revert_join){
-                join_save.pos2_deleted.insert(del);
-                join_save.pos2_added.erase(del);
-                last_insert = del;
-            }else{
-                join_save.pos1_deleted.insert(del);
-                join_save.pos1_added.erase(del);
-                last_insert = del;
+            }
+            if(!skip){
+                if(!revert_join){
+                    join_save.pos2_deleted.insert(del);
+                    join_save.pos2_added.erase(del);
+                    last_insert = del;
+                }else{
+                    join_save.pos1_deleted.insert(del);
+                    join_save.pos1_added.erase(del);
+                    last_insert = del;
+                }
             }
 
             save.pos2_deleted.insert(del);
@@ -811,7 +815,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
 
     //The organic synthesis domain contains double facts - modeling a bond in both directions
     //These double facts somehow still cause problems
-    bool extreme_hack_flag = false;
+    bool extreme_hack_flag;
     if(std::strcmp(task.get_domain_name().c_str(),"chemical") == 0) extreme_hack_flag = false;
 
     const auto full_reducer = std::chrono::high_resolution_clock::now();
@@ -912,11 +916,11 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 }
                 //Now deal with deletes
                 if(delete_condition1) {
-                    deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, deleted_first,false, sj.first, true);
+                    deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, deleted_first,false, sj.first,extreme_hack_flag ,true);
                     affected_flag = true;
                 }
                 if(delete_condition2) {
-                    deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, deleted_second, true, sj.second, true);
+                    deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, deleted_second, true, sj.second, extreme_hack_flag,true);
                     affected_flag = true;
                 }
                 
@@ -968,7 +972,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             }else{
                 
                 deal_with_add_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save.pos1_added, false, sj.first, false, extreme_hack_flag);
-                deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save.pos1_deleted,false, sj.first);
+                deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save.pos1_deleted,false, sj.first, extreme_hack_flag, false);
 
                 //It can happen that there are still changes that need to be made to the second table
                 if(compute_semi_join[sj.second]){
@@ -980,7 +984,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                         affected_tables.insert_or_assign(sj.second,counter);
                     }
                     if(predicate_to_add_diff.count(action.get_precondition().at(sj.second).get_predicate_symbol_idx())!=0) deal_with_add_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, predicate_to_add_diff.at(table_predicates.second), true, sj.second, false, extreme_hack_flag);
-                    if(delete_condition2) deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, deleted_second, true, sj.second);
+                    if(delete_condition2) deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, deleted_second, true, sj.second, extreme_hack_flag, false);
                 }
 
                 tables[sj.second] = save_obj.generate_table();
@@ -1029,7 +1033,7 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
             }else{
 
                 deal_with_add_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save.pos1_added, true, sj.second, false, extreme_hack_flag);
-                deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save.pos1_deleted, true, sj.second);
+                deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save.pos1_deleted, true, sj.second, extreme_hack_flag, false);
 
                 tables[sj.second] = save_obj.generate_table();
                 //If there are no matching columns, the semijoin does nothing
@@ -1082,8 +1086,8 @@ Table YannakakisSuccessorGenerator::dynamic_instantiate(const ActionSchema &acti
                 deal_with_add_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save_pos1.pos1_added, true, sj.second, false,extreme_hack_flag);
     
                 
-                deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save_pos1.pos1_deleted, true,  sj.second);
-                deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save_pos2.pos1_deleted,false, sj.first);
+                deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save_pos1.pos1_deleted, true,  sj.second, extreme_hack_flag, false);
+                deal_with_del_semi(table_predicates, save_obj, thesis_tables.at(action.get_index()).at(join_elem), revert_join, old_save_pos2.pos1_deleted,false, sj.first, extreme_hack_flag, false);
 
                 tables[sj.second] = save_obj.generate_table();
                 //If there are no matching columns, the semijoin does nothing
