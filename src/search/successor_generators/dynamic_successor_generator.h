@@ -77,7 +77,7 @@ struct DynamicTables{
                 this->result.tuples.push_back(it);
             }
         }
-        std::reverse(this->result.tuples.begin(), this->result.tuples.end());
+        //std::reverse(this->result.tuples.begin(), this->result.tuples.end());
         result.tuple_index = this->result_index;
         return this->result;
     }
@@ -85,11 +85,18 @@ struct DynamicTables{
     Table generate_crossproduct_table()
     {
         this->result.tuples.clear();
-        for (auto it : this->crossproduct_result_table){
-            this->result.tuples.push_back(it.second);
+
+        for (int i=0; i<this->biggest_elem; i++) {
+            if (this->crossproduct_result_table.count(i)!=0) {
+                this->result.tuples.push_back(this->crossproduct_result_table[i]);
+            }
         }
+
+        /*for (auto it : this->crossproduct_result_table){
+            this->result.tuples.push_back(it.second);
+        }*/
         //Very ugly solution that will eat computation time. Keep for now
-        std::reverse(this->result.tuples.begin(), this->result.tuples.end());
+        //std::reverse(this->result.tuples.begin(), this->result.tuples.end());
         result.tuple_index = this->result_index;
         return this->result;
     }
